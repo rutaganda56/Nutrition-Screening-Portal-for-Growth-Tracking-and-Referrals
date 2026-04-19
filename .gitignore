@@ -1,0 +1,53 @@
+# =========================
+# Operating System Files
+# =========================
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# =========================
+# Visual Studio & .NET Backend
+# =========================
+# Temporary folders
+.vs/
+[Bb]in/
+[Oo]bj/
+[Tt]est[Rr]esults/
+[Ll]og/
+[Ll]ogs/
+
+# User-specific Visual Studio files
+*.user
+*.userosscache
+*.sln.docstates
+*.suo
+
+# Optional: Ignore local-only config files so you don't leak connection strings
+appsettings.local.json
+appsettings.Development.json
+
+# =========================
+# React, Node & Vite Frontend
+# =========================
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build Outputs (Vite/React)
+dist/
+dist-ssr/
+build/
+
+# Frontend Environment Variables (NEVER COMMIT SECRETS!)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Debug and Error Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.eslintcache
