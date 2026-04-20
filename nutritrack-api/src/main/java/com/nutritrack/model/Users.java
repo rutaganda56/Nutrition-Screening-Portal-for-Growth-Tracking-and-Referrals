@@ -28,8 +28,6 @@ public class Users {
 
     private String role; // DOCTOR | COMMUNITY_HEALTH_WORKER | ADMINISTRATOR
 
-    private String department;
-
     private String address;
 
     private String status; // ACTIVE | INACTIVE
