@@ -1,0 +1,17 @@
+spring:
+  security:
+    user:
+      password: disabled
+      name: disabled
+  datasource:
+    url: jdbc:postgresql://localhost:5432/nutritrack_db
+    username: postgres
+    password: valentin04
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
