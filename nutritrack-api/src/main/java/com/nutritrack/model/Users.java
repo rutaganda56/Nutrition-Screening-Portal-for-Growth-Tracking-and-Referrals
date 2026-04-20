@@ -1,5 +1,6 @@
 package com.nutritrack.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -44,7 +45,7 @@ public class Users {
 
     @ManyToOne
     @JoinColumn(name = "facility_id")
-    @com.fasterxml.jackson.annotation.JsonBackReference("facility-users")
+    @JsonBackReference("facility-users")
     private HealthFacility facility;
 
     @OneToMany(mappedBy = "registeredBy", cascade = CascadeType.ALL)
