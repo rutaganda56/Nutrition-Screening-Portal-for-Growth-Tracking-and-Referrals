@@ -8,7 +8,6 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 import java.util.List;
 
-// Derived from: RegisterPage, LoginPage, UserManagement, Profile
 @Entity
 @Data
 public class Users {
