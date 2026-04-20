@@ -3,10 +3,8 @@ package com.nutritrack.model;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-
 // Derived from: AlertsFollowUps page (alerts tab)
 @Entity
 @Data
