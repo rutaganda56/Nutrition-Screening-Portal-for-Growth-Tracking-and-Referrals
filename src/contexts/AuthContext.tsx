@@ -9,6 +9,8 @@ export interface User {
   email: string;
   role: UserRole;
   department?: string;
+  facilityId?: number | null;
+  facilityName?: string | null;
 }
 
 interface AuthContextType {
@@ -34,6 +36,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       email: data.email,
       role: authApi.toFrontendRole(data.role) as UserRole,
       department: data.department,
+      facilityId: data.facilityId,
+      facilityName: data.facilityName,
     };
     setUser(user);
     localStorage.setItem('user', JSON.stringify(user));
