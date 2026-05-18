@@ -22,13 +22,13 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
-import { patientsApi, screeningsApi, PatientResponse } from '@/services/api';
+import { patientsApi, screeningsApi, usersApi, serviceRequestsApi, nutritionOrdersApi, PatientResponse } from '@/services/api';
 
 export const NewScreening = () => {
   const { user } = useAuth();
   const [step, setStep] = useState(1);
   
-  const assignedHealthCenter = 'Polyclinique du Bon Berger';
+  const assignedHealthCenter = user?.facilityName || 'Polyclinique du Bon Berger';
 
   const [patientCodeInput, setPatientCodeInput] = useState('');
   const [loadedPatient, setLoadedPatient] = useState<PatientResponse | null>(null);
@@ -76,13 +76,33 @@ export const NewScreening = () => {
     duration: ''
   });
 
-  // Available doctors for service request assignment
-  const availableDoctors = [
-    { id: 'D-001', name: 'Mugabo Emmanuel', specialty: 'Pediatrics' },
-    { id: 'D-002', name: 'Uwase Aline', specialty: 'Nutrition' },
-    { id: 'D-003', name: 'Ishimwe Claude', specialty: 'General Medicine' },
-    { id: 'D-004', name: 'Mutesi Divine', specialty: 'Pediatrics' }
-  ];
+  // Available doctors for service request assignment (dynamically fetched from DB and filtered by CHW facility)
+  const [availableDoctors, setAvailableDoctors] = useState<{ id: string; name: string; specialty: string }[]>([]);
+
+  React.useEffect(() => {
+    usersApi.getAll()
+      .then((allUsers) => {
+        const chwFacilityId = user?.facilityId;
+        const doctorsList = allUsers.filter(u => {
+          const isDoctor = u.role === 'DOCTOR';
+          if (!isDoctor) return false;
+          if (chwFacilityId) {
+            return u.facilityId === chwFacilityId;
+          }
+          return true;
+        });
+
+        const mapped = doctorsList.map(doc => ({
+          id: String(doc.id),
+          name: doc.fullName,
+          specialty: doc.department || 'General Medicine'
+        }));
+        setAvailableDoctors(mapped);
+      })
+      .catch((err) => {
+        console.error('Failed to load doctors from database:', err);
+      });
+  }, [user?.facilityId]);
 
   const handlePatientLookup = async () => {
     if (!patientCodeInput.trim()) {
@@ -222,15 +242,59 @@ export const NewScreening = () => {
 
       toast.success(`Screening ${saved.screeningCode} saved successfully!`);
 
+      let createdServiceRequestId: number | null = null;
+
       if (serviceRequest.enabled) {
-        toast.success('Service request submitted to doctor', {
-          description: `Priority: ${serviceRequest.priority.toUpperCase()}`
-        });
+        try {
+          const docId = serviceRequest.assignedDoctor ? Number(serviceRequest.assignedDoctor) : null;
+          const sr = await serviceRequestsApi.create({
+            patientId,
+            screeningId: saved.id,
+            priority: serviceRequest.priority.toUpperCase(),
+            reasonCode: serviceRequest.reasonCode || 'sam-detected',
+            description: serviceRequest.description,
+            assignedToId: docId
+          }, Number(user?.id));
+          createdServiceRequestId = sr.id;
+          toast.success('Service request submitted to doctor', {
+            description: `Priority: ${serviceRequest.priority.toUpperCase()}`
+          });
+        } catch (srErr: any) {
+          console.error(srErr);
+          toast.error(`Screening saved, but failed to create service request: ${srErr.message}`);
+        }
       }
+
       if (nutritionOrder.enabled) {
-        toast.success('Nutrition order created', {
-          description: `Type: ${nutritionOrder.orderType}`
-        });
+        try {
+          const startDate = new Date().toISOString().split('T')[0];
+          let days = 14;
+          if (nutritionOrder.duration === '4-weeks') days = 28;
+          else if (nutritionOrder.duration === '8-weeks') days = 56;
+          else if (nutritionOrder.duration === '12-weeks') days = 84;
+          
+          const endDateObj = new Date();
+          endDateObj.setDate(endDateObj.getDate() + days);
+          const endDate = endDateObj.toISOString().split('T')[0];
+
+          await nutritionOrdersApi.create({
+            patientId,
+            screeningId: saved.id,
+            serviceRequestId: createdServiceRequestId,
+            orderType: nutritionOrder.orderType.toUpperCase(),
+            supplement: nutritionOrder.supplement || 'rutf',
+            instructions: nutritionOrder.instructions,
+            startDate,
+            endDate,
+            duration: nutritionOrder.duration || '2-weeks'
+          }, Number(user?.id));
+          toast.success('Nutrition order created', {
+            description: `Type: ${nutritionOrder.orderType}`
+          });
+        } catch (noErr: any) {
+          console.error(noErr);
+          toast.error(`Screening saved, but failed to create nutrition order: ${noErr.message}`);
+        }
       }
     } catch (error: any) {
       toast.error(error.message ?? 'Failed to save screening');
