@@ -8,7 +8,6 @@ public record UserResponseDto(
         String email,
         String phone,
         String role,
-        String department,
         String status,
         String facilityName,
         LocalDateTime createdAt

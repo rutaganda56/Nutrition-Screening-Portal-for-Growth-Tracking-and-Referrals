@@ -9,7 +9,6 @@ public record ServiceRequestResponseDto(
         Long patientId,
         String patientName,
         String patientAge,
-        String householdId,
         String priority,
         String status,
         String reasonCode,
@@ -21,6 +20,5 @@ public record ServiceRequestResponseDto(
         BigDecimal weightKg,
         BigDecimal heightCm,
         BigDecimal muacCm,
-        boolean edema,
         LocalDateTime submittedAt
 ) {}
