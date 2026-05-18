@@ -12,6 +12,7 @@ import com.nutritrack.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -39,7 +40,7 @@ public class ScreeningService {
         // Server-side WHO classification
         double muac = dto.muacCm().doubleValue();
         String classification;
-        if (dto.edema() || muac < 11.5) {
+        if (muac < 11.5) {
             classification = "SAM";
         } else if (muac < 12.5) {
             classification = "MAM";
@@ -56,12 +57,11 @@ public class ScreeningService {
         Screening screening = new Screening();
         screening.setPatient(patient);
         screening.setConductedBy(conductedBy);
-        screening.setFacility(patient.getFacility());
-        screening.setScreeningDate(dto.screeningDate());
+        screening.setScreeningDate(LocalDate.parse(dto.screeningDate()));
         screening.setWeightKg(dto.weightKg());
         screening.setHeightCm(dto.heightCm());
         screening.setMuacCm(dto.muacCm());
-        screening.setEdema(dto.edema());
+        screening.setEdema(false);
         screening.setClassification(classification);
         screening.setAppetite(dto.appetite());
         screening.setObservationNotes(dto.observationNotes());
@@ -73,7 +73,7 @@ public class ScreeningService {
 
         // Update patient cached status
         patient.setCurrentStatus(classification);
-        patient.setLastScreeningDate(dto.screeningDate());
+        patient.setLastScreeningDate(LocalDate.parse(dto.screeningDate()));
         patient.setTotalScreenings(patient.getTotalScreenings() + 1);
         patientRepository.save(patient);
 
@@ -81,7 +81,7 @@ public class ScreeningService {
     }
 
     public List<ScreeningResponseDto> getScreeningsByPatient(Long patientId) {
-        return screeningRepository.findByPatientIdOrderByScreeningDateDesc(patientId).stream()
+        return screeningRepository.findByPatient_IdOrderByScreeningDateDesc(patientId).stream()
                 .map(screeningMapper::toResponseDto)
                 .collect(Collectors.toList());
     }
