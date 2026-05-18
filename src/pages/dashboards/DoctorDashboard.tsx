@@ -165,7 +165,11 @@ export const DoctorDashboard = () => {
                       <span className="mx-2">•</span>
                       {new Date(request.submittedAt).toLocaleString()}
                     </div>
-                    <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                    <Button 
+                      size="sm" 
+                      className="bg-green-600 hover:bg-green-700"
+                      onClick={() => navigate(`/dashboard/patient-clinical-summary?patient=${request.patientId}&request=${request.id}`)}
+                    >
                       <FileText className="h-4 w-4 mr-2" />
                       Review Case
                     </Button>
@@ -224,7 +228,12 @@ export const DoctorDashboard = () => {
                       <p className="text-xs text-gray-400 mt-2">{new Date(alert.createdAt).toLocaleString()}</p>
                     </div>
                   </div>
-                  <Button size="sm" variant="outline" className="w-full mt-2">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="w-full mt-2"
+                    onClick={() => navigate('/dashboard/alerts')}
+                  >
                     View Details
                   </Button>
                 </div>
