@@ -71,6 +71,12 @@ export const AdminDashboard = () => {
     { facility: 'Village C', normal: 410, moderate: 67, severe: 15 }
   ];
 
+  const systemAlerts = [
+    { severity: 'High', type: 'SAM Cases', message: `${users.filter(u => u.status === 'ACTIVE').length} active users in the system.`, time: 'Now' },
+    { severity: 'Medium', type: 'Records', message: `${totalPatients} patients and ${totalScreenings} screenings recorded.`, time: 'Today' },
+    { severity: 'Low', type: 'System', message: 'All systems operational. Database backup completed successfully.', time: '2h ago' },
+  ];
+
   return (
     <div className="p-6 space-y-6">
       {/* Welcome Section */}
