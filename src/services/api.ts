@@ -1,4 +1,4 @@
-const BASE_URL = '/api';
+const BASE_URL = 'http://localhost:8080/api';
 
 export interface RegisterPayload {
   fullName: string;
@@ -70,13 +70,16 @@ export interface PatientResponse {
   patientCode: string;
   firstName: string;
   lastName: string;
-  ageDisplay: string;
+  birthDate: string | null;
+  age: string;
   gender: string;
   currentStatus: string;
   lastScreeningDate: string | null;
   totalScreenings: number;
-  facilityName: string;
-  village: string;
+  facilityName: string | null;
+  guardianFirstName: string;
+  guardianLastName: string;
+  guardianPhone: string;
 }
 
 export interface ScreeningResponse {
@@ -88,11 +91,11 @@ export interface ScreeningResponse {
   weightKg: number;
   heightCm: number;
   muacCm: number;
-  edema: boolean;
   classification: string;
   recommendation: string;
   conductedByName: string;
   facilityName: string;
+  observationNotes: string;
 }
 
 export interface AlertResponse {
@@ -126,14 +129,47 @@ export interface ServiceRequestResponse {
   submittedAt: string;
 }
 
+export interface PatientRegisterPayload {
+  firstName: string;
+  lastName: string;
+  birthDate: string;
+  gender: string;
+  guardianFirstName: string;
+  guardianLastName: string;
+  guardianRelationship: string;
+  guardianPhone: string;
+  notes?: string;
+}
+
 export const patientsApi = {
   getAll: () => request<PatientResponse[]>('/patients', { method: 'GET' }),
   getByStatus: (status: string) => request<PatientResponse[]>(`/patients/status/${status}`, { method: 'GET' }),
+  getById: (id: number) => request<PatientResponse>(`/patients/${id}`, { method: 'GET' }),
+  register: (payload: PatientRegisterPayload, registeredBy: number) =>
+    request<PatientResponse>(`/patients?registeredBy=${registeredBy}`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
 };
+
+export interface ScreeningCreatePayload {
+  patientId: number;
+  weightKg: number;
+  heightCm: number;
+  muacCm: number;
+  appetite?: string;
+  observationNotes?: string;
+  screeningDate: string;
+}
 
 export const screeningsApi = {
   getAll: () => request<ScreeningResponse[]>('/screenings', { method: 'GET' }),
   getByPatient: (patientId: number) => request<ScreeningResponse[]>(`/screenings/patient/${patientId}`, { method: 'GET' }),
+  create: (payload: ScreeningCreatePayload, conductedBy: number) =>
+    request<ScreeningResponse>(`/screenings?conductedBy=${conductedBy}`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
 };
 
 export const alertsApi = {
@@ -148,4 +184,8 @@ export const serviceRequestsApi = {
 
 export const usersApi = {
   getAll: () => request<UserResponse[]>('/users', { method: 'GET' }),
+};
+
+export const referralsApi = {
+  getAll: () => request<unknown[]>('/referrals', { method: 'GET' }),
 };
