@@ -17,34 +17,38 @@ import {
   Send, 
   Utensils,
   FileText,
-  User
+  User,
+  Search
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import { patientsApi, screeningsApi, PatientResponse } from '@/services/api';
 
 export const NewScreening = () => {
   const { user } = useAuth();
   const [step, setStep] = useState(1);
   
-  // CHW is assigned to a specific health center - patients must be from this center
   const assignedHealthCenter = 'Polyclinique du Bon Berger';
+
+  const [patientCodeInput, setPatientCodeInput] = useState('');
+  const [loadedPatient, setLoadedPatient] = useState<PatientResponse | null>(null);
+  const [isLookingUp, setIsLookingUp] = useState(false);
+  const [patientId, setPatientId] = useState<number | null>(null);
   
   const [formData, setFormData] = useState({
     // Child Info
     patientSelect: '',
-    householdId: '',
     childName: '',
     birthDate: '',
     gender: '',
     guardianName: '',
     guardianPhone: '',
-    
+
     // Measurements
     weight: '',
     height: '',
     muac: '',
-    edema: 'no',
-    
+
     // Notes
     observationNotes: ''
   });
@@ -80,11 +84,60 @@ export const NewScreening = () => {
     { id: 'D-004', name: 'Mutesi Divine', specialty: 'Pediatrics' }
   ];
 
+  const handlePatientLookup = async () => {
+    if (!patientCodeInput.trim()) {
+      toast.error('Please enter a patient ID');
+      return;
+    }
+    setIsLookingUp(true);
+    try {
+      const all = await patientsApi.getAll();
+      const found = all.find(
+        (p) => p.patientCode.toLowerCase() === patientCodeInput.trim().toLowerCase()
+      );
+      if (!found) {
+        toast.error('No patient found with that ID');
+        setLoadedPatient(null);
+        return;
+      }
+
+      const resolvedAge = found.age && found.age.trim()
+        ? found.age
+        : found.birthDate
+          ? computeAgeFromDate(found.birthDate)
+          : 'Age unknown';
+
+      setLoadedPatient({ ...found, age: resolvedAge });
+      setPatientId(found.id);
+      setFormData((prev) => ({
+        ...prev,
+        childName: `${found.firstName} ${found.lastName}`,
+        birthDate: found.birthDate ?? '',
+        gender: found.gender.toLowerCase(),
+        guardianName: `${found.guardianFirstName} ${found.guardianLastName}`,
+        guardianPhone: found.guardianPhone,
+      }));
+      toast.success(`Patient ${found.patientCode} loaded successfully`);
+    } catch {
+      toast.error('Failed to look up patient');
+    } finally {
+      setIsLookingUp(false);
+    }
+  };
+
+  const computeAgeFromDate = (birthDate: string): string => {
+    const birth = new Date(birthDate);
+    const now = new Date();
+    let years = now.getFullYear() - birth.getFullYear();
+    let months = now.getMonth() - birth.getMonth();
+    if (months < 0) { years--; months += 12; }
+    return `${years}y ${months}m`;
+  };
+
   const calculateClassification = () => {
     const muacNum = parseFloat(formData.muac);
-    const hasEdema = formData.edema === 'yes';
-    
-    if (hasEdema || muacNum < 11.5) {
+
+    if (muacNum < 11.5) {
       return {
         classification: 'SAM' as const,
         recommendation: 'Urgent referral to Therapeutic Feeding Center required. Submit service request to doctor immediately.'
@@ -103,12 +156,7 @@ export const NewScreening = () => {
   };
 
   const handleNext = () => {
-    if (step === 1) {
-      if (!formData.householdId || !formData.childName || !formData.birthDate || !formData.gender) {
-        toast.error('Please fill in all required fields');
-        return;
-      }
-    } else if (step === 2) {
+    if (step === 2) {
       if (!formData.weight || !formData.height || !formData.muac) {
         toast.error('Please complete all measurements');
         return;
@@ -148,61 +196,50 @@ export const NewScreening = () => {
     setStep(step + 1);
   };
 
-  const handleSaveScreening = () => {
-    // Validate service request if enabled
+  const handleSaveScreening = async () => {
     if (serviceRequest.enabled && !serviceRequest.description.trim()) {
       toast.error('Please provide a description for the service request');
       return;
     }
-    
-    // Validate nutrition order if enabled
     if (nutritionOrder.enabled && (!nutritionOrder.orderType || !nutritionOrder.instructions.trim())) {
       toast.error('Please complete the nutrition order details');
       return;
     }
+    if (!patientId) {
+      toast.error('No patient selected. Please look up a patient first.');
+      return;
+    }
 
-    const screeningId = `S-${Math.floor(100 + Math.random() * 900)}`;
-    const encounterData = {
-      screeningId,
-      patient: formData.childName,
-      household: formData.householdId,
-      date: new Date().toISOString(),
-      conductedBy: user?.name,
-      healthCenter: assignedHealthCenter,
-      observations: {
-        weight: formData.weight,
-        height: formData.height,
-        muac: formData.muac,
-        edema: formData.edema === 'yes',
-        classification: result?.classification,
-        notes: formData.observationNotes
+    try {
+      const saved = await screeningsApi.create({
+        patientId,
+        weightKg: parseFloat(formData.weight),
+        heightCm: parseFloat(formData.height),
+        muacCm: parseFloat(formData.muac),
+        observationNotes: formData.observationNotes,
+        screeningDate: new Date().toISOString().split('T')[0],
+      }, Number(user?.id));
+
+      toast.success(`Screening ${saved.screeningCode} saved successfully!`);
+
+      if (serviceRequest.enabled) {
+        toast.success('Service request submitted to doctor', {
+          description: `Priority: ${serviceRequest.priority.toUpperCase()}`
+        });
       }
-    };
-
-    let successMessage = `Screening ${screeningId} saved successfully!`;
-    
-    if (serviceRequest.enabled) {
-      const requestId = `SR-${Math.floor(1000 + Math.random() * 9000)}`;
-      successMessage += ` Service request ${requestId} submitted to doctor.`;
-      toast.success(`Service request ${requestId} created`, {
-        description: `Priority: ${serviceRequest.priority.toUpperCase()}`
-      });
+      if (nutritionOrder.enabled) {
+        toast.success('Nutrition order created', {
+          description: `Type: ${nutritionOrder.orderType}`
+        });
+      }
+    } catch (error: any) {
+      toast.error(error.message ?? 'Failed to save screening');
+      return;
     }
-    
-    if (nutritionOrder.enabled) {
-      const orderId = `NO-${Math.floor(1000 + Math.random() * 9000)}`;
-      successMessage += ` Nutrition order ${orderId} created.`;
-      toast.success(`Nutrition order ${orderId} created`, {
-        description: `Type: ${nutritionOrder.orderType}`
-      });
-    }
-    
-    toast.success(successMessage);
     
     // Reset form
     setFormData({
       patientSelect: '',
-      householdId: '',
       childName: '',
       birthDate: '',
       gender: '',
@@ -211,10 +248,12 @@ export const NewScreening = () => {
       weight: '',
       height: '',
       muac: '',
-      edema: 'no',
       observationNotes: ''
     });
     setResult(null);
+    setLoadedPatient(null);
+    setPatientId(null);
+    setPatientCodeInput('');
     setServiceRequest({
       enabled: false,
       priority: 'urgent',
@@ -307,17 +346,36 @@ export const NewScreening = () => {
             <CardDescription>Enter patient details for the encounter</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="householdId">Household ID *</Label>
+            {/* Patient Lookup */}
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-3">
+              <p className="text-sm font-medium text-blue-900">Look up an existing patient by their Patient ID</p>
+              <div className="flex gap-2">
                 <Input
-                  id="householdId"
-                  placeholder="H-101"
-                  value={formData.householdId}
-                  onChange={(e) => setFormData({ ...formData, householdId: e.target.value })}
-                  required
+                  placeholder="e.g. P-1"
+                  value={patientCodeInput}
+                  onChange={(e) => setPatientCodeInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handlePatientLookup()}
+                  className="bg-white"
                 />
+                <Button
+                  type="button"
+                  onClick={handlePatientLookup}
+                  disabled={isLookingUp}
+                  className="bg-blue-600 hover:bg-blue-700 shrink-0"
+                >
+                  <Search className="h-4 w-4 mr-2" />
+                  {isLookingUp ? 'Searching...' : 'Look Up'}
+                </Button>
               </div>
+              {loadedPatient && (
+                <div className="flex items-center gap-2 text-sm text-green-700 font-medium">
+                  <CheckCircle className="h-4 w-4" />
+                  Patient found — fields auto-filled from database
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="childName">Child's Full Name *</Label>
                 <Input
@@ -325,24 +383,38 @@ export const NewScreening = () => {
                   placeholder="Uwase Aline"
                   value={formData.childName}
                   onChange={(e) => setFormData({ ...formData, childName: e.target.value })}
+                  readOnly={!!loadedPatient}
+                  className={loadedPatient ? 'bg-gray-50' : ''}
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="birthDate">Date of Birth *</Label>
-                <Input
-                  id="birthDate"
-                  type="date"
-                  value={formData.birthDate}
-                  onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
-                  max={new Date().toISOString().split('T')[0]}
-                  required
-                />
+                <Label htmlFor="birthDate">{loadedPatient ? 'Age' : 'Date of Birth *'}</Label>
+                {loadedPatient ? (
+                  <Input
+                    id="birthDate"
+                    value={loadedPatient.age}
+                    readOnly
+                    className="bg-gray-50"
+                  />
+                ) : (
+                  <Input
+                    id="birthDate"
+                    type="date"
+                    value={formData.birthDate}
+                    onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
+                    max={new Date().toISOString().split('T')[0]}
+                  />
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="gender">Gender *</Label>
-                <Select value={formData.gender} onValueChange={(v) => setFormData({ ...formData, gender: v })}>
-                  <SelectTrigger>
+                <Select
+                  value={formData.gender}
+                  onValueChange={(v) => !loadedPatient && setFormData({ ...formData, gender: v })}
+                  disabled={!!loadedPatient}
+                >
+                  <SelectTrigger className={loadedPatient ? 'bg-gray-50' : ''}>
                     <SelectValue placeholder="Select gender" />
                   </SelectTrigger>
                   <SelectContent>
@@ -358,6 +430,8 @@ export const NewScreening = () => {
                   placeholder="Mukamana Josiane"
                   value={formData.guardianName}
                   onChange={(e) => setFormData({ ...formData, guardianName: e.target.value })}
+                  readOnly={!!loadedPatient}
+                  className={loadedPatient ? 'bg-gray-50' : ''}
                 />
               </div>
               <div className="space-y-2">
@@ -367,6 +441,8 @@ export const NewScreening = () => {
                   placeholder="+250 788 123 456"
                   value={formData.guardianPhone}
                   onChange={(e) => setFormData({ ...formData, guardianPhone: e.target.value })}
+                  readOnly={!!loadedPatient}
+                  className={loadedPatient ? 'bg-gray-50' : ''}
                 />
               </div>
             </div>
@@ -502,10 +578,6 @@ export const NewScreening = () => {
                     <p className="font-medium">{formData.childName}</p>
                   </div>
                   <div className="p-3 border rounded">
-                    <p className="text-gray-500">Household</p>
-                    <p className="font-medium">{formData.householdId}</p>
-                  </div>
-                  <div className="p-3 border rounded">
                     <p className="text-gray-500">Weight</p>
                     <p className="font-medium">{formData.weight} kg</p>
                   </div>
@@ -516,10 +588,6 @@ export const NewScreening = () => {
                   <div className="p-3 border rounded">
                     <p className="text-gray-500">MUAC</p>
                     <p className="font-medium">{formData.muac} cm</p>
-                  </div>
-                  <div className="p-3 border rounded">
-                    <p className="text-gray-500">Edema</p>
-                    <p className="font-medium">{formData.edema === 'yes' ? 'Present' : 'Absent'}</p>
                   </div>
                 </div>
               </div>
@@ -591,7 +659,6 @@ export const NewScreening = () => {
                       <SelectContent>
                         <SelectItem value="sam-detected">SAM Detected</SelectItem>
                         <SelectItem value="mam-detected">MAM Detected</SelectItem>
-                        <SelectItem value="edema-present">Edema Present</SelectItem>
                         <SelectItem value="rapid-deterioration">Rapid Deterioration</SelectItem>
                         <SelectItem value="complications">Medical Complications</SelectItem>
                       </SelectContent>
