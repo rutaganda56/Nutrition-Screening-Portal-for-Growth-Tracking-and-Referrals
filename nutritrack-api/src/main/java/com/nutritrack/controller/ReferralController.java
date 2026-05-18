@@ -15,39 +15,41 @@ import java.util.HashMap;
 import java.util.List;
 
 @RestController
+@RequestMapping("/api/referrals")
+@CrossOrigin
 public class ReferralController {
 
     @Autowired
     private ReferralService referralService;
 
-    @PostMapping("api/referrals")
+    @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ReferralResponseDto createReferral(@Valid @RequestBody ReferralDto dto,
                                               @RequestParam Long referredBy) {
         return referralService.createReferral(dto, referredBy);
     }
 
-    @GetMapping("api/referrals")
+    @GetMapping
     public List<ReferralResponseDto> getAllReferrals() {
         return referralService.getAllReferrals();
     }
 
-    @GetMapping("api/referrals/{id}")
+    @GetMapping("/{id}")
     public ReferralResponseDto getReferralById(@PathVariable Long id) {
         return referralService.getReferralById(id);
     }
 
-    @GetMapping("api/referrals/doctor/{doctorId}")
+    @GetMapping("/doctor/{doctorId}")
     public List<ReferralResponseDto> getReferralsByDoctor(@PathVariable Long doctorId) {
         return referralService.getReferralsByDoctor(doctorId);
     }
 
-    @GetMapping("api/referrals/patient/{patientId}")
+    @GetMapping("/patient/{patientId}")
     public List<ReferralResponseDto> getReferralsByPatient(@PathVariable Long patientId) {
         return referralService.getReferralsByPatient(patientId);
     }
 
-    @PatchMapping("api/referrals/{id}/status")
+    @PatchMapping("/{id}/status")
     public ReferralResponseDto updateStatus(@PathVariable Long id, @RequestParam String status) {
         return referralService.updateStatus(id, status);
     }
