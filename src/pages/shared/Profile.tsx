@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
@@ -12,6 +12,7 @@ import { Alert, AlertDescription } from '@/app/components/ui/alert';
 import { Switch } from '@/app/components/ui/switch';
 import { User, Mail, Phone, MapPin, Calendar, Save, Camera, Shield, CheckCircle2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { patientsApi, screeningsApi, referralsApi } from '@/services/api';
 
 export const Profile = () => {
   const { user } = useAuth();
@@ -29,6 +30,30 @@ export const Profile = () => {
   // 2FA State
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [showDisable2FA, setShowDisable2FA] = useState(false);
+
+  const [stats, setStats] = useState({ patients: 0, screenings: 0, referrals: 0, thisMonth: 0 });
+
+  useEffect(() => {
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+
+    Promise.all([
+      patientsApi.getAll(),
+      screeningsApi.getAll(),
+      referralsApi.getAll(),
+    ]).then(([patients, screenings, referrals]) => {
+      const thisMonthScreenings = screenings.filter(s => {
+        const d = new Date(s.screeningDate);
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+      }).length;
+      setStats({
+        patients: patients.length,
+        screenings: screenings.length,
+        referrals: referrals.length,
+        thisMonth: thisMonthScreenings,
+      });
+    }).catch(() => {});
+  }, []);
 
   const handleSave = () => {
     toast.success('Profile updated successfully');
@@ -61,7 +86,7 @@ export const Profile = () => {
   const handleDisable2FA = () => {
     setShowDisable2FA(false);
     setTwoFactorEnabled(false);
-    toast.success('2FA yararetswe neza');
+    toast.success('Two-factor authentication has been disabled');
   };
 
   return (
@@ -205,7 +230,7 @@ export const Profile = () => {
                   <div>
                     <h3 className="text-lg font-semibold mb-1">Two-Factor Authentication (2FA)</h3>
                     <p className="text-sm text-gray-600">
-                      Kongera umutekano kuri konti yawe ukoresheje telefoni yawe
+                      Add an extra layer of security to your account using your phone
                     </p>
                   </div>
 
@@ -221,7 +246,7 @@ export const Profile = () => {
                           <div>
                             <div className="flex items-center gap-2 mb-1">
                               <p className="font-medium">
-                                {twoFactorEnabled ? '2FA yashyizweho' : '2FA ntirishyizweho'}
+                                {twoFactorEnabled ? '2FA Enabled' : '2FA Not Enabled'}
                               </p>
                               {twoFactorEnabled && (
                                 <Badge variant="default" className="bg-green-600">
@@ -231,14 +256,14 @@ export const Profile = () => {
                               )}
                             </div>
                             <p className="text-sm text-gray-600">
-                              {twoFactorEnabled 
-                                ? 'Konti yawe irinzwe na 2FA. Uzasabwa ikode ya 2FA buri gihe winjira.'
-                                : 'Shiraho 2FA kugira ngo ukorere umutekano muri konti yawe.'
+                              {twoFactorEnabled
+                                ? 'Your account is protected with 2FA. You will be asked for a 2FA code every time you log in.'
+                                : 'Enable 2FA to add an extra layer of security to your account.'
                               }
                             </p>
                             {twoFactorEnabled && (
                               <p className="text-xs text-gray-500 mt-2">
-                                Yashyizweho: Werurwe 15, 2026
+                                Enabled on: March 15, 2026
                               </p>
                             )}
                           </div>
@@ -249,7 +274,7 @@ export const Profile = () => {
                               onClick={handleEnable2FA}
                               className="bg-blue-600 hover:bg-blue-700"
                             >
-                              Shiraho 2FA
+                              Enable 2FA
                             </Button>
                           ) : (
                             <Button
@@ -257,7 +282,7 @@ export const Profile = () => {
                               variant="outline"
                               className="text-red-600 hover:text-red-700 hover:bg-red-50"
                             >
-                              Hagarika 2FA
+                              Disable 2FA
                             </Button>
                           )}
                         </div>
@@ -269,7 +294,7 @@ export const Profile = () => {
                           <AlertDescription>
                             <div className="space-y-3">
                               <p className="text-sm">
-                                Uzi neza ko ushaka kuhagarika 2FA? Ibi bizagabanya umutekano wa konti yawe.
+                                Are you sure you want to disable 2FA? This will reduce the security of your account.
                               </p>
                               <div className="flex gap-2">
                                 <Button
@@ -277,14 +302,14 @@ export const Profile = () => {
                                   variant="destructive"
                                   size="sm"
                                 >
-                                  Yego, Hagarika
+                                  Yes, Disable
                                 </Button>
                                 <Button
                                   onClick={() => setShowDisable2FA(false)}
                                   variant="outline"
                                   size="sm"
                                 >
-                                  Hagarika
+                                  Cancel
                                 </Button>
                               </div>
                             </div>
@@ -300,13 +325,13 @@ export const Profile = () => {
                   <div>
                     <h3 className="text-lg font-semibold mb-1">Change Password</h3>
                     <p className="text-sm text-gray-600">
-                      Hindura ijambo ry'ibanga kugira ngo ukorere umutekano
+                      Update your password to keep your account secure
                     </p>
                   </div>
 
                   <div className="grid gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="current-password">Ijambo ry'ibanga rya none</Label>
+                      <Label htmlFor="current-password">Current Password</Label>
                       <Input
                         id="current-password"
                         type="password"
@@ -314,7 +339,7 @@ export const Profile = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="new-password">Ijambo ry'ibanga rishya</Label>
+                      <Label htmlFor="new-password">New Password</Label>
                       <Input
                         id="new-password"
                         type="password"
@@ -322,7 +347,7 @@ export const Profile = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="confirm-password">Emeza ijambo ry'ibanga rishya</Label>
+                      <Label htmlFor="confirm-password">Confirm New Password</Label>
                       <Input
                         id="confirm-password"
                         type="password"
@@ -330,7 +355,7 @@ export const Profile = () => {
                       />
                     </div>
                     <Button className="bg-blue-600 hover:bg-blue-700 w-fit">
-                      Hindura Ijambo ry'ibanga
+                      Update Password
                     </Button>
                   </div>
                 </div>
@@ -340,7 +365,7 @@ export const Profile = () => {
                   <div>
                     <h3 className="text-lg font-semibold mb-1">Active Sessions</h3>
                     <p className="text-sm text-gray-600">
-                      Reba ahantu winjiye kuri konti yawe
+                      View the devices where you are currently logged in
                     </p>
                   </div>
 
@@ -413,25 +438,25 @@ export const Profile = () => {
         <Card>
           <CardContent className="pt-6">
             <p className="text-sm text-gray-600">Total Patients</p>
-            <p className="text-2xl font-bold mt-2">87</p>
+            <p className="text-2xl font-bold mt-2">{stats.patients}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
             <p className="text-sm text-gray-600">Screenings</p>
-            <p className="text-2xl font-bold mt-2">245</p>
+            <p className="text-2xl font-bold mt-2">{stats.screenings}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
             <p className="text-sm text-gray-600">Referrals</p>
-            <p className="text-2xl font-bold mt-2">34</p>
+            <p className="text-2xl font-bold mt-2">{stats.referrals}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <p className="text-sm text-gray-600">This Month</p>
-            <p className="text-2xl font-bold mt-2">28</p>
+            <p className="text-sm text-gray-600">Screenings This Month</p>
+            <p className="text-2xl font-bold mt-2">{stats.thisMonth}</p>
           </CardContent>
         </Card>
       </div>
