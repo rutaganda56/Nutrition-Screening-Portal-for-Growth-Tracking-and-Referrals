@@ -1,324 +1,291 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { Badge } from '@/app/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/app/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/app/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/app/components/ui/select';
 import { Label } from '@/app/components/ui/label';
 import { Textarea } from '@/app/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/app/components/ui/table';
-import { Alert, AlertDescription } from '@/app/components/ui/alert';
-import { Search, Plus, MapPin, Phone, Mail, Users, Building, Edit, Trash2, Info } from 'lucide-react';
+import { Search, Plus, MapPin, Phone, Mail, Users, Building, Edit, Trash2, Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { facilitiesApi, FacilityResponse } from '@/services/api';
 
-interface Facility {
-  id: string;
-  name: string;
-  type: 'Hospital' | 'Clinic' | 'Health Center' | 'Dispensary';
-  status: 'Active' | 'Inactive';
-  location: string;
-  phone: string;
-  email: string;
-  staff: number;
-  capacity: number;
-  services: string[];
-}
+const emptyForm = { name: '', type: 'CLINIC', location: '', phone: '', email: '', staff: 0, capacity: 0, services: '' };
+
+type FacilityFormProps = {
+  form: typeof emptyForm;
+  errors: Record<string,string>;
+  submitting: boolean;
+  onNameChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onLocationChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onPhoneChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onEmailChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onStaffChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onCapacityChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onServicesChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  onTypeChange: (v: string) => void;
+  onSubmit: () => void;
+  onCancel: () => void;
+  label: string;
+};
+
+const FacilityFormComponent: React.FC<FacilityFormProps> = ({ form, errors, submitting, onNameChange, onLocationChange, onPhoneChange, onEmailChange, onStaffChange, onCapacityChange, onServicesChange, onTypeChange, onSubmit, onCancel, label }) => (
+  <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }} className="space-y-4">
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">Facility Information</CardTitle>
+        <CardDescription>Provide basic information about the health facility</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="facilityName">Facility Name <span className="text-red-600">*</span></Label>
+            <Input id="facilityName" placeholder="Enter name" value={form.name} onChange={onNameChange} className={errors.name ? 'border-red-500' : ''} />
+            {errors.name && (<p className="text-sm text-red-600 flex items-center gap-1"><AlertCircle className="h-3 w-3" />{errors.name}</p>)}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="facilityType">Type *</Label>
+            <Select value={form.type} onValueChange={onTypeChange}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="HOSPITAL">Hospital</SelectItem>
+                <SelectItem value="CLINIC">Clinic</SelectItem>
+                <SelectItem value="HEALTH_CENTER">Health Center</SelectItem>
+                <SelectItem value="DISPENSARY">Dispensary</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2 col-span-2">
+            <Label htmlFor="facilityLocation">Location <span className="text-red-600">*</span></Label>
+            <Input id="facilityLocation" placeholder="City, Country" value={form.location} onChange={onLocationChange} className={errors.location ? 'border-red-500' : ''} />
+            {errors.location && (<p className="text-sm text-red-600 flex items-center gap-1"><AlertCircle className="h-3 w-3" />{errors.location}</p>)}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="facilityPhone">Phone</Label>
+            <Input id="facilityPhone" placeholder="+250 788 123 456" value={form.phone} onChange={onPhoneChange} className={errors.phone ? 'border-red-500' : ''} />
+            {errors.phone && (<p className="text-sm text-red-600 flex items-center gap-1"><AlertCircle className="h-3 w-3" />{errors.phone}</p>)}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="facilityEmail">Email</Label>
+            <Input id="facilityEmail" type="email" placeholder="facility@example.com" value={form.email} onChange={onEmailChange} className={errors.email ? 'border-red-500' : ''} />
+            {errors.email && (<p className="text-sm text-red-600 flex items-center gap-1"><AlertCircle className="h-3 w-3" />{errors.email}</p>)}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="facilityStaff">Staff Count</Label>
+            <Input id="facilityStaff" type="number" value={form.staff} onChange={onStaffChange} className={errors.staff ? 'border-red-500' : ''} />
+            {errors.staff && (<p className="text-sm text-red-600 flex items-center gap-1"><AlertCircle className="h-3 w-3" />{errors.staff}</p>)}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="facilityCapacity">Patient Capacity</Label>
+            <Input id="facilityCapacity" type="number" value={form.capacity} onChange={onCapacityChange} className={errors.capacity ? 'border-red-500' : ''} />
+            {errors.capacity && (<p className="text-sm text-red-600 flex items-center gap-1"><AlertCircle className="h-3 w-3" />{errors.capacity}</p>)}
+          </div>
+          <div className="space-y-2 col-span-2">
+            <Label htmlFor="facilityServices">Services (comma-separated)</Label>
+            <Textarea id="facilityServices" placeholder="Nutrition, Pediatrics, Laboratory" value={form.services} onChange={onServicesChange} rows={2} className={errors.services ? 'border-red-500' : ''} />
+            {errors.services && (<p className="text-sm text-red-600 flex items-center gap-1"><AlertCircle className="h-3 w-3" />{errors.services}</p>)}
+          </div>
+        </div>
+      </CardContent>
+      <div className="flex gap-2 justify-end p-4">
+        <Button variant="outline" type="button" onClick={onCancel}>Cancel</Button>
+        <Button type="submit" disabled={submitting} className="bg-blue-600 hover:bg-blue-700">{submitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}{label}</Button>
+      </div>
+    </Card>
+  </form>
+);
 
 export const FacilityDirectory = () => {
+  const [facilities, setFacilities] = useState<FacilityResponse[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all');
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [form, setForm] = useState(emptyForm);
+  const [submitting, setSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const [facilities, setFacilities] = useState<Facility[]>([
-    {
-      id: 'F-001',
-      name: 'Polyclinique du Bon Berger',
-      type: 'Hospital',
-      status: 'Active',
-      location: 'Kigali, Rwanda',
-      phone: '+250 788 123 456',
-      email: 'contact@bonberger.org',
-      staff: 45,
-      capacity: 120,
-      services: ['Nutrition', 'Pediatrics', 'General Medicine', 'Laboratory']
-    },
-    {
-      id: 'F-002',
-      name: 'Kibagabaga Health Center',
-      type: 'Health Center',
-      status: 'Active',
-      location: 'Kibagabaga, Kigali',
-      phone: '+250 788 234 567',
-      email: 'kibagabaga@health.rw',
-      staff: 28,
-      capacity: 60,
-      services: ['Nutrition', 'Maternal Health', 'Vaccination']
-    },
-    {
-      id: 'F-003',
-      name: 'Kimironko Clinic',
-      type: 'Clinic',
-      status: 'Active',
-      location: 'Kimironko, Kigali',
-      phone: '+250 788 345 678',
-      email: 'info@kimironko.rw',
-      staff: 15,
-      capacity: 30,
-      services: ['General Medicine', 'Nutrition Screening']
-    },
-    {
-      id: 'F-004',
-      name: 'Remera Dispensary',
-      type: 'Dispensary',
-      status: 'Inactive',
-      location: 'Remera, Kigali',
-      phone: '+250 788 456 789',
-      email: 'remera@health.rw',
-      staff: 8,
-      capacity: 15,
-      services: ['Basic Care', 'Vaccination']
-    }
-  ]);
+  const reload = () =>
+    facilitiesApi.getAll().then(setFacilities).catch(() => toast.error('Failed to load facilities'));
 
-  const [newFacility, setNewFacility] = useState<Partial<Facility>>({
-    name: '',
-    type: 'Clinic',
-    status: 'Active',
-    location: '',
-    phone: '',
-    email: '',
-    staff: 0,
-    capacity: 0,
-    services: []
+  useEffect(() => {
+    reload().finally(() => setLoading(false));
+  }, []);
+
+  const handleCreate = async () => {
+    const newErrors: Record<string,string> = {};
+    if (!form.name || !form.name.trim()) newErrors.name = 'Facility name is required';
+    if (!form.location || !form.location.trim()) newErrors.location = 'Location is required';
+    if (Object.keys(newErrors).length > 0) { setErrors(newErrors); toast.error('Please correct the errors in the form'); return; }
+    setSubmitting(true);
+    try {
+      await facilitiesApi.create({ ...form, status: 'ACTIVE' } as any);
+      toast.success('Facility created successfully');
+      setIsCreateOpen(false);
+      setForm(emptyForm);
+      reload();
+    } catch (e: any) {
+      toast.error(e.message ?? 'Failed to create facility');
+    } finally { setSubmitting(false); }
+  };
+
+  const handleUpdate = async () => {
+    if (!editingId) return;
+    const newErrors: Record<string,string> = {};
+    if (!form.name || !form.name.trim()) newErrors.name = 'Facility name is required';
+    if (!form.location || !form.location.trim()) newErrors.location = 'Location is required';
+    if (Object.keys(newErrors).length > 0) { setErrors(newErrors); toast.error('Please correct the errors in the form'); return; }
+    setSubmitting(true);
+    try {
+      await facilitiesApi.update(editingId, { ...form, status: 'ACTIVE' } as any);
+      toast.success('Facility updated successfully');
+      setIsEditOpen(false);
+      setEditingId(null);
+      reload();
+    } catch (e: any) {
+      toast.error(e.message ?? 'Failed to update facility');
+    } finally { setSubmitting(false); }
+  };
+
+  const handleToggle = async (id: number) => {
+    try {
+      await facilitiesApi.toggleStatus(id);
+      toast.success('Facility status updated');
+      reload();
+    } catch { toast.error('Failed to update status'); }
+  };
+
+  const handleDelete = async (id: number) => {
+    try {
+      await facilitiesApi.delete(id);
+      toast.success('Facility deleted');
+      reload();
+    } catch { toast.error('Failed to delete facility'); }
+  };
+
+  const openEdit = (f: FacilityResponse) => {
+    setEditingId(f.id);
+    setForm({ name: f.name, type: f.type, location: f.location, phone: f.phone ?? '', email: f.email ?? '', staff: f.staff, capacity: f.capacity, services: f.services ?? '' });
+    setIsEditOpen(true);
+  };
+
+  const filtered = facilities.filter(f => {
+    const matchSearch = f.name.toLowerCase().includes(searchQuery.toLowerCase()) || f.location.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchType = filterType === 'all' || f.type.toLowerCase() === filterType.toLowerCase();
+    return matchSearch && matchType;
   });
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'Hospital':
-        return 'default';
-      case 'Clinic':
-        return 'secondary';
-      case 'Health Center':
-        return 'outline';
-      case 'Dispensary':
-        return 'outline';
-      default:
-        return 'secondary';
-    }
+  const stats = {
+    total: facilities.length,
+    active: facilities.filter(f => f.status === 'ACTIVE').length,
+    staff: facilities.reduce((s, f) => s + f.staff, 0),
+    capacity: facilities.reduce((s, f) => s + f.capacity, 0),
   };
 
-  const getStatusColor = (status: string) => {
-    return status === 'Active' ? 'secondary' : 'destructive';
-  };
+  // useCallback handlers to avoid recreating functions on each render for smoother typing
+  const onNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = e.target.value;
+    setForm(f => ({ ...f, name: v }));
+    setErrors(prev => { if (!prev.name) return prev; const n = { ...prev }; delete n.name; return n; });
+  }, []);
+  const onLocationChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = e.target.value;
+    setForm(f => ({ ...f, location: v }));
+    setErrors(prev => { if (!prev.location) return prev; const n = { ...prev }; delete n.location; return n; });
+  }, []);
+  const onPhoneChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = e.target.value;
+    setForm(f => ({ ...f, phone: v }));
+    setErrors(prev => { if (!prev.phone) return prev; const n = { ...prev }; delete n.phone; return n; });
+  }, []);
+  const onEmailChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = e.target.value;
+    setForm(f => ({ ...f, email: v }));
+    setErrors(prev => { if (!prev.email) return prev; const n = { ...prev }; delete n.email; return n; });
+  }, []);
+  const onStaffChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = e.target.value;
+    setForm(f => ({ ...f, staff: parseInt(v) || 0 }));
+    setErrors(prev => { if (!prev.staff) return prev; const n = { ...prev }; delete n.staff; return n; });
+  }, []);
+  const onCapacityChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = e.target.value;
+    setForm(f => ({ ...f, capacity: parseInt(v) || 0 }));
+    setErrors(prev => { if (!prev.capacity) return prev; const n = { ...prev }; delete n.capacity; return n; });
+  }, []);
+  const onServicesChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const v = e.target.value;
+    setForm(f => ({ ...f, services: v }));
+    setErrors(prev => { if (!prev.services) return prev; const n = { ...prev }; delete n.services; return n; });
+  }, []);
 
-  const filteredFacilities = facilities.filter(facility => {
-    const matchesSearch = facility.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         facility.location.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesType = filterType === 'all' || facility.type.toLowerCase() === filterType;
-    return matchesSearch && matchesType;
-  });
-
-  const handleAddFacility = () => {
-    const facility: Facility = {
-      id: `F-${String(facilities.length + 1).padStart(3, '0')}`,
-      name: newFacility.name || '',
-      type: newFacility.type as any,
-      status: newFacility.status as any,
-      location: newFacility.location || '',
-      phone: newFacility.phone || '',
-      email: newFacility.email || '',
-      staff: newFacility.staff || 0,
-      capacity: newFacility.capacity || 0,
-      services: newFacility.services || []
-    };
-
-    setFacilities([...facilities, facility]);
-    setIsAddDialogOpen(false);
-    setNewFacility({
-      name: '',
-      type: 'Clinic',
-      status: 'Active',
-      location: '',
-      phone: '',
-      email: '',
-      staff: 0,
-      capacity: 0,
-      services: []
-    });
-    toast.success('Facility added successfully');
-  };
-
-  const handleDeleteFacility = (id: string) => {
-    setFacilities(facilities.filter(f => f.id !== id));
-    toast.success('Facility deleted successfully');
-  };
-
-  const activeFacilities = facilities.filter(f => f.status === 'Active').length;
-  const totalStaff = facilities.reduce((sum, f) => sum + f.staff, 0);
-  const totalCapacity = facilities.reduce((sum, f) => sum + f.capacity, 0);
 
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Health Center Management</h1>
-          <p className="text-gray-600 mt-1">Manage healthcare facilities and organizational structure</p>
+          <p className="text-gray-600 mt-1">Manage healthcare facilities</p>
         </div>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-blue-600 hover:bg-blue-700">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Facility
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Add New Facility</DialogTitle>
-              <DialogDescription>Register a new healthcare facility in the system</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Facility Name</Label>
-                  <Input 
-                    placeholder="Enter facility name"
-                    value={newFacility.name}
-                    onChange={(e) => setNewFacility({...newFacility, name: e.target.value})}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Type</Label>
-                  <Select value={newFacility.type} onValueChange={(value) => setNewFacility({...newFacility, type: value as any})}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Hospital">Hospital</SelectItem>
-                      <SelectItem value="Clinic">Clinic</SelectItem>
-                      <SelectItem value="Health Center">Health Center</SelectItem>
-                      <SelectItem value="Dispensary">Dispensary</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Location</Label>
-                <Input 
-                  placeholder="Enter location"
-                  value={newFacility.location}
-                  onChange={(e) => setNewFacility({...newFacility, location: e.target.value})}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Phone Number</Label>
-                  <Input 
-                    placeholder="+250 788 123 456"
-                    value={newFacility.phone}
-                    onChange={(e) => setNewFacility({...newFacility, phone: e.target.value})}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Email Address</Label>
-                  <Input 
-                    type="email" 
-                    placeholder="facility@example.com"
-                    value={newFacility.email}
-                    onChange={(e) => setNewFacility({...newFacility, email: e.target.value})}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Staff Count</Label>
-                  <Input 
-                    type="number" 
-                    placeholder="0"
-                    value={newFacility.staff}
-                    onChange={(e) => setNewFacility({...newFacility, staff: parseInt(e.target.value) || 0})}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Patient Capacity</Label>
-                  <Input 
-                    type="number" 
-                    placeholder="0"
-                    value={newFacility.capacity}
-                    onChange={(e) => setNewFacility({...newFacility, capacity: parseInt(e.target.value) || 0})}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Services Offered</Label>
-                <Textarea 
-                  placeholder="Enter services separated by commas (e.g., Nutrition, Pediatrics, Laboratory)"
-                  value={newFacility.services?.join(', ')}
-                  onChange={(e) => setNewFacility({...newFacility, services: e.target.value.split(',').map(s => s.trim())})}
-                />
-              </div>
-
-              <div className="flex gap-2 justify-end pt-4">
-                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
-                <Button onClick={handleAddFacility} className="bg-blue-600 hover:bg-blue-700">
-                  Add Facility
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => { setForm(emptyForm); setErrors({}); setIsCreateOpen(true); }}>
+          <Plus className="h-4 w-4 mr-2" />Add Facility
+        </Button>
       </div>
 
-      {/* Statistics */}
+      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Add New Facility</DialogTitle><DialogDescription>Register a new healthcare facility</DialogDescription></DialogHeader>
+          <FacilityFormComponent
+            form={form}
+            errors={errors}
+            submitting={submitting}
+            onNameChange={onNameChange}
+            onLocationChange={onLocationChange}
+            onPhoneChange={onPhoneChange}
+            onEmailChange={onEmailChange}
+            onStaffChange={onStaffChange}
+            onCapacityChange={onCapacityChange}
+            onServicesChange={onServicesChange}
+            onTypeChange={v => setForm(f => ({ ...f, type: v }))}
+            onSubmit={handleCreate}
+            onCancel={() => { setIsCreateOpen(false); setErrors({}); setForm(emptyForm); }}
+            label="Add Facility"
+          />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Edit Facility</DialogTitle><DialogDescription>Update facility information</DialogDescription></DialogHeader>
+          <FacilityFormComponent
+            form={form}
+            errors={errors}
+            submitting={submitting}
+            onNameChange={onNameChange}
+            onLocationChange={onLocationChange}
+            onPhoneChange={onPhoneChange}
+            onEmailChange={onEmailChange}
+            onStaffChange={onStaffChange}
+            onCapacityChange={onCapacityChange}
+            onServicesChange={onServicesChange}
+            onTypeChange={v => setForm(f => ({ ...f, type: v }))}
+            onSubmit={handleUpdate}
+            onCancel={() => { setIsEditOpen(false); setEditingId(null); setErrors({}); setForm(emptyForm); }}
+            label="Save Changes"
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Facilities</p>
-                <p className="text-3xl font-bold mt-1">{facilities.length}</p>
-              </div>
-              <Building className="h-8 w-8 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Active Facilities</p>
-                <p className="text-3xl font-bold mt-1 text-green-600">{activeFacilities}</p>
-              </div>
-              <MapPin className="h-8 w-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Staff</p>
-                <p className="text-3xl font-bold mt-1">{totalStaff}</p>
-              </div>
-              <Users className="h-8 w-8 text-purple-600" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Capacity</p>
-                <p className="text-3xl font-bold mt-1">{totalCapacity}</p>
-              </div>
-              <Building className="h-8 w-8 text-orange-600" />
-            </div>
-          </CardContent>
-        </Card>
+        <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Total Facilities</p><p className="text-3xl font-bold mt-1">{stats.total}</p></div><Building className="h-8 w-8 text-blue-600" /></div></CardContent></Card>
+        <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Active</p><p className="text-3xl font-bold mt-1 text-green-600">{stats.active}</p></div><MapPin className="h-8 w-8 text-green-600" /></div></CardContent></Card>
+        <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Total Staff</p><p className="text-3xl font-bold mt-1">{stats.staff}</p></div><Users className="h-8 w-8 text-purple-600" /></div></CardContent></Card>
+        <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Total Capacity</p><p className="text-3xl font-bold mt-1">{stats.capacity}</p></div><Building className="h-8 w-8 text-orange-600" /></div></CardContent></Card>
       </div>
 
       {/* Filters */}
@@ -327,22 +294,15 @@ export const FacilityDirectory = () => {
           <div className="flex gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Search facilities by name or location..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
+              <Input placeholder="Search by name or location..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-10" />
             </div>
             <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Filter by type" />
-              </SelectTrigger>
+              <SelectTrigger className="w-48"><SelectValue placeholder="Filter by type" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Types</SelectItem>
                 <SelectItem value="hospital">Hospital</SelectItem>
                 <SelectItem value="clinic">Clinic</SelectItem>
-                <SelectItem value="health center">Health Center</SelectItem>
+                <SelectItem value="health_center">Health Center</SelectItem>
                 <SelectItem value="dispensary">Dispensary</SelectItem>
               </SelectContent>
             </Select>
@@ -350,80 +310,59 @@ export const FacilityDirectory = () => {
         </CardContent>
       </Card>
 
-      {/* Facilities Table */}
+      {/* Table */}
       <Card>
-        <CardHeader>
-          <CardTitle>All Facilities ({filteredFacilities.length})</CardTitle>
-        </CardHeader>
+        <CardHeader><CardTitle>All Facilities ({filtered.length})</CardTitle></CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Facility ID</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Location</TableHead>
-                <TableHead>Contact</TableHead>
-                <TableHead>Staff</TableHead>
-                <TableHead>Capacity</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredFacilities.map((facility) => (
-                <TableRow key={facility.id}>
-                  <TableCell className="font-medium">{facility.id}</TableCell>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{facility.name}</div>
-                      <div className="text-xs text-gray-500">{facility.services.slice(0, 2).join(', ')}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={getTypeColor(facility.type)}>{facility.type}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <MapPin className="h-3 w-3 text-gray-400" />
-                      {facility.location}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-1 text-sm">
-                        <Phone className="h-3 w-3 text-gray-400" />
-                        {facility.phone}
-                      </div>
-                      <div className="flex items-center gap-1 text-sm">
-                        <Mail className="h-3 w-3 text-gray-400" />
-                        {facility.email}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>{facility.staff}</TableCell>
-                  <TableCell>{facility.capacity}</TableCell>
-                  <TableCell>
-                    <Badge variant={getStatusColor(facility.status)}>{facility.status}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="outline" onClick={() => toast.info('Edit functionality')}>
-                        <Edit className="h-3 w-3" />
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        onClick={() => handleDeleteFacility(facility.id)}
-                      >
-                        <Trash2 className="h-3 w-3 text-red-600" />
-                      </Button>
-                    </div>
-                  </TableCell>
+          {loading ? (
+            <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-gray-400" /></div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Location</TableHead>
+                  <TableHead>Contact</TableHead>
+                  <TableHead>Staff</TableHead>
+                  <TableHead>Capacity</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filtered.map(f => (
+                  <TableRow key={f.id}>
+                    <TableCell>
+                      <div className="font-medium">{f.name}</div>
+                      <div className="text-xs text-gray-500">{f.services}</div>
+                    </TableCell>
+                    <TableCell><Badge variant="outline">{f.type}</Badge></TableCell>
+                    <TableCell><div className="flex items-center gap-1"><MapPin className="h-3 w-3 text-gray-400" />{f.location}</div></TableCell>
+                    <TableCell>
+                      <div className="space-y-1 text-sm">
+                        {f.phone && <div className="flex items-center gap-1"><Phone className="h-3 w-3 text-gray-400" />{f.phone}</div>}
+                        {f.email && <div className="flex items-center gap-1"><Mail className="h-3 w-3 text-gray-400" />{f.email}</div>}
+                      </div>
+                    </TableCell>
+                    <TableCell>{f.staff}</TableCell>
+                    <TableCell>{f.capacity}</TableCell>
+                    <TableCell><Badge variant={f.status === 'ACTIVE' ? 'secondary' : 'destructive'}>{f.status}</Badge></TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" onClick={() => openEdit(f)}><Edit className="h-3 w-3" /></Button>
+                        <Button size="sm" variant="ghost" onClick={() => handleToggle(f.id)}>{f.status === 'ACTIVE' ? 'Disable' : 'Enable'}</Button>
+                        <Button size="sm" variant="ghost" onClick={() => handleDelete(f.id)}><Trash2 className="h-3 w-3 text-red-600" /></Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {filtered.length === 0 && (
+                  <TableRow><TableCell colSpan={8} className="text-center text-gray-500 py-8">No facilities found</TableCell></TableRow>
+                )}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>
