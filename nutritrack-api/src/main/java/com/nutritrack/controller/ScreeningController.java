@@ -15,29 +15,31 @@ import java.util.HashMap;
 import java.util.List;
 
 @RestController
+@RequestMapping("/api/screenings")
+@CrossOrigin
 public class ScreeningController {
 
     @Autowired
     private ScreeningService screeningService;
 
-    @PostMapping("api/screenings")
+    @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ScreeningResponseDto createScreening(@Valid @RequestBody ScreeningDto dto,
                                                 @RequestParam Long conductedBy) {
         return screeningService.createScreening(dto, conductedBy);
     }
 
-    @GetMapping("api/screenings")
+    @GetMapping
     public List<ScreeningResponseDto> getAllScreenings() {
         return screeningService.getAllScreenings();
     }
 
-    @GetMapping("api/screenings/{id}")
+    @GetMapping("/{id}")
     public ScreeningResponseDto getScreeningById(@PathVariable Long id) {
         return screeningService.getScreeningById(id);
     }
 
-    @GetMapping("api/screenings/patient/{patientId}")
+    @GetMapping("/patient/{patientId}")
     public List<ScreeningResponseDto> getScreeningsByPatient(@PathVariable Long patientId) {
         return screeningService.getScreeningsByPatient(patientId);
     }
