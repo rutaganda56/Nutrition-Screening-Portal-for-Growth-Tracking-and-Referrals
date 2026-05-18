@@ -6,7 +6,6 @@ import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -35,12 +34,6 @@ public class Patient {
 
     private String gender; // MALE | FEMALE
 
-    @Column(name = "birth_weight_kg")
-    private BigDecimal birthWeightKg;
-
-    @Column(name = "birth_length_cm")
-    private BigDecimal birthLengthCm;
-
     // Guardian info
     @Column(name = "guardian_first_name")
     private String guardianFirstName;
@@ -53,19 +46,6 @@ public class Patient {
 
     @Column(name = "guardian_phone")
     private String guardianPhone;
-
-    @Column(name = "guardian_alt_phone")
-    private String guardianAltPhone;
-
-    // Address
-    private String village;
-
-    private String zone;
-
-    @Column(name = "household_id")
-    private String householdId;
-
-    private String address;
 
     private String notes;
 
@@ -83,15 +63,16 @@ public class Patient {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    @ManyToOne
-    @JoinColumn(name = "facility_id")
-    @JsonBackReference("facility-patients")
-    private HealthFacility facility;
 
     @ManyToOne
     @JoinColumn(name = "registered_by")
     @JsonBackReference("user-patients")
     private Users registeredBy;
+
+    @ManyToOne
+    @JoinColumn(name = "facility_id")
+    @JsonBackReference("facility-patients")
+    private HealthFacility facility;
 
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL)
     @JsonManagedReference("patient-screenings")
