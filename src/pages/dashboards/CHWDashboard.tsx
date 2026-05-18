@@ -105,7 +105,7 @@ export const CHWDashboard = () => {
                   <div className="flex justify-between items-start mb-2">
                     <div>
                       <div className="font-medium">{patient.firstName} {patient.lastName}</div>
-                      <div className="text-sm text-gray-500">{patient.patientCode} • {patient.ageDisplay} • {patient.gender}</div>
+                      <div className="text-sm text-gray-500">{patient.patientCode} • {patient.age} • {patient.gender}</div>
                     </div>
                     <Badge variant={getStatusColor(patient.currentStatus)}>
                       {patient.currentStatus}
