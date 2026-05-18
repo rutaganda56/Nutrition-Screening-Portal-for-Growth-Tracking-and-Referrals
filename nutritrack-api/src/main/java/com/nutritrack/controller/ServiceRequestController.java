@@ -15,39 +15,41 @@ import java.util.HashMap;
 import java.util.List;
 
 @RestController
+@RequestMapping("/api/service-requests")
+@CrossOrigin
 public class ServiceRequestController {
 
     @Autowired
     private ServiceRequestService serviceRequestService;
 
-    @PostMapping("api/service-requests")
+    @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ServiceRequestResponseDto createServiceRequest(@Valid @RequestBody ServiceRequestDto dto,
                                                           @RequestParam Long submittedBy) {
         return serviceRequestService.createServiceRequest(dto, submittedBy);
     }
 
-    @GetMapping("api/service-requests")
+    @GetMapping
     public List<ServiceRequestResponseDto> getAllServiceRequests() {
         return serviceRequestService.getAllServiceRequests();
     }
 
-    @GetMapping("api/service-requests/{id}")
+    @GetMapping("/{id}")
     public ServiceRequestResponseDto getServiceRequestById(@PathVariable Long id) {
         return serviceRequestService.getServiceRequestById(id);
     }
 
-    @GetMapping("api/service-requests/doctor/{doctorId}")
+    @GetMapping("/doctor/{doctorId}")
     public List<ServiceRequestResponseDto> getServiceRequestsByDoctor(@PathVariable Long doctorId) {
         return serviceRequestService.getServiceRequestsByDoctor(doctorId);
     }
 
-    @GetMapping("api/service-requests/status/{status}")
+    @GetMapping("/status/{status}")
     public List<ServiceRequestResponseDto> getServiceRequestsByStatus(@PathVariable String status) {
         return serviceRequestService.getServiceRequestsByStatus(status);
     }
 
-    @PatchMapping("api/service-requests/{id}/status")
+    @PatchMapping("/{id}/status")
     public ServiceRequestResponseDto updateStatus(@PathVariable Long id, @RequestParam String status) {
         return serviceRequestService.updateStatus(id, status);
     }
