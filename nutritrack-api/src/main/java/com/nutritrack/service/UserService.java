@@ -39,7 +39,6 @@ public class UserService {
         user.setPhone(dto.phone());
         user.setPassword(passwordEncoder.encode(dto.password()));
         user.setRole(dto.role());
-        user.setDepartment(dto.department());
         user.setStatus("ACTIVE");
         return userMapper.toResponseDto(userRepository.save(user));
     }
@@ -71,7 +70,6 @@ public class UserService {
         user.setEmail(dto.email());
         user.setPhone(dto.phone());
         user.setRole(dto.role());
-        user.setDepartment(dto.department());
         if (dto.status() != null) user.setStatus(dto.status());
         if (dto.facilityId() != null) {
             HealthFacility facility = facilityRepository.findById(dto.facilityId())
