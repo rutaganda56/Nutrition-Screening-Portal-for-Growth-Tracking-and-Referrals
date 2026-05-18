@@ -56,6 +56,11 @@ public class ServiceRequestService {
             Users assignedTo = userRepository.findById(dto.assignedToId())
                     .orElseThrow(() -> new RuntimeException("Assigned doctor not found"));
             sr.setAssignedTo(assignedTo);
+            // Assign the doctor's facility to the patient if not already set
+            if (patient.getFacility() == null && assignedTo.getFacility() != null) {
+                patient.setFacility(assignedTo.getFacility());
+                patientRepository.save(patient);
+            }
         }
 
         ServiceRequest saved = serviceRequestRepository.save(sr);
@@ -76,7 +81,7 @@ public class ServiceRequestService {
                 .map(serviceRequestMapper::toResponseDto)
                 .collect(Collectors.toList());
     }
-
+ 
     public List<ServiceRequestResponseDto> getServiceRequestsByStatus(String status) {
         return serviceRequestRepository.findByStatus(status.toUpperCase()).stream()
                 .map(serviceRequestMapper::toResponseDto)
