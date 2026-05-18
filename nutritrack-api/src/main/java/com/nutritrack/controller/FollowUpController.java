@@ -15,28 +15,30 @@ import java.util.HashMap;
 import java.util.List;
 
 @RestController
+@RequestMapping("/api/follow-ups")
+@CrossOrigin
 public class FollowUpController {
 
     @Autowired
     private FollowUpService followUpService;
 
-    @PostMapping("api/follow-ups")
+    @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public FollowUpResponseDto createFollowUp(@Valid @RequestBody FollowUpDto dto) {
         return followUpService.createFollowUp(dto);
     }
 
-    @GetMapping("api/follow-ups")
+    @GetMapping
     public List<FollowUpResponseDto> getAllFollowUps() {
         return followUpService.getAllFollowUps();
     }
 
-    @GetMapping("api/follow-ups/doctor/{doctorId}")
+    @GetMapping("/doctor/{doctorId}")
     public List<FollowUpResponseDto> getFollowUpsByDoctor(@PathVariable Long doctorId) {
         return followUpService.getFollowUpsByDoctor(doctorId);
     }
 
-    @PatchMapping("api/follow-ups/{id}/status")
+    @PatchMapping("/{id}/status")
     public FollowUpResponseDto updateStatus(@PathVariable Long id, @RequestParam String status) {
         return followUpService.updateStatus(id, status);
     }
