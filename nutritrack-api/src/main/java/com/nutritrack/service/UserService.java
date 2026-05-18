@@ -29,6 +29,37 @@ public class UserService {
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
 
+    public UserResponseDto createUser(UserDto dto) {
+        if (userRepository.existsByEmail(dto.email())) {
+            throw new RuntimeException("Email already registered");
+        }
+        Users user = new Users();
+        user.setFullName(dto.fullName());
+        user.setEmail(dto.email());
+        user.setPhone(dto.phone());
+        user.setRole(dto.role());
+        user.setStatus("ACTIVE");
+        // Use provided password or generate a temporary one
+        String rawPassword = (dto.status() != null && !dto.status().isBlank()) ? dto.status() : "Temp@" + dto.fullName().replaceAll("\\s+", "").substring(0, Math.min(4, dto.fullName().replaceAll("\\s+", "").length())) + "123";
+        user.setPassword(passwordEncoder.encode(rawPassword));
+        if (dto.facilityId() != null) {
+            HealthFacility facility = facilityRepository.findById(dto.facilityId())
+                    .orElseThrow(() -> new RuntimeException("Facility not found"));
+            user.setFacility(facility);
+        }
+        return userMapper.toResponseDto(userRepository.save(user));
+    }
+
+    public UserResponseDto changePassword(Long id, String currentPassword, String newPassword) {
+        Users user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new RuntimeException("Current password is incorrect");
+        }
+        user.setPassword(passwordEncoder.encode(newPassword));
+        return userMapper.toResponseDto(userRepository.save(user));
+    }
+
     public UserResponseDto register(RegisterDto dto) {
         if (userRepository.existsByEmail(dto.email())) {
             throw new RuntimeException("Email already registered");
