@@ -15,28 +15,30 @@ import java.util.HashMap;
 import java.util.List;
 
 @RestController
+@RequestMapping("/api/alerts")
+@CrossOrigin
 public class AlertController {
 
     @Autowired
     private AlertService alertService;
 
-    @PostMapping("api/alerts")
+    @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public AlertResponseDto createAlert(@Valid @RequestBody AlertDto dto) {
         return alertService.createAlert(dto);
     }
 
-    @GetMapping("api/alerts")
+    @GetMapping
     public List<AlertResponseDto> getAllAlerts() {
         return alertService.getAllAlerts();
     }
 
-    @GetMapping("api/alerts/doctor/{doctorId}")
+    @GetMapping("/doctor/{doctorId}")
     public List<AlertResponseDto> getAlertsByDoctor(@PathVariable Long doctorId) {
         return alertService.getAlertsByDoctor(doctorId);
     }
 
-    @PatchMapping("api/alerts/{id}/status")
+    @PatchMapping("/{id}/status")
     public AlertResponseDto updateStatus(@PathVariable Long id, @RequestParam String status) {
         return alertService.updateStatus(id, status);
     }
