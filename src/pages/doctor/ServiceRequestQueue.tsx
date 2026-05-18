@@ -18,151 +18,37 @@ import {
   FileText
 } from 'lucide-react';
 import { toast } from 'sonner';
-
-interface ServiceRequest {
-  id: string;
-  patientId: string;
-  patientName: string;
-  age: string;
-  householdId: string;
-  priority: 'urgent' | 'routine' | 'asap';
-  status: 'pending' | 'in-review' | 'completed' | 'declined';
-  reasonCode: string;
-  description: string;
-  submittedBy: string;
-  submittedAt: string;
-  screeningId: string;
-  classification: 'SAM' | 'MAM' | 'Normal';
-  observations: {
-    weight: string;
-    height: string;
-    muac: string;
-    edema: boolean;
-  };
-}
+import { serviceRequestsApi, ServiceRequestResponse } from '@/services/api';
 
 export const ServiceRequestQueue = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('pending');
   const [searchTerm, setSearchTerm] = useState('');
+  const [serviceRequests, setServiceRequests] = useState<ServiceRequestResponse[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Mock service requests from CHWs
-  const serviceRequests: ServiceRequest[] = [
-    {
-      id: 'SR-1024',
-      patientId: 'P-1024',
-      patientName: 'Uwimana Marie',
-      age: '2y 4m',
-      householdId: 'H-101',
-      priority: 'urgent',
-      status: 'pending',
-      reasonCode: 'sam-detected',
-      description: 'Severe Acute Malnutrition detected during community screening. MUAC: 10.8cm, Bilateral edema present. Child appears lethargic, mother reports reduced appetite for 2 weeks.',
-      submittedBy: 'CHW Mukamana Josiane',
-      submittedAt: '2026-02-04 11:00 AM',
-      screeningId: 'S-521',
-      classification: 'SAM',
-      observations: {
-        weight: '9.2 kg',
-        height: '82.0 cm',
-        muac: '10.8 cm',
-        edema: true
-      }
-    },
-    {
-      id: 'SR-1089',
-      patientId: 'P-1089',
-      patientName: 'Ishimwe Claude',
-      age: '1y 8m',
-      householdId: 'H-087',
-      priority: 'urgent',
-      status: 'pending',
-      reasonCode: 'sam-detected',
-      description: 'SAM with rapid deterioration. MUAC: 11.2cm, showing signs of medical complications. Requires immediate assessment.',
-      submittedBy: 'CHW Mutoni Beatrice',
-      submittedAt: '2026-02-04 09:30 AM',
-      screeningId: 'S-520',
-      classification: 'SAM',
-      observations: {
-        weight: '7.8 kg',
-        height: '75.0 cm',
-        muac: '11.2 cm',
-        edema: false
-      }
-    },
-    {
-      id: 'SR-1156',
-      patientId: 'P-1156',
-      patientName: 'Nshuti Diane',
-      age: '3y 2m',
-      householdId: 'H-142',
-      priority: 'routine',
-      status: 'pending',
-      reasonCode: 'mam-detected',
-      description: 'Moderate Acute Malnutrition detected. MUAC: 11.8cm. No immediate complications but needs treatment plan assessment.',
-      submittedBy: 'CHW Mukamana Josiane',
-      submittedAt: '2026-02-03 02:15 PM',
-      screeningId: 'S-518',
-      classification: 'MAM',
-      observations: {
-        weight: '11.8 kg',
-        height: '88.0 cm',
-        muac: '11.8 cm',
-        edema: false
-      }
-    },
-    {
-      id: 'SR-1201',
-      patientId: 'P-1201',
-      patientName: 'Irakoze Patrick',
-      age: '4y 1m',
-      householdId: 'H-098',
-      priority: 'routine',
-      status: 'in-review',
-      reasonCode: 'follow-up-required',
-      description: 'Follow-up after previous treatment. Weight gain is slow, needs reassessment of nutrition plan.',
-      submittedBy: 'CHW Mutoni Beatrice',
-      submittedAt: '2026-02-03 10:00 AM',
-      screeningId: 'S-517',
-      classification: 'MAM',
-      observations: {
-        weight: '13.5 kg',
-        height: '95.0 cm',
-        muac: '12.0 cm',
-        edema: false
-      }
-    },
-    {
-      id: 'SR-0987',
-      patientId: 'P-0987',
-      patientName: 'Mutesi Divine',
-      age: '2y 6m',
-      householdId: 'H-076',
-      priority: 'asap',
-      status: 'pending',
-      reasonCode: 'complications',
-      description: 'Child with SAM and medical complications - persistent diarrhea and fever. Immediate clinical review needed.',
-      submittedBy: 'CHW Mukamana Josiane',
-      submittedAt: '2026-02-05 08:00 AM',
-      screeningId: 'S-523',
-      classification: 'SAM',
-      observations: {
-        weight: '8.5 kg',
-        height: '80.0 cm',
-        muac: '10.5 cm',
-        edema: true
-      }
-    }
-  ];
+  useEffect(() => {
+    setLoading(true);
+    serviceRequestsApi.getAll()
+      .then((data) => {
+        setServiceRequests(data);
+      })
+      .catch((err) => {
+        console.error(err);
+        toast.error('Failed to load service requests from database');
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, []);
 
-  const pendingRequests = serviceRequests.filter(r => r.status === 'pending');
-  const inReviewRequests = serviceRequests.filter(r => r.status === 'in-review');
-  const completedRequests = serviceRequests.filter(r => r.status === 'completed');
+  const pendingRequests = serviceRequests.filter(r => r.status.toLowerCase() === 'pending');
+  const inReviewRequests = serviceRequests.filter(r => r.status.toLowerCase() === 'in_review' || r.status.toLowerCase() === 'in-review');
+  const completedRequests = serviceRequests.filter(r => r.status.toLowerCase() === 'completed');
 
   const getPriorityColor = (priority: string) => {
-    switch (priority) {
+    switch (priority.toLowerCase()) {
       case 'urgent':
-        return 'destructive';
       case 'asap':
         return 'destructive';
       case 'routine':
@@ -173,7 +59,7 @@ export const ServiceRequestQueue = () => {
   };
 
   const getPriorityIcon = (priority: string) => {
-    switch (priority) {
+    switch (priority.toLowerCase()) {
       case 'urgent':
       case 'asap':
         return <AlertTriangle className="h-4 w-4" />;
@@ -198,21 +84,35 @@ export const ServiceRequestQueue = () => {
   const handleReviewCase = (requestId: string, patientId: string) => {
     // Store the service request ID to pass to the Patient Clinical Summary
     localStorage.setItem('activeServiceRequest', requestId);
-    navigate(`/dashboard/patient-clinical-summary?patient=${patientId}&request=${requestId}`);
+    // Mark as in-review in database if it was pending
+    const req = serviceRequests.find(r => String(r.id) === requestId);
+    if (req && req.status.toLowerCase() === 'pending') {
+      serviceRequestsApi.updateStatus(Number(requestId), 'IN_REVIEW')
+        .then(() => {
+          navigate(`/dashboard/patient-clinical-summary?patient=${patientId}&request=${requestId}`);
+        })
+        .catch((err) => {
+          console.error(err);
+          // Proceed anyway so doctor can see the patient summary
+          navigate(`/dashboard/patient-clinical-summary?patient=${patientId}&request=${requestId}`);
+        });
+    } else {
+      navigate(`/dashboard/patient-clinical-summary?patient=${patientId}&request=${requestId}`);
+    }
   };
 
-  const filteredRequests = (requests: ServiceRequest[]) => {
+  const filteredRequests = (requests: ServiceRequestResponse[]) => {
     if (!searchTerm) return requests;
     return requests.filter(r => 
       r.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.patientId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.id.toLowerCase().includes(searchTerm.toLowerCase())
+      String(r.patientId).includes(searchTerm) ||
+      String(r.id).includes(searchTerm)
     );
   };
 
-  const ServiceRequestCard = ({ request }: { request: ServiceRequest }) => (
+  const ServiceRequestCard = ({ request }: { request: ServiceRequestResponse }) => (
     <Card className={`hover:shadow-lg transition-shadow ${
-      request.priority === 'asap' ? 'border-2 border-red-400' : ''
+      request.priority.toLowerCase() === 'asap' || request.priority.toLowerCase() === 'urgent' ? 'border-2 border-red-400' : ''
     }`}>
       <CardContent className="pt-6">
         <div className="space-y-4">
@@ -221,8 +121,8 @@ export const ServiceRequestQueue = () => {
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
                 <h3 className="font-semibold text-lg">{request.patientName}</h3>
-                <Badge variant={getPriorityColor(request.priority)} className="flex items-center gap-1">
-                  {getPriorityIcon(request.priority)}
+                <Badge variant={getPriorityColor(request.priority.toLowerCase())} className="flex items-center gap-1">
+                  {getPriorityIcon(request.priority.toLowerCase())}
                   {request.priority.toUpperCase()}
                 </Badge>
                 <Badge className={getClassificationColor(request.classification)}>
@@ -230,7 +130,7 @@ export const ServiceRequestQueue = () => {
                 </Badge>
               </div>
               <p className="text-sm text-gray-600">
-                {request.patientId} • {request.age} • Household: {request.householdId}
+                Patient ID: {request.patientId} • Age: {request.patientAge}
               </p>
             </div>
           </div>
@@ -241,10 +141,10 @@ export const ServiceRequestQueue = () => {
               <User className="h-4 w-4 text-blue-600 mt-0.5" />
               <div className="flex-1">
                 <p className="text-sm font-medium text-blue-900">Submitted by CHW</p>
-                <p className="text-sm text-blue-700">{request.submittedBy}</p>
+                <p className="text-sm text-blue-700">{request.submittedByName}</p>
                 <p className="text-xs text-blue-600 mt-1">
                   <Calendar className="h-3 w-3 inline mr-1" />
-                  {request.submittedAt} • Screening: {request.screeningId}
+                  {new Date(request.submittedAt).toLocaleString()} • Screening: {request.screeningCode}
                 </p>
               </div>
             </div>
@@ -257,29 +157,21 @@ export const ServiceRequestQueue = () => {
           </div>
 
           {/* Observations Summary */}
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <div className="p-2 bg-gray-50 rounded text-center">
               <p className="text-xs text-gray-500">Weight</p>
-              <p className="font-semibold text-sm">{request.observations.weight}</p>
+              <p className="font-semibold text-sm">{request.weightKg} kg</p>
             </div>
             <div className="p-2 bg-gray-50 rounded text-center">
               <p className="text-xs text-gray-500">Height</p>
-              <p className="font-semibold text-sm">{request.observations.height}</p>
+              <p className="font-semibold text-sm">{request.heightCm} cm</p>
             </div>
             <div className="p-2 bg-gray-50 rounded text-center">
               <p className="text-xs text-gray-500">MUAC</p>
               <p className={`font-semibold text-sm ${
-                parseFloat(request.observations.muac) < 11.5 ? 'text-red-600' : 'text-gray-900'
+                request.muacCm < 11.5 ? 'text-red-600' : 'text-gray-900'
               }`}>
-                {request.observations.muac}
-              </p>
-            </div>
-            <div className="p-2 bg-gray-50 rounded text-center">
-              <p className="text-xs text-gray-500">Edema</p>
-              <p className={`font-semibold text-sm ${
-                request.observations.edema ? 'text-red-600' : 'text-gray-900'
-              }`}>
-                {request.observations.edema ? 'Yes' : 'No'}
+                {request.muacCm} cm
               </p>
             </div>
           </div>
@@ -287,7 +179,7 @@ export const ServiceRequestQueue = () => {
           {/* Actions */}
           <div className="flex gap-2 pt-2 border-t">
             <Button 
-              onClick={() => handleReviewCase(request.id, request.patientId)}
+              onClick={() => handleReviewCase(String(request.id), String(request.patientId))}
               className="flex-1 bg-green-600 hover:bg-green-700"
             >
               <FileText className="h-4 w-4 mr-2" />
@@ -346,7 +238,7 @@ export const ServiceRequestQueue = () => {
               <div>
                 <p className="text-sm text-gray-600">Urgent Cases</p>
                 <p className="text-3xl font-bold text-yellow-600 mt-1">
-                  {serviceRequests.filter(r => r.priority === 'urgent' || r.priority === 'asap').length}
+                  {serviceRequests.filter(r => r.priority.toLowerCase() === 'urgent' || r.priority.toLowerCase() === 'asap').length}
                 </p>
               </div>
               <Send className="h-8 w-8 text-yellow-600" />
@@ -357,7 +249,7 @@ export const ServiceRequestQueue = () => {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Completed Today</p>
+                <p className="text-sm text-gray-600">Completed</p>
                 <p className="text-3xl font-bold text-green-600 mt-1">{completedRequests.length}</p>
               </div>
               <CheckCircle className="h-8 w-8 text-green-600" />
@@ -388,67 +280,71 @@ export const ServiceRequestQueue = () => {
       </Card>
 
       {/* Service Requests Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="pending" className="flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4" />
-            Pending ({pendingRequests.length})
-          </TabsTrigger>
-          <TabsTrigger value="in-review" className="flex items-center gap-2">
-            <Clock className="h-4 w-4" />
-            In Review ({inReviewRequests.length})
-          </TabsTrigger>
-          <TabsTrigger value="completed" className="flex items-center gap-2">
-            <CheckCircle className="h-4 w-4" />
-            Completed ({completedRequests.length})
-          </TabsTrigger>
-        </TabsList>
+      {loading ? (
+        <div className="text-center py-10 text-gray-500">Loading service requests from database...</div>
+      ) : (
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="pending" className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4" />
+              Pending ({pendingRequests.length})
+            </TabsTrigger>
+            <TabsTrigger value="in-review" className="flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              In Review ({inReviewRequests.length})
+            </TabsTrigger>
+            <TabsTrigger value="completed" className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4" />
+              Completed ({completedRequests.length})
+            </TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="pending" className="space-y-4">
-          {filteredRequests(pendingRequests).length > 0 ? (
-            filteredRequests(pendingRequests).map((request) => (
-              <ServiceRequestCard key={request.id} request={request} />
-            ))
-          ) : (
-            <Card>
-              <CardContent className="pt-6 text-center text-gray-500">
-                <CheckCircle className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-                <p>No pending service requests</p>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
+          <TabsContent value="pending" className="space-y-4">
+            {filteredRequests(pendingRequests).length > 0 ? (
+              filteredRequests(pendingRequests).map((request) => (
+                <ServiceRequestCard key={request.id} request={request} />
+              ))
+            ) : (
+              <Card>
+                <CardContent className="pt-6 text-center text-gray-500">
+                  <CheckCircle className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                  <p>No pending service requests</p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
 
-        <TabsContent value="in-review" className="space-y-4">
-          {filteredRequests(inReviewRequests).length > 0 ? (
-            filteredRequests(inReviewRequests).map((request) => (
-              <ServiceRequestCard key={request.id} request={request} />
-            ))
-          ) : (
-            <Card>
-              <CardContent className="pt-6 text-center text-gray-500">
-                <Clock className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-                <p>No requests currently in review</p>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
+          <TabsContent value="in-review" className="space-y-4">
+            {filteredRequests(inReviewRequests).length > 0 ? (
+              filteredRequests(inReviewRequests).map((request) => (
+                <ServiceRequestCard key={request.id} request={request} />
+              ))
+            ) : (
+              <Card>
+                <CardContent className="pt-6 text-center text-gray-500">
+                  <Clock className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                  <p>No requests currently in review</p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
 
-        <TabsContent value="completed" className="space-y-4">
-          {filteredRequests(completedRequests).length > 0 ? (
-            filteredRequests(completedRequests).map((request) => (
-              <ServiceRequestCard key={request.id} request={request} />
-            ))
-          ) : (
-            <Card>
-              <CardContent className="pt-6 text-center text-gray-500">
-                <FileText className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-                <p>No completed requests</p>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-      </Tabs>
+          <TabsContent value="completed" className="space-y-4">
+            {filteredRequests(completedRequests).length > 0 ? (
+              filteredRequests(completedRequests).map((request) => (
+                <ServiceRequestCard key={request.id} request={request} />
+              ))
+            ) : (
+              <Card>
+                <CardContent className="pt-6 text-center text-gray-500">
+                  <FileText className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                  <p>No completed requests</p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+        </Tabs>
+      )}
     </div>
   );
 };
