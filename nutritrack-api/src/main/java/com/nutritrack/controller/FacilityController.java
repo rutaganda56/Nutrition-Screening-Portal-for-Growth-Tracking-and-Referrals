@@ -15,38 +15,40 @@ import java.util.HashMap;
 import java.util.List;
 
 @RestController
+@RequestMapping("/api/facilities")
+@CrossOrigin
 public class FacilityController {
 
     @Autowired
     private FacilityService facilityService;
 
-    @GetMapping("api/facilities")
+    @GetMapping
     public List<FacilityResponseDto> getAllFacilities() {
         return facilityService.getAllFacilities();
     }
 
-    @GetMapping("api/facilities/{id}")
+    @GetMapping("/{id}")
     public FacilityResponseDto getFacilityById(@PathVariable Long id) {
         return facilityService.getFacilityById(id);
     }
 
-    @PostMapping("api/facilities")
+    @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public FacilityResponseDto createFacility(@Valid @RequestBody FacilityDto dto) {
         return facilityService.createFacility(dto);
     }
 
-    @PutMapping("api/facilities/{id}")
+    @PutMapping("/{id}")
     public FacilityResponseDto updateFacility(@PathVariable Long id, @Valid @RequestBody FacilityDto dto) {
         return facilityService.updateFacility(id, dto);
     }
 
-    @PatchMapping("api/facilities/{id}/toggle-status")
+    @PatchMapping("/{id}/toggle-status")
     public FacilityResponseDto toggleStatus(@PathVariable Long id) {
         return facilityService.toggleStatus(id);
     }
 
-    @DeleteMapping("api/facilities/{id}")
+    @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteFacility(@PathVariable Long id) {
         facilityService.deleteFacility(id);
@@ -63,3 +65,4 @@ public class FacilityController {
         return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
     }
 }
+
