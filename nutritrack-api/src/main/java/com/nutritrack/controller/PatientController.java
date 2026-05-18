@@ -37,10 +37,6 @@ public class PatientController {
         return patientService.getPatientById(id);
     }
 
-    @GetMapping("api/patients/facility/{facilityId}")
-    public List<PatientResponseDto> getPatientsByFacility(@PathVariable Long facilityId) {
-        return patientService.getPatientsByFacility(facilityId);
-    }
 
     @GetMapping("api/patients/status/{status}")
     public List<PatientResponseDto> getPatientsByStatus(@PathVariable String status) {
