@@ -15,34 +15,36 @@ import java.util.HashMap;
 import java.util.List;
 
 @RestController
+@RequestMapping("/api/nutrition-orders")
+@CrossOrigin
 public class NutritionOrderController {
 
     @Autowired
     private NutritionOrderService nutritionOrderService;
 
-    @PostMapping("api/nutrition-orders")
+    @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public NutritionOrderResponseDto createOrder(@Valid @RequestBody NutritionOrderDto dto,
                                                  @RequestParam Long prescribedBy) {
         return nutritionOrderService.createOrder(dto, prescribedBy);
     }
 
-    @GetMapping("api/nutrition-orders")
+    @GetMapping
     public List<NutritionOrderResponseDto> getAllOrders() {
         return nutritionOrderService.getAllOrders();
     }
 
-    @GetMapping("api/nutrition-orders/{id}")
+    @GetMapping("/{id}")
     public NutritionOrderResponseDto getOrderById(@PathVariable Long id) {
         return nutritionOrderService.getOrderById(id);
     }
 
-    @GetMapping("api/nutrition-orders/patient/{patientId}")
+    @GetMapping("/patient/{patientId}")
     public List<NutritionOrderResponseDto> getOrdersByPatient(@PathVariable Long patientId) {
         return nutritionOrderService.getOrdersByPatient(patientId);
     }
 
-    @PatchMapping("api/nutrition-orders/{id}/status")
+    @PatchMapping("/{id}/status")
     public NutritionOrderResponseDto updateStatus(@PathVariable Long id, @RequestParam String status) {
         return nutritionOrderService.updateStatus(id, status);
     }
