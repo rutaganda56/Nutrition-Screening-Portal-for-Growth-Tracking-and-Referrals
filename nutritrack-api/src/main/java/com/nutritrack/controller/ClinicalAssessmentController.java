@@ -15,24 +15,26 @@ import java.util.HashMap;
 import java.util.List;
 
 @RestController
+@RequestMapping("/api/clinical-assessments")
+@CrossOrigin
 public class ClinicalAssessmentController {
 
     @Autowired
     private ClinicalAssessmentService clinicalAssessmentService;
 
-    @PostMapping("api/clinical-assessments")
+    @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ClinicalAssessmentResponseDto createAssessment(@Valid @RequestBody ClinicalAssessmentDto dto,
                                                           @RequestParam Long assessedBy) {
         return clinicalAssessmentService.createAssessment(dto, assessedBy);
     }
 
-    @GetMapping("api/clinical-assessments/{id}")
+    @GetMapping("/{id}")
     public ClinicalAssessmentResponseDto getAssessmentById(@PathVariable Long id) {
         return clinicalAssessmentService.getAssessmentById(id);
     }
 
-    @GetMapping("api/clinical-assessments/patient/{patientId}")
+    @GetMapping("/patient/{patientId}")
     public List<ClinicalAssessmentResponseDto> getAssessmentsByPatient(@PathVariable Long patientId) {
         return clinicalAssessmentService.getAssessmentsByPatient(patientId);
     }
