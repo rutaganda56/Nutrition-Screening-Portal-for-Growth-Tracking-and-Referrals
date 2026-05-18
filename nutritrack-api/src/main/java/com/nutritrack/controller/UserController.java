@@ -15,32 +15,47 @@ import java.util.HashMap;
 import java.util.List;
 
 @RestController
+@RequestMapping("/api/users")
+@CrossOrigin
 public class UserController {
 
     @Autowired
     private UserService userService;
 
-    @GetMapping("api/users")
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public UserResponseDto createUser(@Valid @RequestBody UserDto dto) {
+        return userService.createUser(dto);
+    }
+
+    @GetMapping
     public List<UserResponseDto> getAllUsers() {
         return userService.getAllUsers();
     }
 
-    @GetMapping("api/users/{id}")
+    @GetMapping("/{id}")
     public UserResponseDto getUserById(@PathVariable Long id) {
         return userService.getUserById(id);
     }
 
-    @PutMapping("api/users/{id}")
+    @PutMapping("/{id}")
     public UserResponseDto updateUser(@PathVariable Long id, @Valid @RequestBody UserDto dto) {
         return userService.updateUser(id, dto);
     }
 
-    @PatchMapping("api/users/{id}/toggle-status")
+    @PatchMapping("/{id}/change-password")
+    public UserResponseDto changePassword(@PathVariable Long id,
+                                          @RequestParam String currentPassword,
+                                          @RequestParam String newPassword) {
+        return userService.changePassword(id, currentPassword, newPassword);
+    }
+
+    @PatchMapping("/{id}/toggle-status")
     public UserResponseDto toggleStatus(@PathVariable Long id) {
         return userService.toggleStatus(id);
     }
 
-    @DeleteMapping("api/users/{id}")
+    @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
@@ -57,3 +72,4 @@ public class UserController {
         return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
     }
 }
+
