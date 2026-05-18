@@ -14,7 +14,6 @@ public class UserMapper {
         user.setEmail(dto.email());
         user.setPhone(dto.phone());
         user.setRole(dto.role());
-        user.setDepartment(dto.department());
         user.setStatus(dto.status() != null ? dto.status() : "ACTIVE");
         return user;
     }
@@ -26,10 +25,8 @@ public class UserMapper {
                 user.getEmail(),
                 user.getPhone(),
                 user.getRole(),
-                user.getDepartment(),
                 user.getStatus(),
                 user.getFacility() != null ? user.getFacility().getName() : null,
-                user.getCreatedAt()
-        );
+                user.getCreatedAt());
     }
 }

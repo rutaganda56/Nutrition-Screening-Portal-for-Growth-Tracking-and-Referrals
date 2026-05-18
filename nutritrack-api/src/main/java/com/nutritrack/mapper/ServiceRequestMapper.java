@@ -20,7 +20,6 @@ public class ServiceRequestMapper {
                 sr.getPatient() != null ? sr.getPatient().getId() : null,
                 patientName,
                 patientAge,
-                sr.getPatient() != null ? sr.getPatient().getHouseholdId() : null,
                 sr.getPriority(),
                 sr.getStatus(),
                 sr.getReasonCode(),
@@ -32,7 +31,6 @@ public class ServiceRequestMapper {
                 sr.getScreening() != null ? sr.getScreening().getWeightKg() : null,
                 sr.getScreening() != null ? sr.getScreening().getHeightCm() : null,
                 sr.getScreening() != null ? sr.getScreening().getMuacCm() : null,
-                sr.getScreening() != null && sr.getScreening().isEdema(),
                 sr.getSubmittedAt()
         );
     }
