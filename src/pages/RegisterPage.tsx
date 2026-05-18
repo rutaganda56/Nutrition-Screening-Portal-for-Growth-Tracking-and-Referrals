@@ -46,7 +46,6 @@ export const RegisterPage = () => {
         email: formData.email,
         phone: formData.phone,
         role: formData.role as UserRole,
-        department: formData.department,
         password: formData.password
       });
       
@@ -138,19 +137,6 @@ export const RegisterPage = () => {
                   <p className="text-xs text-gray-500">This determines your dashboard access</p>
                 </div>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="department">Department</Label>
-                <Input
-                  id="department"
-                  type="text"
-                  required
-                  value={formData.department}
-                  onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                  placeholder="e.g., Pediatrics, General Health"
-                />
-              </div>
-
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="password">Password</Label>
@@ -183,7 +169,7 @@ export const RegisterPage = () => {
                 </Button>
                 
                 <div className="text-center text-sm text-gray-600">
-                  Already have an account?{' '}
+                  Already have an account?{'j '}
                   <button
                     type="button"
                     onClick={() => navigate('/login')}
