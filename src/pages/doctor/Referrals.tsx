@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
@@ -24,89 +24,44 @@ import {
   Stethoscope
 } from 'lucide-react';
 import { toast } from 'sonner';
-
-interface Referral {
-  id: string;
-  patientId: string;
-  patientName: string;
-  age: string;
-  status: 'Pending' | 'Accepted' | 'Completed' | 'Rejected';
-  priority: 'High' | 'Medium' | 'Low';
-  referredTo: string;
-  diagnosis: string;
-  referralReason: string;
-  referredDate: string;
-  followUpDate: string;
-}
+import { useAuth } from '@/contexts/AuthContext';
+import { referralsApi, ReferralResponse } from '@/services/api';
 
 export const Referrals = () => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('active');
   const [showNewReferral, setShowNewReferral] = useState(false);
+  const [referrals, setReferrals] = useState<ReferralResponse[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const referrals: Referral[] = [
-    {
-      id: 'REF-2401',
-      patientId: 'P-1024',
-      patientName: 'Uwase Aline',
-      age: '2y 4m',
-      status: 'Pending',
-      priority: 'High',
-      referredTo: 'TFC - Polyclinique du Bon Berger',
-      diagnosis: 'Severe Acute Malnutrition',
-      referralReason: 'MUAC < 11.5cm with bilateral edema',
-      referredDate: '2026-02-20',
-      followUpDate: '2026-02-27'
-    },
-    {
-      id: 'REF-2398',
-      patientId: 'P-1089',
-      patientName: 'Mugisha David',
-      age: '1y 8m',
-      status: 'Accepted',
-      priority: 'High',
-      referredTo: 'Regional Nutrition Center',
-      diagnosis: 'SAM with complications',
-      referralReason: 'Requires intensive therapeutic feeding',
-      referredDate: '2026-02-18',
-      followUpDate: '2026-02-25'
-    },
-    {
-      id: 'REF-2375',
-      patientId: 'P-1156',
-      patientName: 'Imena Diane',
-      age: '3y 2m',
-      status: 'Completed',
-      priority: 'Medium',
-      referredTo: 'Supplementary Feeding Program',
-      diagnosis: 'Moderate Acute Malnutrition',
-      referralReason: 'MUAC 11.5-12.5cm, requires supplementary feeding',
-      referredDate: '2026-02-10',
-      followUpDate: '2026-02-17'
-    },
-    {
-      id: 'REF-2356',
-      patientId: 'P-1201',
-      patientName: 'Ntare Eric',
-      age: '4y 1m',
-      status: 'Completed',
-      priority: 'Low',
-      referredTo: 'Pediatric Clinic - Growth Assessment',
-      diagnosis: 'Growth monitoring',
-      referralReason: 'Slow weight gain, needs specialist review',
-      referredDate: '2026-02-01',
-      followUpDate: '2026-02-15'
-    }
-  ];
+  const fetchReferrals = () => {
+    setLoading(true);
+    referralsApi.getAll()
+      .then((data) => {
+        setReferrals(data);
+      })
+      .catch((err) => {
+        console.error(err);
+        toast.error('Failed to load referrals from database');
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  };
+
+  useEffect(() => {
+    fetchReferrals();
+  }, []);
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Pending':
+    switch (status.toUpperCase()) {
+      case 'PENDING':
         return 'default';
-      case 'Accepted':
+      case 'ACCEPTED':
         return 'secondary';
-      case 'Completed':
+      case 'COMPLETED':
         return 'outline';
-      case 'Rejected':
+      case 'REJECTED':
         return 'destructive';
       default:
         return 'secondary';
@@ -114,20 +69,23 @@ export const Referrals = () => {
   };
 
   const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'High':
+    switch (priority.toUpperCase()) {
+      case 'HIGH':
+      case 'URGENT':
         return 'destructive';
-      case 'Medium':
+      case 'MEDIUM':
+      case 'SEMI-URGENT':
         return 'default';
-      case 'Low':
+      case 'LOW':
+      case 'ROUTINE':
         return 'secondary';
       default:
         return 'secondary';
     }
   };
 
-  const activeReferrals = referrals.filter(r => r.status === 'Pending' || r.status === 'Accepted');
-  const completedReferrals = referrals.filter(r => r.status === 'Completed' || r.status === 'Rejected');
+  const activeReferrals = referrals.filter(r => r.status.toUpperCase() === 'PENDING' || r.status.toUpperCase() === 'ACCEPTED');
+  const completedReferrals = referrals.filter(r => r.status.toUpperCase() === 'COMPLETED' || r.status.toUpperCase() === 'REJECTED');
 
   return (
     <div className="p-6 space-y-6">
@@ -151,7 +109,7 @@ export const Referrals = () => {
                 Complete the form to create a new patient referral
               </DialogDescription>
             </DialogHeader>
-            <NewReferralForm onClose={() => setShowNewReferral(false)} />
+            <NewReferralForm onClose={() => { setShowNewReferral(false); fetchReferrals(); }} />
           </DialogContent>
         </Dialog>
       </div>
@@ -184,7 +142,7 @@ export const Referrals = () => {
               <div>
                 <p className="text-sm text-gray-600">Pending</p>
                 <p className="text-3xl font-bold mt-1 text-yellow-600">
-                  {referrals.filter(r => r.status === 'Pending').length}
+                  {referrals.filter(r => r.status.toUpperCase() === 'PENDING').length}
                 </p>
               </div>
               <Clock className="h-8 w-8 text-yellow-600" />
@@ -197,7 +155,7 @@ export const Referrals = () => {
               <div>
                 <p className="text-sm text-gray-600">Accepted</p>
                 <p className="text-3xl font-bold mt-1 text-green-600">
-                  {referrals.filter(r => r.status === 'Accepted').length}
+                  {referrals.filter(r => r.status.toUpperCase() === 'ACCEPTED').length}
                 </p>
               </div>
               <CheckCircle className="h-8 w-8 text-green-600" />
@@ -210,7 +168,7 @@ export const Referrals = () => {
               <div>
                 <p className="text-sm text-gray-600">Completed</p>
                 <p className="text-3xl font-bold mt-1 text-gray-600">
-                  {referrals.filter(r => r.status === 'Completed').length}
+                  {referrals.filter(r => r.status.toUpperCase() === 'COMPLETED').length}
                 </p>
               </div>
               <CheckCircle className="h-8 w-8 text-gray-600" />
@@ -220,134 +178,178 @@ export const Referrals = () => {
       </div>
 
       {/* Referrals List */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="active">
-            <Clock className="h-4 w-4 mr-2" />
-            Active Referrals ({activeReferrals.length})
-          </TabsTrigger>
-          <TabsTrigger value="completed">
-            <CheckCircle className="h-4 w-4 mr-2" />
-            Completed ({completedReferrals.length})
-          </TabsTrigger>
-        </TabsList>
+      {loading ? (
+        <div className="text-center py-10 text-gray-500">Loading referrals from database...</div>
+      ) : (
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList>
+            <TabsTrigger value="active">
+              <Clock className="h-4 w-4 mr-2" />
+              Active Referrals ({activeReferrals.length})
+            </TabsTrigger>
+            <TabsTrigger value="completed">
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Completed ({completedReferrals.length})
+            </TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="active" className="space-y-4">
-          {activeReferrals.map((referral) => (
-            <Card key={referral.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="pt-6">
-                <div className="flex flex-col lg:flex-row gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
+          <TabsContent value="active" className="space-y-4">
+            {activeReferrals.length > 0 ? (
+              activeReferrals.map((referral) => (
+                <Card key={referral.id} className="hover:shadow-md transition-shadow">
+                  <CardContent className="pt-6">
+                    <div className="flex flex-col lg:flex-row gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <div className="flex items-center gap-2 mb-2">
+                              <h3 className="font-semibold text-lg">{referral.patientName}</h3>
+                              <Badge variant={getPriorityColor(referral.priority)}>
+                                {referral.priority} Priority
+                              </Badge>
+                              <Badge variant={getStatusColor(referral.status)}>
+                                {referral.status}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-gray-600">
+                              Patient ID: {referral.patientId} • Diagnosis: {referral.diagnosis}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <div className="flex items-start gap-2">
+                            <Hospital className="h-4 w-4 text-gray-500 mt-1" />
+                            <div>
+                              <p className="text-sm font-medium">Referral To:</p>
+                              <p className="text-sm text-gray-600">{referral.referredTo}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <AlertTriangle className="h-4 w-4 text-gray-500 mt-1" />
+                            <div>
+                              <p className="text-sm font-medium">Reason:</p>
+                              <p className="text-sm text-gray-600">{referral.referralReason}</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="mt-3 pt-3 border-t">
+                          <p className="text-xs text-gray-500">
+                            Created: {new Date(referral.referredDate).toLocaleDateString()} • Ref Code: {referral.referralCode}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex lg:flex-col gap-2">
+                        <Button variant="outline" className="flex-1 lg:flex-none">
+                          View Details
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <Card>
+                <CardContent className="pt-6 text-center text-gray-500">
+                  <Clock className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                  <p>No active referrals</p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="completed" className="space-y-4">
+            {completedReferrals.length > 0 ? (
+              completedReferrals.map((referral) => (
+                <Card key={referral.id}>
+                  <CardContent className="pt-6">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
-                          <h3 className="font-semibold text-lg">{referral.patientName}</h3>
-                          <Badge variant={getPriorityColor(referral.priority)}>
-                            {referral.priority} Priority
-                          </Badge>
+                          <h3 className="font-semibold">{referral.patientName}</h3>
                           <Badge variant={getStatusColor(referral.status)}>
                             {referral.status}
                           </Badge>
                         </div>
-                        <p className="text-sm text-gray-600">
-                          {referral.patientId} • {referral.age} • {referral.diagnosis}
+                        <p className="text-sm text-gray-600 mb-2">
+                          Patient ID: {referral.patientId} • Referred To: {referral.referredTo}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Referred on: {new Date(referral.referredDate).toLocaleDateString()} • Code: {referral.referralCode}
                         </p>
                       </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="flex items-start gap-2">
-                        <Hospital className="h-4 w-4 text-gray-500 mt-1" />
-                        <div>
-                          <p className="text-sm font-medium">Referral To:</p>
-                          <p className="text-sm text-gray-600">{referral.referredTo}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <AlertTriangle className="h-4 w-4 text-gray-500 mt-1" />
-                        <div>
-                          <p className="text-sm font-medium">Reason:</p>
-                          <p className="text-sm text-gray-600">{referral.referralReason}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-3 pt-3 border-t">
-                      <p className="text-xs text-gray-500">
-                        Created: {referral.referredDate} • Ref ID: {referral.id}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex lg:flex-col gap-2">
-                    <Button variant="outline" className="flex-1 lg:flex-none">
-                      View Details
-                    </Button>
-                    {referral.status === 'Pending' && (
-                      <Button variant="outline" className="flex-1 lg:flex-none">
-                        Follow Up
+                      <Button variant="ghost" size="sm">
+                        View Details
                       </Button>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </TabsContent>
-
-        <TabsContent value="completed" className="space-y-4">
-          {completedReferrals.map((referral) => (
-            <Card key={referral.id}>
-              <CardContent className="pt-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h3 className="font-semibold">{referral.patientName}</h3>
-                      <Badge variant={getStatusColor(referral.status)}>
-                        {referral.status}
-                      </Badge>
                     </div>
-                    <p className="text-sm text-gray-600 mb-2">
-                      {referral.patientId} • {referral.referredTo}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {referral.referredDate} • {referral.id}
-                    </p>
-                  </div>
-                  <Button variant="ghost" size="sm">
-                    View Details
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </TabsContent>
-      </Tabs>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <Card>
+                <CardContent className="pt-6 text-center text-gray-500">
+                  <CheckCircle className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                  <p>No completed referrals</p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+        </Tabs>
+      )}
     </div>
   );
 };
 
 function NewReferralForm({ onClose }: { onClose: () => void }) {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     patientId: '',
     facility: '',
-    priority: '',
+    urgency: 'routine',
     reason: ''
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success('Referral created successfully');
-    onClose();
+    if (!formData.patientId || !formData.facility || !formData.reason.trim()) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    const followUpObj = new Date();
+    followUpObj.setDate(followUpObj.getDate() + 7);
+    const followUpDate = followUpObj.toISOString().split('T')[0];
+
+    referralsApi.create({
+      patientId: Number(formData.patientId),
+      serviceRequestId: null,
+      referredTo: formData.facility,
+      priority: formData.urgency.toUpperCase() === 'URGENT' ? 'URGENT' : 'ROUTINE',
+      urgency: formData.urgency.toUpperCase(),
+      diagnosis: 'SAM', // Default placeholder diagnosis for new direct referrals
+      referralReason: formData.reason,
+      transportArranged: false,
+      followUpDate
+    }, Number(user?.id))
+    .then((savedRef) => {
+      toast.success(`Referral created successfully! Code: ${savedRef.referralCode}`);
+      onClose();
+    })
+    .catch((err) => {
+      console.error(err);
+      toast.error(`Failed to create referral: ${err.message}`);
+    });
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="patientId">Patient ID</Label>
+        <Label htmlFor="patientId">Patient Database ID *</Label>
         <Input
           id="patientId"
-          placeholder="P-1024"
+          placeholder="e.g. 1"
           value={formData.patientId}
           onChange={(e) => setFormData({ ...formData, patientId: e.target.value })}
           required
@@ -355,7 +357,7 @@ function NewReferralForm({ onClose }: { onClose: () => void }) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="facility">Referral Facility</Label>
+        <Label htmlFor="facility">Referral Facility *</Label>
         <Select
           value={formData.facility}
           onValueChange={(value) => setFormData({ ...formData, facility: value })}
@@ -364,33 +366,32 @@ function NewReferralForm({ onClose }: { onClose: () => void }) {
             <SelectValue placeholder="Select facility" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="therapeutic">Therapeutic Feeding Center</SelectItem>
-            <SelectItem value="supplementary">Supplementary Feeding Program</SelectItem>
-            <SelectItem value="hospital">District Hospital</SelectItem>
-            <SelectItem value="counseling">Nutrition Counseling</SelectItem>
+            <SelectItem value="Kigali University Hospital">Kigali University Hospital</SelectItem>
+            <SelectItem value="Therapeutic Feeding Center">Therapeutic Feeding Center</SelectItem>
+            <SelectItem value="District Hospital">District Hospital</SelectItem>
+            <SelectItem value="Specialized Nutrition Clinic">Specialized Nutrition Clinic</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="priority">Priority Level</Label>
+        <Label htmlFor="urgency">Urgency Level *</Label>
         <Select
-          value={formData.priority}
-          onValueChange={(value) => setFormData({ ...formData, priority: value })}
+          value={formData.urgency}
+          onValueChange={(value) => setFormData({ ...formData, urgency: value })}
         >
           <SelectTrigger>
-            <SelectValue placeholder="Select priority" />
+            <SelectValue placeholder="Select urgency" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="high">High - Immediate attention required</SelectItem>
-            <SelectItem value="medium">Medium - Schedule within week</SelectItem>
-            <SelectItem value="low">Low - Routine follow-up</SelectItem>
+            <SelectItem value="urgent">Urgent - Immediate attention required</SelectItem>
+            <SelectItem value="routine">Routine - Standard process</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="reason">Reason for Referral</Label>
+        <Label htmlFor="reason">Reason for Referral *</Label>
         <Textarea
           id="reason"
           placeholder="Describe the clinical reason for this referral..."
