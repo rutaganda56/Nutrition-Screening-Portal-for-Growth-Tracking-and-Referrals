@@ -27,6 +27,7 @@ public class UserMapper {
                 user.getRole(),
                 user.getStatus(),
                 user.getFacility() != null ? user.getFacility().getName() : null,
+                user.getFacility() != null ? user.getFacility().getId() : null,
                 user.getCreatedAt());
     }
 }
