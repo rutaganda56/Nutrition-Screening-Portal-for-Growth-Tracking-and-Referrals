@@ -10,5 +10,6 @@ public record UserResponseDto(
         String role,
         String status,
         String facilityName,
+        Long facilityId,
         LocalDateTime createdAt
 ) {}
