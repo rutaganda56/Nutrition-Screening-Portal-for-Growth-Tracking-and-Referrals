@@ -24,8 +24,21 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { 
+  patientsApi, 
+  screeningsApi, 
+  serviceRequestsApi, 
+  clinicalAssessmentsApi, 
+  nutritionOrdersApi, 
+  referralsApi, 
+  PatientResponse, 
+  ScreeningResponse, 
+  ServiceRequestResponse 
+} from '@/services/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const PatientClinicalSummary = () => {
+  const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('clinical');
@@ -34,86 +47,12 @@ export const PatientClinicalSummary = () => {
   const patientId = searchParams.get('patient');
   const serviceRequestId = searchParams.get('request');
 
-  // Redirect if no service request (doctors can only access patients through service requests)
-  useEffect(() => {
-    if (!serviceRequestId) {
-      toast.error('Access denied: Patients can only be accessed through service requests');
-      navigate('/dashboard/service-requests');
-    }
-  }, [serviceRequestId, navigate]);
-
-  // Mock patient data - only basic info, loaded through service request
-  const patient = {
-    id: patientId || 'P-1024',
-    name: 'Uwase Aline',
-    dateOfBirth: '2023-10-15',
-    age: '2y 4m',
-    gender: 'Female',
-    guardian: 'Mukamana Josiane',
-    guardianPhone: '+250 788 123 456',
-    householdId: 'H-101',
-    healthCenter: 'Polyclinique du Bon Berger'
-  };
-
-  // Service request from CHW (this is why doctor has access to this patient)
-  const serviceRequest = {
-    id: serviceRequestId || 'SR-1024',
-    priority: 'urgent',
-    status: 'pending',
-    reason: 'SAM Detected',
-    description: 'Severe Acute Malnutrition detected. MUAC: 10.8cm, Bilateral edema present. Immediate clinical review required.',
-    submittedBy: 'CHW Mukamana Josiane',
-    submittedAt: '2026-02-04 11:00 AM',
-    actions: []
-  };
-
-  // Latest screening data (from CHW)
-  const latestScreening = {
-    id: 'S-521',
-    date: '2026-02-04',
-    time: '10:30 AM',
-    conductedBy: 'CHW Mukamana Josiane',
-    location: 'Community Visit',
-    gps: '-1.9536, 30.0605',
-    measurements: {
-      weight: '9.2 kg',
-      height: '82.0 cm',
-      muac: '10.8 cm',
-      edema: 'Bilateral',
-      temperature: '36.8°C'
-    },
-    classification: 'SAM',
-    zscore: '-3.2 SD',
-    appetite: 'Poor'
-  };
-
-  // CHW Nutrition Order
-  const chwNutritionOrder = {
-    orderId: 'NO-421',
-    items: [
-      {
-        type: 'Supplementary Feeding',
-        supplement: 'Corn-Soy Blend (CSB+)',
-        instructions: 'Initial supplementary feeding while awaiting doctor review',
-        createdBy: 'CHW Mukamana Josiane'
-      }
-    ]
-  };
-
-  // Growth tracking data
-  const growthData = [
-    { date: 'Nov 2025', weight: 10.5, height: 78 },
-    { date: 'Dec 2025', weight: 10.2, height: 79 },
-    { date: 'Jan 2026', weight: 9.8, height: 80 },
-    { date: 'Feb 2026', weight: 9.2, height: 82 }
-  ];
-
-  // Previous screening history
-  const screeningHistory = [
-    { id: 'S-520', date: '2026-01-15', classification: 'MAM', muac: '11.5 cm', conductedBy: 'CHW Mukamana Josiane' },
-    { id: 'S-519', date: '2025-12-20', classification: 'MAM', muac: '11.8 cm', conductedBy: 'CHW Mukamana Josiane' },
-    { id: 'S-518', date: '2025-11-25', classification: 'Normal', muac: '12.2 cm', conductedBy: 'CHW Mutoni Beatrice' }
-  ];
+  const [loading, setLoading] = useState(true);
+  const [patient, setPatient] = useState<PatientResponse | null>(null);
+  const [serviceRequest, setServiceRequest] = useState<ServiceRequestResponse | null>(null);
+  const [latestScreening, setLatestScreening] = useState<ScreeningResponse | null>(null);
+  const [screeningHistory, setScreeningHistory] = useState<ScreeningResponse[]>([]);
+  const [growthData, setGrowthData] = useState<{ date: string; weight: number; height: number }[]>([]);
 
   // Clinical decision forms
   const [clinicalDecision, setClinicalDecision] = useState({
@@ -141,38 +80,154 @@ export const PatientClinicalSummary = () => {
     transportArranged: false
   });
 
-  const handleConfirmDiagnosis = () => {
-    if (!clinicalDecision.diagnosis || !clinicalDecision.severity) {
-      toast.error('Please complete the diagnosis and severity assessment');
+  useEffect(() => {
+    if (!serviceRequestId) {
+      toast.error('Access denied: Patients can only be accessed through service requests');
+      navigate('/dashboard/service-request-queue');
       return;
     }
 
-    toast.success('Diagnosis confirmed successfully', {
-      description: `Clinical diagnosis: ${clinicalDecision.diagnosis}`
+    setLoading(true);
+    Promise.all([
+      patientsApi.getById(Number(patientId)),
+      serviceRequestsApi.getById(Number(serviceRequestId)),
+      screeningsApi.getByPatient(Number(patientId))
+    ])
+    .then(([patientData, requestData, screeningsData]) => {
+      setPatient(patientData);
+      setServiceRequest(requestData);
+
+      // Sort screenings by date descending to find the latest
+      const sortedScreenings = [...screeningsData].sort((a, b) => 
+        new Date(b.screeningDate).getTime() - new Date(a.screeningDate).getTime()
+      );
+
+      if (sortedScreenings.length > 0) {
+        setLatestScreening(sortedScreenings[0]);
+        setScreeningHistory(sortedScreenings.slice(1));
+      }
+
+      // Map growth data for the chart: weight vs date
+      const growth = [...screeningsData]
+        .sort((a, b) => new Date(a.screeningDate).getTime() - new Date(b.screeningDate).getTime())
+        .map(s => ({
+          date: new Date(s.screeningDate).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }),
+          weight: s.weightKg,
+          height: s.heightCm
+        }));
+      setGrowthData(growth);
+    })
+    .catch((err) => {
+      console.error(err);
+      toast.error('Failed to load patient clinical data');
+    })
+    .finally(() => {
+      setLoading(false);
+    });
+  }, [patientId, serviceRequestId, navigate]);
+
+  const handleConfirmDiagnosis = () => {
+    if (!clinicalDecision.diagnosis || !clinicalDecision.severity || !clinicalDecision.clinicalNotes.trim()) {
+      toast.error('Please complete the diagnosis, severity assessment, and clinical notes');
+      return;
+    }
+
+    clinicalAssessmentsApi.create({
+      serviceRequestId: Number(serviceRequestId),
+      patientId: Number(patientId),
+      diagnosis: clinicalDecision.diagnosis,
+      severity: clinicalDecision.severity,
+      complications: clinicalDecision.complications.join(', '),
+      clinicalNotes: clinicalDecision.clinicalNotes
+    }, Number(user?.id))
+    .then(() => {
+      // Mark service request as COMPLETED in the database
+      return serviceRequestsApi.updateStatus(Number(serviceRequestId), 'COMPLETED');
+    })
+    .then(() => {
+      toast.success('Clinical diagnosis confirmed and case marked as resolved!');
+      navigate('/dashboard/service-request-queue');
+    })
+    .catch((err) => {
+      console.error(err);
+      toast.error(`Failed to save clinical diagnosis: ${err.message}`);
     });
   };
 
   const handleCreateNutritionOrder = () => {
-    if (!nutritionOrder.orderType || !nutritionOrder.supplement) {
-      toast.error('Please complete the nutrition order details');
+    if (!nutritionOrder.orderType || !nutritionOrder.supplement || !nutritionOrder.instructions.trim()) {
+      toast.error('Please complete the nutrition order details and instructions');
       return;
     }
 
-    const orderId = `NO-${Math.floor(1000 + Math.random() * 9000)}`;
-    toast.success(`Nutrition order ${orderId} created successfully`, {
-      description: `Type: ${nutritionOrder.orderType} - ${nutritionOrder.supplement}`
+    const startDate = new Date().toISOString().split('T')[0];
+    let days = 14;
+    if (nutritionOrder.duration === '2-weeks') days = 14;
+    else if (nutritionOrder.duration === '4-weeks') days = 28;
+    else if (nutritionOrder.duration === '8-weeks') days = 56;
+    
+    const endDateObj = new Date();
+    endDateObj.setDate(endDateObj.getDate() + days);
+    const endDate = endDateObj.toISOString().split('T')[0];
+
+    nutritionOrdersApi.create({
+      patientId: Number(patientId),
+      screeningId: latestScreening?.id || null,
+      serviceRequestId: Number(serviceRequestId),
+      orderType: nutritionOrder.orderType.toUpperCase(),
+      supplement: nutritionOrder.supplement,
+      dosage: nutritionOrder.dosage || '1 sachet',
+      frequency: nutritionOrder.frequency || 'once-daily',
+      duration: nutritionOrder.duration || '2-weeks',
+      instructions: nutritionOrder.instructions,
+      startDate,
+      endDate
+    }, Number(user?.id))
+    .then(() => {
+      toast.success(`Nutrition order created successfully!`);
+      setNutritionOrder({
+        orderType: '',
+        supplement: '',
+        dosage: '',
+        frequency: '',
+        duration: '',
+        instructions: ''
+      });
+    })
+    .catch((err) => {
+      console.error(err);
+      toast.error(`Failed to save nutrition order: ${err.message}`);
     });
   };
 
   const handleCreateReferral = () => {
-    if (!referral.facility || !referral.reason) {
-      toast.error('Please complete the referral details');
+    if (!referral.facility || !referral.reason.trim()) {
+      toast.error('Please complete the referral facility and reason');
       return;
     }
 
-    const referralId = `REF-${Math.floor(1000 + Math.random() * 9000)}`;
-    toast.success(`Referral ${referralId} created successfully`, {
-      description: `Facility: ${referral.facility}`
+    const followUpObj = new Date();
+    followUpObj.setDate(followUpObj.getDate() + 7); // Default 7 days
+    const followUpDate = followUpObj.toISOString().split('T')[0];
+
+    referralsApi.create({
+      patientId: Number(patientId),
+      serviceRequestId: Number(serviceRequestId),
+      referredTo: referral.facility,
+      priority: referral.urgency.toUpperCase() === 'URGENT' ? 'URGENT' : 'ROUTINE',
+      urgency: referral.urgency.toUpperCase(),
+      diagnosis: clinicalDecision.diagnosis || latestScreening?.classification || 'SAM',
+      referralReason: referral.reason,
+      transportArranged: referral.transportArranged,
+      followUpDate
+    }, Number(user?.id))
+    .then((savedRef) => {
+      toast.success(`Referral created successfully! Code: ${savedRef.referralCode}`);
+      setReferral({ ...referral, enabled: false });
+    })
+    .catch((err) => {
+      console.error(err);
+      toast.error(`Failed to create referral in database: ${err.message}`);
     });
   };
 
@@ -188,6 +243,14 @@ export const PatientClinicalSummary = () => {
         return 'secondary';
     }
   };
+
+  if (loading) {
+    return <div className="p-6 text-center text-gray-500">Loading patient clinical summary...</div>;
+  }
+
+  if (!patient || !serviceRequest) {
+    return <div className="p-6 text-center text-red-500">Patient or service request not found.</div>;
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -216,13 +279,13 @@ export const PatientClinicalSummary = () => {
                 <User className="h-8 w-8 text-blue-600" />
               </div>
               <div>
-                <CardTitle className="text-2xl">{patient.name}</CardTitle>
+                <CardTitle className="text-2xl">{patient.firstName} {patient.lastName}</CardTitle>
                 <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
-                  <span>{patient.id}</span>
+                  <span>{patient.patientCode}</span>
                   <span>•</span>
                   <span>{patient.age} ({patient.gender})</span>
                   <span>•</span>
-                  <span>DOB: {patient.dateOfBirth}</span>
+                  <span>DOB: {patient.birthDate || 'N/A'}</span>
                 </div>
               </div>
             </div>
@@ -233,16 +296,16 @@ export const PatientClinicalSummary = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <p className="text-sm text-gray-500">Guardian</p>
-              <p className="font-medium">{patient.guardian}</p>
+              <p className="font-medium">{patient.guardianFirstName} {patient.guardianLastName}</p>
               <p className="text-sm text-gray-600">{patient.guardianPhone}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-500">Household ID</p>
-              <p className="font-medium">{patient.householdId}</p>
+              <p className="text-sm text-gray-500">Facility ID</p>
+              <p className="font-medium">FAC-{patient.id}</p>
             </div>
             <div>
               <p className="text-sm text-gray-500">Health Center</p>
-              <p className="font-medium">{patient.healthCenter}</p>
+              <p className="font-medium">{patient.facilityName || 'N/A'}</p>
             </div>
           </div>
         </CardContent>
@@ -279,8 +342,8 @@ export const PatientClinicalSummary = () => {
             <CardContent className="space-y-4">
               <div className="p-3 bg-blue-50 border border-blue-200 rounded">
                 <p className="text-sm text-blue-900">
-                  <strong>CHW Assessment:</strong> {latestScreening.classification} - 
-                  MUAC: {latestScreening.measurements.muac}, Edema: {latestScreening.measurements.edema}
+                  <strong>CHW Assessment:</strong> {latestScreening ? latestScreening.classification : 'No Screening'} - 
+                  MUAC: {latestScreening ? `${latestScreening.muacCm} cm` : 'N/A'}, Weight: {latestScreening ? `${latestScreening.weightKg} kg` : 'N/A'}
                 </p>
               </div>
 
@@ -525,10 +588,10 @@ export const PatientClinicalSummary = () => {
                         <SelectValue placeholder="Select facility" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="kigali-university-hospital">Kigali University Hospital</SelectItem>
-                        <SelectItem value="therapeutic-feeding-center">Therapeutic Feeding Center</SelectItem>
-                        <SelectItem value="district-hospital">District Hospital</SelectItem>
-                        <SelectItem value="specialized-nutrition-clinic">Specialized Nutrition Clinic</SelectItem>
+                        <SelectItem value="Kigali University Hospital">Kigali University Hospital</SelectItem>
+                        <SelectItem value="Therapeutic Feeding Center">Therapeutic Feeding Center</SelectItem>
+                        <SelectItem value="District Hospital">District Hospital</SelectItem>
+                        <SelectItem value="Specialized Nutrition Clinic">Specialized Nutrition Clinic</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -586,27 +649,31 @@ export const PatientClinicalSummary = () => {
         <TabsContent value="nutrition" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>CHW Nutrition Order</CardTitle>
-              <CardDescription>Initial nutrition order created by CHW pending doctor review</CardDescription>
+              <CardTitle>Therapeutic Feeding & Supplementary Nutrition</CardTitle>
+              <CardDescription>Nutrition intervention plan for this patient</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="p-4 border rounded-lg bg-blue-50">
-                <div className="flex items-center gap-3 mb-2">
-                  <p className="font-medium">{chwNutritionOrder.orderId}</p>
-                  <Badge variant="default">
-                    {chwNutritionOrder.items[0].type}
-                  </Badge>
+              {latestScreening ? (
+                <div className="p-4 border rounded-lg bg-blue-50">
+                  <div className="flex items-center gap-3 mb-2">
+                    <p className="font-semibold text-lg">Initial Screening Status</p>
+                    <Badge variant="default">
+                      {latestScreening.classification}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-gray-600 mt-1">
+                    MUAC Measurement: <span className="font-semibold">{latestScreening.muacCm} cm</span>
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Observation Notes: {latestScreening.observationNotes || 'None'}
+                  </p>
+                  <p className="text-sm text-gray-500 mt-2">
+                    Conducted on: {latestScreening.screeningDate}
+                  </p>
                 </div>
-                <p className="text-sm text-gray-600 mt-1">
-                  Supplement: {chwNutritionOrder.items[0].supplement}
-                </p>
-                <p className="text-sm text-gray-600">
-                  Instructions: {chwNutritionOrder.items[0].instructions}
-                </p>
-                <p className="text-sm text-gray-500 mt-2">
-                  Created by: {chwNutritionOrder.items[0].createdBy}
-                </p>
-              </div>
+              ) : (
+                <p className="text-sm text-gray-500">No screenings recorded for this patient.</p>
+              )}
               <Alert className="mt-4">
                 <Info className="h-4 w-4" />
                 <AlertDescription>
@@ -622,23 +689,48 @@ export const PatientClinicalSummary = () => {
           <Card>
             <CardHeader>
               <CardTitle>Screening History</CardTitle>
-              <CardDescription>Previous CHW-conducted screenings</CardDescription>
+              <CardDescription>Previous growth screening records</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-6">
+              {growthData.length > 0 && (
+                <div className="h-64 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={growthData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" />
+                      <YAxis label={{ value: 'Weight (kg)', angle: -90, position: 'insideLeft' }} />
+                      <Tooltip />
+                      <Line type="monotone" dataKey="weight" stroke="#3b82f6" activeDot={{ r: 8 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+
+              <Separator />
+
               <div className="space-y-3">
-                {screeningHistory.map((screening) => (
-                  <div key={screening.id} className="p-4 border rounded-lg hover:bg-gray-50">
-                    <div className="flex items-center gap-3">
-                      <p className="font-medium">{screening.id}</p>
-                      <Badge variant={getClassificationColor(screening.classification)}>
-                        {screening.classification}
-                      </Badge>
+                {screeningHistory.length > 0 ? (
+                  screeningHistory.map((screening) => (
+                    <div key={screening.id} className="p-4 border rounded-lg hover:bg-gray-50">
+                      <div className="flex items-center gap-3">
+                        <p className="font-medium">Screening Code: {screening.screeningCode}</p>
+                        <Badge variant={getClassificationColor(screening.classification)}>
+                          {screening.classification}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-gray-500 mt-1">
+                        Date: {screening.screeningDate} • Weight: {screening.weightKg} kg • Height: {screening.heightCm} cm • MUAC: {screening.muacCm} cm
+                      </p>
+                      {screening.observationNotes && (
+                        <p className="text-xs text-gray-600 mt-2 bg-gray-50 p-2 rounded">
+                          Notes: {screening.observationNotes}
+                        </p>
+                      )}
                     </div>
-                    <p className="text-sm text-gray-500 mt-1">
-                      {screening.date} • MUAC: {screening.muac} • By: {screening.conductedBy}
-                    </p>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-500 text-center py-4">No previous screenings found in history.</p>
+                )}
               </div>
             </CardContent>
           </Card>
