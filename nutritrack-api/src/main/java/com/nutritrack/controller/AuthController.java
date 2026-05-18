@@ -15,18 +15,20 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 
 @RestController
+@RequestMapping("/api/auth")
+@CrossOrigin
 public class AuthController {
 
     @Autowired
     private UserService userService;
 
-    @PostMapping("api/auth/register")
+    @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
     public UserResponseDto register(@Valid @RequestBody RegisterDto dto) {
         return userService.register(dto);
     }
 
-    @PostMapping("api/auth/login")
+    @PostMapping("/login")
     public UserResponseDto login(@Valid @RequestBody LoginDto dto) {
         return userService.login(dto);
     }
