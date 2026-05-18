@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
@@ -18,6 +18,8 @@ import {
   TrendingUp
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
+import { screeningsApi, ScreeningResponse } from '@/services/api';
 
 interface ScreeningResult {
   wfh: string; // Weight-for-Height Z-score
@@ -28,6 +30,7 @@ interface ScreeningResult {
 }
 
 export const NutritionScreening = () => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('new');
   const [patientId, setPatientId] = useState('');
   const [weight, setWeight] = useState('');
@@ -36,11 +39,34 @@ export const NutritionScreening = () => {
   const [edema, setEdema] = useState('no');
   const [notes, setNotes] = useState('');
   const [result, setResult] = useState<ScreeningResult | null>(null);
+  
+  const [screenings, setScreenings] = useState<ScreeningResponse[]>([]);
+  const [loadingRecent, setLoadingRecent] = useState(false);
 
-  // WHO Classification criteria
+  const fetchRecentScreenings = () => {
+    setLoadingRecent(true);
+    screeningsApi.getAll()
+      .then((data) => {
+        setScreenings(data);
+      })
+      .catch((err) => {
+        console.error(err);
+        toast.error('Failed to load recent screenings');
+      })
+      .finally(() => {
+        setLoadingRecent(false);
+      });
+  };
+
+  useEffect(() => {
+    if (activeTab === 'recent') {
+      fetchRecentScreenings();
+    }
+  }, [activeTab]);
+
   const calculateScreening = () => {
-    if (!weight || !height || !muac) {
-      toast.error('Please fill in all measurements');
+    if (!weight || !height || !muac || !patientId) {
+      toast.error('Please enter patient ID and all measurements');
       return;
     }
 
@@ -54,10 +80,9 @@ export const NutritionScreening = () => {
     let recommendation = '';
     let wfhZScore = '';
 
-    // Calculate Weight-for-Height Z-score (simplified)
     const wfhRatio = (weightNum / heightNum) * 100;
     
-    if (hasEdema || muacNum < 11.5 || wfhZScore === '< -3 SD') {
+    if (hasEdema || muacNum < 11.5) {
       classification = 'SAM';
       recommendation = 'Immediate referral to therapeutic feeding program. Requires urgent medical attention.';
     } else if (muacNum >= 11.5 && muacNum < 12.5) {
@@ -68,7 +93,6 @@ export const NutritionScreening = () => {
       recommendation = 'Continue regular monitoring. Next screening in 3 months.';
     }
 
-    // Generate Z-score display
     if (wfhRatio < 70) {
       wfhZScore = '< -3 SD';
     } else if (wfhRatio < 80) {
@@ -85,7 +109,7 @@ export const NutritionScreening = () => {
       recommendation
     });
 
-    toast.success('Screening completed successfully');
+    toast.success('Screening calculation complete');
   };
 
   const saveScreening = () => {
@@ -94,68 +118,44 @@ export const NutritionScreening = () => {
       return;
     }
 
-    toast.success('Screening saved successfully');
-    // Reset form
-    setPatientId('');
-    setWeight('');
-    setHeight('');
-    setMuac('');
-    setEdema('no');
-    setNotes('');
-    setResult(null);
+    const payload = {
+      patientId: Number(patientId),
+      weightKg: parseFloat(weight),
+      heightCm: parseFloat(height),
+      muacCm: parseFloat(muac),
+      appetite: 'GOOD',
+      observationNotes: notes,
+      screeningDate: new Date().toISOString().split('T')[0]
+    };
+
+    screeningsApi.create(payload, Number(user?.id))
+      .then(() => {
+        toast.success('Screening saved successfully to database!');
+        // Reset form
+        setPatientId('');
+        setWeight('');
+        setHeight('');
+        setMuac('');
+        setEdema('no');
+        setNotes('');
+        setResult(null);
+      })
+      .catch((err) => {
+        console.error(err);
+        toast.error(`Failed to save screening: ${err.message}`);
+      });
   };
 
-  interface Screening {
-    id: string;
-    patientId: string;
-    patientName: string;
-    date: string;
-    classification: string;
-    muac: string;
-    weight: string;
-    height: string;
-  }
-
-  const screenings: Screening[] = [
-    {
-      id: 'S-5421',
-      patientId: 'P-1024',
-      patientName: 'Uwase Aline',
-      date: '2026-01-23',
-      classification: 'SAM',
-      muac: '10.8 cm',
-      weight: '9.5 kg',
-      height: '82.0 cm'
-    },
-    {
-      id: 'S-5420',
-      patientId: 'P-1156',
-      patientName: 'Imena Diane',
-      date: '2026-01-22',
-      classification: 'MAM',
-      muac: '12.0 cm',
-      weight: '11.8 kg',
-      height: '88.0 cm'
-    },
-    {
-      id: 'S-5419',
-      patientId: 'P-1242',
-      patientName: 'Mutesi Divine',
-      date: '2026-01-22',
-      classification: 'Normal',
-      muac: '13.5 cm',
-      weight: '12.5 kg',
-      height: '85.0 cm'
-    }
-  ];
-
-  const getClassificationColor = (classification: string) => {
-    switch (classification) {
+  const getClassificationColor = (classification: string | null) => {
+    const c = classification || 'NORMAL';
+    switch (c.toUpperCase()) {
       case 'SAM':
+      case 'SEVERE':
         return 'destructive';
       case 'MAM':
+      case 'MODERATE':
         return 'default';
-      case 'Normal':
+      case 'NORMAL':
         return 'secondary';
       default:
         return 'secondary';
@@ -211,10 +211,10 @@ export const NutritionScreening = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="patientId">Patient ID</Label>
+                  <Label htmlFor="patientId">Patient Database ID</Label>
                   <Input
                     id="patientId"
-                    placeholder="P-1024"
+                    placeholder="e.g. 1"
                     value={patientId}
                     onChange={(e) => setPatientId(e.target.value)}
                   />
@@ -255,7 +255,6 @@ export const NutritionScreening = () => {
                     value={muac}
                     onChange={(e) => setMuac(e.target.value)}
                   />
-                  <p className="text-xs text-gray-500">Measured at the midpoint between shoulder and elbow</p>
                 </div>
 
                 <div className="space-y-2">
@@ -386,31 +385,33 @@ export const NutritionScreening = () => {
               <CardTitle>Recent Screening Records</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {screenings.map((screening) => (
-                  <div key={screening.id} className="p-4 border rounded-lg hover:bg-gray-50">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3">
-                          <span className="font-medium">{screening.patientName}</span>
-                          <Badge variant={getClassificationColor(screening.classification)}>
-                            {screening.classification}
-                          </Badge>
+              {loadingRecent ? (
+                <div className="text-center py-10 text-gray-500">Loading screening logs...</div>
+              ) : (
+                <div className="space-y-3">
+                  {screenings.map((screening) => (
+                    <div key={screening.id} className="p-4 border rounded-lg hover:bg-gray-50">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3">
+                            <span className="font-semibold">{screening.patientName || `Patient ID: ${screening.patientId}`}</span>
+                            {getClassificationBadge(screening.classification)}
+                          </div>
+                          <div className="text-sm text-gray-600 mt-1">
+                            Weight: {screening.weightKg} kg • Height: {screening.heightCm} cm • MUAC: {screening.muacCm} cm
+                          </div>
                         </div>
-                        <div className="text-sm text-gray-600 mt-1">
-                          {screening.patientId} • MUAC: {screening.muac}
+                        <div className="text-right">
+                          <div className="text-sm text-gray-500">{new Date(screening.screeningDate).toLocaleDateString()}</div>
                         </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-sm text-gray-500">{screening.date}</div>
-                        <Button variant="link" className="p-0 h-auto mt-1">
-                          View Details
-                        </Button>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                  {screenings.length === 0 && (
+                    <p className="text-sm text-gray-500 text-center py-4">No screening records found in the database.</p>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
