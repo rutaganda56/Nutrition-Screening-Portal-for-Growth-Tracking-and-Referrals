@@ -162,6 +162,29 @@ export const NutritionScreening = () => {
     }
   };
 
+  const getClassificationBadge = (classification: string | null) => {
+    const c = classification || 'NORMAL';
+    const variant = getClassificationColor(c);
+    let label = 'Normal';
+    
+    switch (c.toUpperCase()) {
+      case 'SAM':
+      case 'SEVERE':
+        label = 'SAM';
+        break;
+      case 'MAM':
+      case 'MODERATE':
+        label = 'MAM';
+        break;
+      case 'NORMAL':
+      default:
+        label = 'Normal';
+        break;
+    }
+    
+    return <Badge variant={variant}>{label}</Badge>;
+  };
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
