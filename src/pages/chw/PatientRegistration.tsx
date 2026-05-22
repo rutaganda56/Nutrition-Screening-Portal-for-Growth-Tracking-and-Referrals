@@ -19,7 +19,7 @@ export const PatientRegistration = () => {
   const { user } = useAuth();
   
   // CHW is assigned to a specific health center
-  const assignedHealthCenter = 'Polyclinique du Bon Berger';
+  const assignedHealthCenter = user?.facilityName || 'Polyclinique du Bon Berger';
   
   const [formData, setFormData] = useState({
     // Patient Basic Information
