@@ -57,6 +57,7 @@ public class ScreeningService {
         Screening screening = new Screening();
         screening.setPatient(patient);
         screening.setConductedBy(conductedBy);
+        screening.setFacility(conductedBy.getFacility());
         screening.setScreeningDate(LocalDate.parse(dto.screeningDate()));
         screening.setWeightKg(dto.weightKg());
         screening.setHeightCm(dto.heightCm());
