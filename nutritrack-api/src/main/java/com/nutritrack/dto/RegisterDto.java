@@ -12,5 +12,6 @@ public record RegisterDto(
         @NotEmpty @Size(min = 6, message = "Password must be at least 6 characters") String password,
         @NotEmpty @Pattern(regexp = "^(DOCTOR|COMMUNITY_HEALTH_WORKER|ADMINISTRATOR)$",
                 message = "Role must be DOCTOR, COMMUNITY_HEALTH_WORKER, or ADMINISTRATOR") String role,
-        String department
+        String department,
+        Long facilityId
 ) {}
