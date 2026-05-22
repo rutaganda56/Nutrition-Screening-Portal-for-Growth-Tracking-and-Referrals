@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { Badge } from '@/app/components/ui/badge';
 import { Button } from '@/app/components/ui/button';
+import { formatDistanceToNow } from 'date-fns';
 import { 
   Users, 
   Activity, 
@@ -30,7 +31,14 @@ import {
   ResponsiveContainer,
   Legend
 } from 'recharts';
-import { usersApi, patientsApi, screeningsApi, UserResponse } from '@/services/api';
+import { usersApi, patientsApi, screeningsApi, facilitiesApi, alertsApi, UserResponse, FacilityResponse, ScreeningResponse, AlertResponse } from '@/services/api';
+
+interface FacilityStats {
+  facility: string;
+  normal: number;
+  moderate: number;
+  severe: number;
+}
 
 export const AdminDashboard = () => {
   const { user } = useAuth();
@@ -39,11 +47,57 @@ export const AdminDashboard = () => {
   const [users, setUsers] = useState<UserResponse[]>([]);
   const [totalPatients, setTotalPatients] = useState(0);
   const [totalScreenings, setTotalScreenings] = useState(0);
+  const [facilityStats, setFacilityStats] = useState<FacilityStats[]>([]);
+  const [usageData, setUsageData] = useState<any[]>([]);
+  const [alerts, setAlerts] = useState<AlertResponse[]>([]);
 
   useEffect(() => {
-    usersApi.getAll().then(setUsers).catch(console.error);
-    patientsApi.getAll().then(data => setTotalPatients(data.length)).catch(console.error);
-    screeningsApi.getAll().then(data => setTotalScreenings(data.length)).catch(console.error);
+    const fetchData = async () => {
+      try {
+        const [usersData, patientsData, screeningsData, facilitiesData, alertsData] = await Promise.all([
+          usersApi.getAll(),
+          patientsApi.getAll(),
+          screeningsApi.getAll(),
+          facilitiesApi.getAll(),
+          alertsApi.getAll()
+        ]);
+
+        setUsers(usersData);
+        setTotalPatients(patientsData.length);
+        setTotalScreenings(screeningsData.length);
+        setAlerts(alertsData);
+
+        // Calculate usage data by role
+        const doctorCount = usersData.filter(u => u.role === 'DOCTOR').length;
+        const chwCount = usersData.filter(u => u.role === 'COMMUNITY_HEALTH_WORKER').length;
+        const adminCount = usersData.filter(u => u.role === 'ADMINISTRATOR').length;
+
+        const roleUsageData = [
+          { month: 'Current', doctors: doctorCount, chw: chwCount, admin: adminCount }
+        ];
+        setUsageData(roleUsageData);
+
+        // Calculate facility statistics
+        const stats: FacilityStats[] = facilitiesData.map(facility => {
+          const facilityScreenings = screeningsData.filter(
+            s => s.facilityName === facility.name
+          );
+
+          return {
+            facility: facility.name,
+            normal: facilityScreenings.filter(s => s.classification === 'NORMAL').length,
+            moderate: facilityScreenings.filter(s => s.classification === 'MODERATE_ACUTE_MALNUTRITION').length,
+            severe: facilityScreenings.filter(s => s.classification === 'SEVERE_ACUTE_MALNUTRITION').length
+          };
+        });
+
+        setFacilityStats(stats);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    };
+
+    fetchData();
   }, []);
 
   const activeUsers = users.filter(u => u.status === 'ACTIVE');
@@ -53,28 +107,6 @@ export const AdminDashboard = () => {
     { label: 'System Uptime', value: '99.8%', change: 'Stable', icon: Activity, color: 'bg-green-100 text-green-600' },
     { label: 'Total Records', value: String(totalPatients + totalScreenings), change: `${totalPatients} patients, ${totalScreenings} screenings`, icon: Database, color: 'bg-purple-100 text-purple-600' },
     { label: 'Active Sessions', value: String(activeUsers.length), change: 'Currently active', icon: Shield, color: 'bg-yellow-100 text-yellow-600' }
-  ];
-
-  const usageData = [
-    { month: 'Jan', doctors: 45, chw: 78, admin: 12 },
-    { month: 'Feb', doctors: 52, chw: 85, admin: 15 },
-    { month: 'Mar', doctors: 48, chw: 92, admin: 14 },
-    { month: 'Apr', doctors: 58, chw: 98, admin: 16 },
-    { month: 'May', doctors: 63, chw: 105, admin: 18 },
-    { month: 'Jun', doctors: 67, chw: 112, admin: 19 }
-  ];
-
-  const malnutritionStats = [
-    { facility: 'Main Clinic', normal: 850, moderate: 120, severe: 30 },
-    { facility: 'Village A', normal: 320, moderate: 58, severe: 12 },
-    { facility: 'Village B', normal: 290, moderate: 45, severe: 8 },
-    { facility: 'Village C', normal: 410, moderate: 67, severe: 15 }
-  ];
-
-  const systemAlerts = [
-    { severity: 'High', type: 'SAM Cases', message: `${users.filter(u => u.status === 'ACTIVE').length} active users in the system.`, time: 'Now' },
-    { severity: 'Medium', type: 'Records', message: `${totalPatients} patients and ${totalScreenings} screenings recorded.`, time: 'Today' },
-    { severity: 'Low', type: 'System', message: 'All systems operational. Database backup completed successfully.', time: '2h ago' },
   ];
 
   return (
@@ -147,18 +179,24 @@ export const AdminDashboard = () => {
             <CardTitle>Malnutrition Statistics by Facility</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={malnutritionStats}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="facility" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="normal" fill="#10b981" name="Normal" />
-                <Bar dataKey="moderate" fill="#f59e0b" name="Moderate" />
-                <Bar dataKey="severe" fill="#ef4444" name="Severe" />
-              </BarChart>
-            </ResponsiveContainer>
+            {facilityStats.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={facilityStats}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="facility" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="normal" fill="#10b981" name="Normal" />
+                  <Bar dataKey="moderate" fill="#f59e0b" name="Moderate" />
+                  <Bar dataKey="severe" fill="#ef4444" name="Severe" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-[300px] flex items-center justify-center text-gray-500">
+                <p>No facility data available. Add facilities to see statistics.</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -204,74 +242,34 @@ export const AdminDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {systemAlerts.map((alert, index) => (
-                <div key={index} className="p-3 border rounded-lg">
+              {alerts.slice(0, 5).map((alert) => (
+                <div key={alert.id} className="p-3 border rounded-lg">
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <Badge variant={
-                        alert.severity === 'High' ? 'destructive' : 
-                        alert.severity === 'Medium' ? 'default' : 'secondary'
+                        alert.alertType === 'CRITICAL' ? 'destructive' : 
+                        alert.alertType === 'WARNING' ? 'default' : 'secondary'
                       }>
-                        {alert.severity}
+                        {alert.alertType}
                       </Badge>
-                      <span className="text-sm font-medium">{alert.type}</span>
+                      <span className="text-sm font-medium">{alert.patientName || 'System'}</span>
                     </div>
-                    <span className="text-xs text-gray-500">{alert.time}</span>
+                    <span className="text-xs text-gray-500">
+                      {formatDistanceToNow(new Date(alert.createdAt), { addSuffix: true })}
+                    </span>
                   </div>
                   <p className="text-sm text-gray-700">{alert.message}</p>
                 </div>
               ))}
+              {alerts.length === 0 && (
+                <p className="text-sm text-gray-500 text-center py-4">No alerts found.</p>
+              )}
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Compliance Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5" />
-            Data Security & Compliance
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 bg-green-50 rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 bg-green-600 rounded-full flex items-center justify-center">
-                  <Shield className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <div className="font-medium text-green-900">Encryption Status</div>
-                  <div className="text-sm text-green-700">Active (AES-256)</div>
-                </div>
-              </div>
-            </div>
-            <div className="p-4 bg-blue-50 rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 bg-blue-600 rounded-full flex items-center justify-center">
-                  <Database className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <div className="font-medium text-blue-900">Backup Status</div>
-                  <div className="text-sm text-blue-700">Last backup: 2 hours ago</div>
-                </div>
-              </div>
-            </div>
-            <div className="p-4 bg-purple-50 rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 bg-purple-600 rounded-full flex items-center justify-center">
-                  <TrendingUp className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <div className="font-medium text-purple-900">Audit Logs</div>
-                  <div className="text-sm text-purple-700">45,231 entries</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+     
 
       {/* Quick Actions for Health Center Management */}
       <Card>
