@@ -181,11 +181,11 @@ export const UserManagement = () => {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Full Name *</Label>
-                <Input placeholder="John Doe" value={form.fullName} onChange={e => setForm(f => ({ ...f, fullName: e.target.value }))} />
+                <Input placeholder="John Habineza" value={form.fullName} onChange={e => setForm(f => ({ ...f, fullName: e.target.value }))} />
               </div>
               <div className="space-y-2">
                 <Label>Email Address *</Label>
-                <Input type="email" placeholder="john@example.com" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
+                <Input type="email" placeholder="john@gmail.com" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
               </div>
               <div className="space-y-2">
                 <Label>Phone Number</Label>
@@ -205,7 +205,7 @@ export const UserManagement = () => {
               <div className="space-y-2 col-span-2">
                 <Label>Assign to Facility</Label>
                 <Select value={form.facilityId} onValueChange={v => setForm(f => ({ ...f, facilityId: v }))}>
-                  <SelectTrigger><SelectValue placeholder="Select facility (optional)" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Select facility " /></SelectTrigger>
                   <SelectContent>
                     {facilities.map(f => (
                       <SelectItem key={f.id} value={String(f.id)}>{f.name}</SelectItem>
@@ -250,11 +250,11 @@ export const UserManagement = () => {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Full Name *</Label>
-                <Input placeholder="John Doe" value={form.fullName} onChange={e => setForm(f => ({ ...f, fullName: e.target.value }))} />
+                <Input placeholder="John Habineza" value={form.fullName} onChange={e => setForm(f => ({ ...f, fullName: e.target.value }))} />
               </div>
               <div className="space-y-2">
                 <Label>Email Address *</Label>
-                <Input type="email" placeholder="john@example.com" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
+                <Input type="email" placeholder="john@gmail.com" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
               </div>
               <div className="space-y-2">
                 <Label>Phone Number</Label>
@@ -274,7 +274,7 @@ export const UserManagement = () => {
               <div className="space-y-2 col-span-2">
                 <Label>Assign to Facility</Label>
                 <Select value={form.facilityId} onValueChange={v => setForm(f => ({ ...f, facilityId: v }))}>
-                  <SelectTrigger><SelectValue placeholder="Select facility (optional)" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Select facility " /></SelectTrigger>
                   <SelectContent>
                     {facilities.map(f => (
                       <SelectItem key={f.id} value={String(f.id)}>{f.name}</SelectItem>
