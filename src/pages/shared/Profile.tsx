@@ -8,11 +8,17 @@ import { Label } from '@/app/components/ui/label';
 import { Avatar, AvatarFallback } from '@/app/components/ui/avatar';
 import { Badge } from '@/app/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs';
-import { Alert, AlertDescription } from '@/app/components/ui/alert';
-import { Switch } from '@/app/components/ui/switch';
-import { User, Mail, Phone, MapPin, Calendar, Save, Camera, Shield, CheckCircle2, AlertCircle } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Calendar, Save, Camera, Clock } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatDistanceToNow } from 'date-fns';
 import { patientsApi, screeningsApi, referralsApi } from '@/services/api';
+
+interface ActivityItem {
+  id: string;
+  action: string;
+  patient: string;
+  time: Date;
+}
 
 export const Profile = () => {
   const { user } = useAuth();
@@ -27,11 +33,8 @@ export const Profile = () => {
     joinDate: '2024-01-15'
   });
 
-  // 2FA State
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
-  const [showDisable2FA, setShowDisable2FA] = useState(false);
-
   const [stats, setStats] = useState({ patients: 0, screenings: 0, referrals: 0, thisMonth: 0 });
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
 
   useEffect(() => {
     const currentMonth = new Date().getMonth();
@@ -42,18 +45,47 @@ export const Profile = () => {
       screeningsApi.getAll(),
       referralsApi.getAll(),
     ]).then(([patients, screenings, referrals]) => {
+      // Calculate Stats
       const thisMonthScreenings = screenings.filter(s => {
         const d = new Date(s.screeningDate);
         return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
       }).length;
+
       setStats({
         patients: patients.length,
         screenings: screenings.length,
         referrals: referrals.length,
         thisMonth: thisMonthScreenings,
       });
-    }).catch(() => {});
-  }, []);
+
+      // Build Recent Activity
+      const myScreenings = screenings
+        .filter(s => s.conductedByName === user?.name)
+        .map(s => ({
+          id: `s-${s.id}`,
+          action: 'Completed screening',
+          patient: s.patientName,
+          time: new Date(s.screeningDate),
+        }));
+
+      const myReferrals = referrals
+        .filter(r => r.referredByName === user?.name)
+        .map(r => ({
+          id: `r-${r.id}`,
+          action: 'Created referral',
+          patient: r.patientName,
+          time: new Date(r.createdAt),
+        }));
+
+      const allActivity = [...myScreenings, ...myReferrals]
+        .sort((a, b) => b.time.getTime() - a.time.getTime())
+        .slice(0, 10);
+
+      setActivities(allActivity);
+    }).catch((error) => {
+      console.error('Error fetching profile data:', error);
+    });
+  }, [user?.name]);
 
   const handleSave = () => {
     toast.success('Profile updated successfully');
@@ -73,27 +105,11 @@ export const Profile = () => {
     }
   };
 
-  const recentActivity = [
-    { action: 'Completed screening', patient: 'Sarah Johnson', time: '2 hours ago' },
-    { action: 'Updated patient record', patient: 'Michael Brown', time: '5 hours ago' },
-    { action: 'Created referral', patient: 'Emma Davis', time: '1 day ago' }
-  ];
-
-  const handleEnable2FA = () => {
-    navigate('/2fa-setup');
-  };
-
-  const handleDisable2FA = () => {
-    setShowDisable2FA(false);
-    setTwoFactorEnabled(false);
-    toast.success('Two-factor authentication has been disabled');
-  };
-
   return (
     <div className="p-6 space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">My Profile</h1>
-        <p className="text-gray-600 mt-1">Manage your personal information and settings</p>
+        <p className="text-gray-600 mt-1">Manage your personal information and activities</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -157,7 +173,6 @@ export const Profile = () => {
             <Tabs defaultValue="details">
               <TabsList>
                 <TabsTrigger value="details">Personal Details</TabsTrigger>
-                <TabsTrigger value="security">Security</TabsTrigger>
                 <TabsTrigger value="activity">Recent Activity</TabsTrigger>
               </TabsList>
 
@@ -224,209 +239,31 @@ export const Profile = () => {
                 )}
               </TabsContent>
 
-              <TabsContent value="security" className="space-y-6 mt-4">
-                {/* Two-Factor Authentication */}
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-lg font-semibold mb-1">Two-Factor Authentication (2FA)</h3>
-                    <p className="text-sm text-gray-600">
-                      Add an extra layer of security to your account using your phone
-                    </p>
-                  </div>
-
-                  <Card className={twoFactorEnabled ? 'border-green-200 bg-green-50' : 'border-gray-200'}>
-                    <CardContent className="pt-6">
-                      <div className="flex items-start justify-between">
-                        <div className="flex gap-4">
-                          <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                            twoFactorEnabled ? 'bg-green-100' : 'bg-gray-100'
-                          }`}>
-                            <Shield className={`w-6 h-6 ${twoFactorEnabled ? 'text-green-600' : 'text-gray-400'}`} />
+              <TabsContent value="activity" className="space-y-3 mt-4">
+                {activities.length > 0 ? (
+                  activities.map((activity) => (
+                    <div key={activity.id} className="p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                      <div className="flex justify-between items-start">
+                        <div className="flex gap-3">
+                          <div className="mt-1">
+                            <Clock className="h-4 w-4 text-blue-500" />
                           </div>
                           <div>
-                            <div className="flex items-center gap-2 mb-1">
-                              <p className="font-medium">
-                                {twoFactorEnabled ? '2FA Enabled' : '2FA Not Enabled'}
-                              </p>
-                              {twoFactorEnabled && (
-                                <Badge variant="default" className="bg-green-600">
-                                  <CheckCircle2 className="w-3 h-3 mr-1" />
-                                  Active
-                                </Badge>
-                              )}
-                            </div>
-                            <p className="text-sm text-gray-600">
-                              {twoFactorEnabled
-                                ? 'Your account is protected with 2FA. You will be asked for a 2FA code every time you log in.'
-                                : 'Enable 2FA to add an extra layer of security to your account.'
-                              }
-                            </p>
-                            {twoFactorEnabled && (
-                              <p className="text-xs text-gray-500 mt-2">
-                                Enabled on: March 15, 2026
-                              </p>
-                            )}
+                            <p className="font-medium">{activity.action}</p>
+                            <p className="text-sm text-gray-600">Patient: {activity.patient}</p>
                           </div>
                         </div>
-                        <div>
-                          {!twoFactorEnabled ? (
-                            <Button
-                              onClick={handleEnable2FA}
-                              className="bg-blue-600 hover:bg-blue-700"
-                            >
-                              Enable 2FA
-                            </Button>
-                          ) : (
-                            <Button
-                              onClick={() => setShowDisable2FA(true)}
-                              variant="outline"
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                            >
-                              Disable 2FA
-                            </Button>
-                          )}
-                        </div>
+                        <span className="text-sm text-gray-500">
+                          {formatDistanceToNow(activity.time, { addSuffix: true })}
+                        </span>
                       </div>
-
-                      {showDisable2FA && (
-                        <Alert variant="destructive" className="mt-4">
-                          <AlertCircle className="h-4 w-4" />
-                          <AlertDescription>
-                            <div className="space-y-3">
-                              <p className="text-sm">
-                                Are you sure you want to disable 2FA? This will reduce the security of your account.
-                              </p>
-                              <div className="flex gap-2">
-                                <Button
-                                  onClick={handleDisable2FA}
-                                  variant="destructive"
-                                  size="sm"
-                                >
-                                  Yes, Disable
-                                </Button>
-                                <Button
-                                  onClick={() => setShowDisable2FA(false)}
-                                  variant="outline"
-                                  size="sm"
-                                >
-                                  Cancel
-                                </Button>
-                              </div>
-                            </div>
-                          </AlertDescription>
-                        </Alert>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Password Change */}
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-lg font-semibold mb-1">Change Password</h3>
-                    <p className="text-sm text-gray-600">
-                      Update your password to keep your account secure
-                    </p>
-                  </div>
-
-                  <div className="grid gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="current-password">Current Password</Label>
-                      <Input
-                        id="current-password"
-                        type="password"
-                        placeholder="••••••••"
-                      />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="new-password">New Password</Label>
-                      <Input
-                        id="new-password"
-                        type="password"
-                        placeholder="••••••••"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="confirm-password">Confirm New Password</Label>
-                      <Input
-                        id="confirm-password"
-                        type="password"
-                        placeholder="••••••••"
-                      />
-                    </div>
-                    <Button className="bg-blue-600 hover:bg-blue-700 w-fit">
-                      Update Password
-                    </Button>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <p>No recent activity found.</p>
                   </div>
-                </div>
-
-                {/* Session Management */}
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-lg font-semibold mb-1">Active Sessions</h3>
-                    <p className="text-sm text-gray-600">
-                      View the devices where you are currently logged in
-                    </p>
-                  </div>
-
-                  <div className="space-y-3">
-                    <Card>
-                      <CardContent className="pt-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex gap-3">
-                            <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                              <CheckCircle2 className="w-5 h-5 text-green-600" />
-                            </div>
-                            <div>
-                              <p className="font-medium">Current Session</p>
-                              <p className="text-sm text-gray-600">Windows · Chrome · Kigali, Rwanda</p>
-                              <p className="text-xs text-gray-500 mt-1">Last active: Now</p>
-                            </div>
-                          </div>
-                          <Badge variant="default" className="bg-green-600">Active</Badge>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card>
-                      <CardContent className="pt-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex gap-3">
-                            <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                              <Phone className="w-5 h-5 text-gray-600" />
-                            </div>
-                            <div>
-                              <p className="font-medium">Mobile App</p>
-                              <p className="text-sm text-gray-600">Android · Kigali, Rwanda</p>
-                              <p className="text-xs text-gray-500 mt-1">Last active: 2 hours ago</p>
-                            </div>
-                          </div>
-                          <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700">
-                            Revoke
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-
-                  <Button variant="outline" className="w-full">
-                    Sign Out All Other Sessions
-                  </Button>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="activity" className="space-y-3 mt-4">
-                {recentActivity.map((activity, idx) => (
-                  <div key={idx} className="p-4 border rounded-lg">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-medium">{activity.action}</p>
-                        <p className="text-sm text-gray-600">Patient: {activity.patient}</p>
-                      </div>
-                      <span className="text-sm text-gray-500">{activity.time}</span>
-                    </div>
-                  </div>
-                ))}
+                )}
               </TabsContent>
             </Tabs>
           </CardContent>
