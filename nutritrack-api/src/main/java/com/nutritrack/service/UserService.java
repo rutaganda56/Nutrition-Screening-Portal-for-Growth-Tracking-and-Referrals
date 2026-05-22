@@ -71,6 +71,11 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(dto.password()));
         user.setRole(dto.role());
         user.setStatus("ACTIVE");
+        if (dto.facilityId() != null) {
+            HealthFacility facility = facilityRepository.findById(dto.facilityId())
+                    .orElseThrow(() -> new RuntimeException("Facility not found"));
+            user.setFacility(facility);
+        }
         return userMapper.toResponseDto(userRepository.save(user));
     }
 
