@@ -48,9 +48,9 @@ public class PatientService {
         patient.setGuardianPhone(dto.guardianPhone());
         patient.setNotes(dto.notes());
         patient.setRegisteredBy(registeredBy);
+        patient.setFacility(registeredBy.getFacility());
         patient.setCurrentStatus("UNKNOWN");
         patient.setTotalScreenings(0);
-        // facility is null at registration — assigned later via service request
 
         Patient saved = patientRepository.save(patient);
         saved.setPatientCode("P-" + saved.getId());
