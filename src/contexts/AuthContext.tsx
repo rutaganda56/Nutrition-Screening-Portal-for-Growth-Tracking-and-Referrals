@@ -17,7 +17,7 @@ interface AuthContextType {
   user: User | null;
   login: (email: string, password: string, role: UserRole) => Promise<boolean>;
   logout: () => void;
-  register: (userData: Omit<User, 'id'> & { password: string; phone?: string }) => Promise<boolean>;
+  register: (userData: Omit<User, 'id'> & { password: string; phone?: string; facilityId?: number }) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -44,7 +44,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return true;
   };
 
-  const register = async (userData: Omit<User, 'id'> & { password: string; phone?: string }): Promise<boolean> => {
+  const register = async (userData: Omit<User, 'id'> & { password: string; phone?: string; facilityId?: number }): Promise<boolean> => {
     await authApi.register({
       fullName: userData.name,
       email: userData.email,
@@ -52,6 +52,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       password: userData.password,
       role: userData.role,
       department: userData.department,
+      facilityId: userData.facilityId,
     });
     return true;
   };
