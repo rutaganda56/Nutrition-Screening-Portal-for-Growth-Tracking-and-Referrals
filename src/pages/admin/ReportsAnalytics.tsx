@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/app/components/ui/select';
@@ -321,7 +321,9 @@ export const ReportsAnalytics = () => {
                   Total recorded evaluations
                 </div>
               </div>
-              <Activity className="h-8 w-8 text-blue-600 bg-blue-50 p-1.5 rounded-lg" />
+              <div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600">
+                <Activity className="h-6 w-6" />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -336,7 +338,9 @@ export const ReportsAnalytics = () => {
                   Based on active screenings
                 </div>
               </div>
-              <Users className="h-8 w-8 text-orange-600 bg-orange-50 p-1.5 rounded-lg" />
+              <div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600">
+                <Users className="h-6 w-6" />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -351,7 +355,9 @@ export const ReportsAnalytics = () => {
                   Pending doctor assessment
                 </div>
               </div>
-              <FileText className="h-8 w-8 text-purple-600 bg-purple-50 p-1.5 rounded-lg" />
+              <div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600">
+                <FileText className="h-6 w-6" />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -366,7 +372,9 @@ export const ReportsAnalytics = () => {
                   {completedReferralsCount} completed of {referrals.length} total
                 </div>
               </div>
-              <BarChart3 className="h-8 w-8 text-emerald-600 bg-emerald-50 p-1.5 rounded-lg" />
+              <div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600">
+                <BarChart3 className="h-6 w-6" />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -585,3 +593,4 @@ export const ReportsAnalytics = () => {
     </div>
   );
 };
+
