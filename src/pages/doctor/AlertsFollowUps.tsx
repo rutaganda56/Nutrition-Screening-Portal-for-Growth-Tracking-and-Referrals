@@ -120,7 +120,9 @@ export const AlertsFollowUps = () => {
                 <p className="text-sm text-gray-600">Unread Alerts</p>
                 <p className="text-3xl font-bold mt-1 text-red-600">{unreadAlerts}</p>
               </div>
-              <Bell className="h-8 w-8 text-red-600" />
+              <div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600">
+                <Bell className="h-8 w-8" />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -131,7 +133,9 @@ export const AlertsFollowUps = () => {
                 <p className="text-sm text-gray-600">Critical</p>
                 <p className="text-3xl font-bold mt-1 text-red-600">{criticalAlerts}</p>
               </div>
-              <AlertTriangle className="h-8 w-8 text-red-600" />
+              <div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600">
+                <AlertTriangle className="h-8 w-8" />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -142,7 +146,9 @@ export const AlertsFollowUps = () => {
                 <p className="text-sm text-gray-600">Pending Referrals</p>
                 <p className="text-3xl font-bold mt-1 text-yellow-600">{pendingReferrals}</p>
               </div>
-              <Clock className="h-8 w-8 text-yellow-600" />
+              <div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600">
+                <Clock className="h-8 w-8" />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -153,7 +159,9 @@ export const AlertsFollowUps = () => {
                 <p className="text-sm text-gray-600">Total Referrals</p>
                 <p className="text-3xl font-bold mt-1">{referrals.length}</p>
               </div>
-              <Calendar className="h-8 w-8 text-blue-600" />
+              <div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600">
+                <Calendar className="h-8 w-8" />
+              </div>
             </div>
           </CardContent>
         </Card>
