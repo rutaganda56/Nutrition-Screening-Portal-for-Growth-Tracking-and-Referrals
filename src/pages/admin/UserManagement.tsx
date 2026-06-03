@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
@@ -296,10 +296,10 @@ export const UserManagement = () => {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Total Users</p><p className="text-3xl font-bold mt-1">{stats.total}</p></div><Users className="h-8 w-8 text-blue-600" /></div></CardContent></Card>
-        <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Active</p><p className="text-3xl font-bold mt-1 text-green-600">{stats.active}</p></div><Activity className="h-8 w-8 text-green-600" /></div></CardContent></Card>
-        <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Administrators</p><p className="text-3xl font-bold mt-1">{stats.admins}</p></div><Shield className="h-8 w-8 text-purple-600" /></div></CardContent></Card>
-        <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Inactive</p><p className="text-3xl font-bold mt-1 text-red-600">{stats.inactive}</p></div><Ban className="h-8 w-8 text-red-600" /></div></CardContent></Card>
+        <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Total Users</p><p className="text-3xl font-bold mt-1">{stats.total}</p></div><div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600"><Users className="h-6 w-6" /></div></div></CardContent></Card>
+        <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Active</p><p className="text-3xl font-bold mt-1 text-green-600">{stats.active}</p></div><div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600"><Activity className="h-6 w-6" /></div></div></CardContent></Card>
+        <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Administrators</p><p className="text-3xl font-bold mt-1">{stats.admins}</p></div><div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600"><Shield className="h-6 w-6" /></div></div></CardContent></Card>
+        <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Inactive</p><p className="text-3xl font-bold mt-1 text-red-600">{stats.inactive}</p></div><div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600"><Ban className="h-6 w-6" /></div></div></CardContent></Card>
       </div>
 
       {/* Search */}
@@ -341,7 +341,7 @@ export const UserManagement = () => {
                           {ROLE_LABELS[user.role] ?? user.role}
                         </Badge>
                       </TableCell>
-                      <TableCell>{user.facilityName ?? '—'}</TableCell>
+                      <TableCell>{user.facilityName ?? 'N/A'}</TableCell>
                       <TableCell>
                         <Badge variant={user.status === 'ACTIVE' ? 'secondary' : 'outline'}>{user.status}</Badge>
                       </TableCell>
@@ -368,3 +368,6 @@ export const UserManagement = () => {
     </div>
   );
 };
+
+
+
