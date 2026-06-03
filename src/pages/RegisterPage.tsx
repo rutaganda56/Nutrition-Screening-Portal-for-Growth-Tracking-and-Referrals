@@ -75,12 +75,10 @@ export const RegisterPage = () => {
       <div className="w-full max-w-2xl">
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <Heart className="h-12 w-12 text-green-600" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900">Create Your Account</h1>
           <p className="text-gray-600 mt-2">Join the Nutrition Screening Portal</p>
         </div>
-
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -128,7 +126,7 @@ export const RegisterPage = () => {
                     required
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    placeholder="+XXX XXX XXXX"
+                    placeholder="+250 788 123 456"
                   />
                 </div>
 
