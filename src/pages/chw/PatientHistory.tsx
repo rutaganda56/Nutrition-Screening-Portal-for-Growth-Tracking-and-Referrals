@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
@@ -99,7 +99,9 @@ export const PatientHistory = () => {
                 <p className="text-sm text-gray-600">Total Patients</p>
                 <p className="text-3xl font-bold mt-1">{stats.total}</p>
               </div>
-              <Users className="h-8 w-8 text-blue-600" />
+              <div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600">
+                <Users className="h-6 w-6" />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -108,9 +110,11 @@ export const PatientHistory = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Normal</p>
-                <p className="text-3xl font-bold mt-1 text-green-600">{stats.normal}</p>
+                <p className="text-3xl font-bold mt-1 ">{stats.normal}</p>
               </div>
-              <Activity className="h-8 w-8 text-green-600" />
+              <div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600">
+                <Activity className="h-6 w-6" />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -119,9 +123,11 @@ export const PatientHistory = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">MAM</p>
-                <p className="text-3xl font-bold mt-1 text-yellow-600">{stats.mam}</p>
+                <p className="text-3xl font-bold mt-1 ">{stats.mam}</p>
               </div>
-              <TrendingUp className="h-8 w-8 text-yellow-600" />
+              <div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600">
+                <TrendingUp className="h-6 w-6" />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -130,9 +136,11 @@ export const PatientHistory = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">SAM</p>
-                <p className="text-3xl font-bold mt-1 text-red-600">{stats.sam}</p>
+                <p className="text-3xl font-bold mt-1 ">{stats.sam}</p>
               </div>
-              <AlertCircle className="h-8 w-8 text-red-600" />
+              <div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600">
+                <AlertCircle className="h-6 w-6" />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -200,7 +208,7 @@ export const PatientHistory = () => {
                             </Badge>
                           </div>
                           <p className="text-sm text-gray-600">
-                            {patient.patientCode} • {patient.age} • {patient.gender}
+                            {patient.patientCode} - {patient.age} - {patient.gender}
                           </p>
                         </div>
                       </div>
@@ -208,11 +216,11 @@ export const PatientHistory = () => {
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                         <div>
                           <p className="text-gray-500">Facility</p>
-                          <p className="font-medium">{patient.facilityName ?? '—'}</p>
+                          <p className="font-medium">{patient.facilityName ?? 'N/A'}</p>
                         </div>
                         <div>
                           <p className="text-gray-500">Last Screening</p>
-                          <p className="font-medium">{patient.lastScreeningDate ?? '—'}</p>
+                          <p className="font-medium">{patient.lastScreeningDate ?? 'N/A'}</p>
                         </div>
                         <div>
                           <p className="text-gray-500">Total Screenings</p>
@@ -236,7 +244,7 @@ export const PatientHistory = () => {
                         <DialogHeader>
                           <DialogTitle>Screening History: {patient.firstName} {patient.lastName}</DialogTitle>
                           <DialogDescription>
-                            {patient.patientCode} • {patient.age} • {patient.gender} (Read-only)
+                            {patient.patientCode} - {patient.age} - {patient.gender} (Read-only)
                           </DialogDescription>
                         </DialogHeader>
 
@@ -385,3 +393,6 @@ export const PatientHistory = () => {
     </div>
   );
 };
+
+
+
