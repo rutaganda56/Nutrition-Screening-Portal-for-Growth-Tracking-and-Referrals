@@ -173,7 +173,7 @@ export const Reports = () => {
               <CardContent className="pt-6">
                 <div>
                   <p className="text-sm text-gray-600 mb-2">SAM Detected</p>
-                  <p className="text-3xl font-bold text-red-600">{samCases}</p>
+                  <p className="text-3xl font-bold ">{samCases}</p>
                 </div>
               </CardContent>
             </Card>
@@ -181,7 +181,7 @@ export const Reports = () => {
               <CardContent className="pt-6">
                 <div>
                   <p className="text-sm text-gray-600 mb-2">MAM Detected</p>
-                  <p className="text-3xl font-bold text-yellow-600">{mamCases}</p>
+                  <p className="text-3xl font-bold ">{mamCases}</p>
                 </div>
               </CardContent>
             </Card>
@@ -189,7 +189,7 @@ export const Reports = () => {
               <CardContent className="pt-6">
                 <div>
                   <p className="text-sm text-gray-600 mb-2">Referrals Success</p>
-                  <p className="text-3xl font-bold text-green-600">{referralSuccessRate}%</p>
+                  <p className="text-3xl font-bold ">{referralSuccessRate}%</p>
                 </div>
               </CardContent>
             </Card>
