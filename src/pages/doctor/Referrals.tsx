@@ -132,7 +132,9 @@ export const Referrals = () => {
                 <p className="text-sm text-gray-600">Total Referrals</p>
                 <p className="text-3xl font-bold mt-1">{referrals.length}</p>
               </div>
-              <Send className="h-8 w-8 text-blue-600" />
+              <div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600">
+                <Send className="h-8 w-8" />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -145,7 +147,9 @@ export const Referrals = () => {
                   {referrals.filter(r => r.status.toUpperCase() === 'PENDING').length}
                 </p>
               </div>
-              <Clock className="h-8 w-8 text-yellow-600" />
+              <div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600">
+                <Clock className="h-8 w-8" />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -158,7 +162,9 @@ export const Referrals = () => {
                   {referrals.filter(r => r.status.toUpperCase() === 'ACCEPTED').length}
                 </p>
               </div>
-              <CheckCircle className="h-8 w-8 text-green-600" />
+              <div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600">
+                <CheckCircle className="h-8 w-8" />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -171,7 +177,9 @@ export const Referrals = () => {
                   {referrals.filter(r => r.status.toUpperCase() === 'COMPLETED').length}
                 </p>
               </div>
-              <CheckCircle className="h-8 w-8 text-gray-600" />
+              <div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600">
+                <CheckCircle className="h-8 w-8" />
+              </div>
             </div>
           </CardContent>
         </Card>
