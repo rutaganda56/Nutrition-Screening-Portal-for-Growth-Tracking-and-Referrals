@@ -130,21 +130,21 @@ export const ServiceRequestQueue = () => {
                 </Badge>
               </div>
               <p className="text-sm text-gray-600">
-                Patient ID: {request.patientId} • Age: {request.patientAge}
+                Patient ID: {request.patientId}  Age: {request.patientAge}
               </p>
             </div>
           </div>
 
           {/* CHW Information */}
-          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
             <div className="flex items-start gap-2">
-              <User className="h-4 w-4 text-blue-600 mt-0.5" />
+              <User className="h-4 w-4 text-gray-600 mt-0.5" />
               <div className="flex-1">
-                <p className="text-sm font-medium text-blue-900">Submitted by CHW</p>
-                <p className="text-sm text-blue-700">{request.submittedByName}</p>
-                <p className="text-xs text-blue-600 mt-1">
+                <p className="text-sm font-medium text-gray-900">Submitted by CHW</p>
+                <p className="text-sm text-gray-700">{request.submittedByName}</p>
+                <p className="text-xs text-gray-600 mt-1">
                   <Calendar className="h-3 w-3 inline mr-1" />
-                  {new Date(request.submittedAt).toLocaleString()} • Screening: {request.screeningCode}
+                  {new Date(request.submittedAt).toLocaleString()}  Screening: {request.screeningCode}
                 </p>
               </div>
             </div>
@@ -200,11 +200,11 @@ export const ServiceRequestQueue = () => {
       </div>
 
       {/* Role Information */}
-      <Alert className="border-blue-300 bg-blue-50">
-        <AlertTriangle className="h-4 w-4 text-blue-600" />
-        <AlertDescription className="text-blue-900">
+      <Alert className="border-grey-300 bg-grey-50">
+        <AlertTriangle className="h-4 w-4 text-grey-600" />
+        <AlertDescription className="text-grey-600">
           <strong>Doctor Workflow:</strong> Community Health Workers submit service requests for patients requiring clinical review. 
-          All patient access is through these service requests - you cannot browse patients directly. Review each case to make clinical decisions.
+          All patient access is through these service requests  you cannot browse patients directly. Review each case to make clinical decisions.
         </AlertDescription>
       </Alert>
 
@@ -215,9 +215,11 @@ export const ServiceRequestQueue = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Pending Review</p>
-                <p className="text-3xl font-bold text-red-600 mt-1">{pendingRequests.length}</p>
+                <p className="text-3xl font-bold  mt-1">{pendingRequests.length}</p>
               </div>
-              <AlertTriangle className="h-8 w-8 text-red-600" />
+              <div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600">
+                <AlertTriangle className="h-8 w-8" />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -226,9 +228,11 @@ export const ServiceRequestQueue = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">In Review</p>
-                <p className="text-3xl font-bold text-blue-600 mt-1">{inReviewRequests.length}</p>
+                <p className="text-3xl font-bold  mt-1">{inReviewRequests.length}</p>
               </div>
-              <Clock className="h-8 w-8 text-blue-600" />
+              <div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600">
+                <Clock className="h-8 w-8" />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -237,11 +241,13 @@ export const ServiceRequestQueue = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Urgent Cases</p>
-                <p className="text-3xl font-bold text-yellow-600 mt-1">
+                <p className="text-3xl font-bold  mt-1">
                   {serviceRequests.filter(r => r.priority.toLowerCase() === 'urgent' || r.priority.toLowerCase() === 'asap').length}
                 </p>
               </div>
-              <Send className="h-8 w-8 text-yellow-600" />
+              <div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600">
+                <Send className="h-8 w-8" />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -250,9 +256,11 @@ export const ServiceRequestQueue = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Completed</p>
-                <p className="text-3xl font-bold text-green-600 mt-1">{completedRequests.length}</p>
+                <p className="text-3xl font-bold  mt-1">{completedRequests.length}</p>
               </div>
-              <CheckCircle className="h-8 w-8 text-green-600" />
+              <div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600">
+                <CheckCircle className="h-8 w-8" />
+              </div>
             </div>
           </CardContent>
         </Card>
