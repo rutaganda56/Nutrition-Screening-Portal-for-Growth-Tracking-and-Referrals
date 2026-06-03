@@ -14,8 +14,6 @@ import {
 import {
   LayoutDashboard,
   Users,
-  Activity,
-  TrendingUp,
   Send,
   Bell,
   FileText,
@@ -26,16 +24,7 @@ import {
   Menu,
   X,
   ClipboardCheck,
-  MapPin,
-  Calendar,
-  Wifi,
   Home,
-  Shield,
-  Database,
-  FolderKanban,
-  Lock,
-  Sliders,
-  Stethoscope
 } from 'lucide-react';
 
 interface SidebarItem {
@@ -81,6 +70,8 @@ const getSidebarItems = (role: UserRole): SidebarItem[] => {
       return [];
   }
 };
+
+const canAccessSettings = (role: UserRole) => role === 'administrator';
 
 export const DashboardLayout = () => {
   const { user, logout } = useAuth();
@@ -163,10 +154,12 @@ export const DashboardLayout = () => {
                   <User className="mr-2 h-4 w-4" />
                   Profile
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/dashboard/settings')}>
-                  <Settings className="mr-2 h-4 w-4" />
-                  Settings
-                </DropdownMenuItem>
+                {canAccessSettings(user.role) && (
+                  <DropdownMenuItem onClick={() => navigate('/dashboard/settings')}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    Settings
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => { logout(); navigate('/'); }}>
                   <LogOut className="mr-2 h-4 w-4" />
