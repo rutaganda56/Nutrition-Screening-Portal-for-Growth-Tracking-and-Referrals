@@ -24,6 +24,8 @@ interface ActivityItem {
 export const Profile = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [profileImage, setProfileImage] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     name: user?.name || '',
@@ -111,6 +113,23 @@ export const Profile = () => {
     });
   }, [user?.name]);
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error('Image size should be less than 2MB');
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfileImage(reader.result as string);
+        toast.success('Profile picture updated locally');
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSave = () => {
     toast.success('Profile updated successfully');
     setIsEditing(false);
@@ -142,14 +161,26 @@ export const Profile = () => {
           <CardContent className="pt-6">
             <div className="flex flex-col items-center">
               <div className="relative">
-                <Avatar className="h-32 w-32">
-                  <AvatarFallback className="bg-green-600 text-white text-4xl">
-                    {user?.name?.charAt(0).toUpperCase()}
-                  </AvatarFallback>
+                <Avatar className="h-32 w-32 border-2 border-gray-100 shadow-sm">
+                  {profileImage ? (
+                    <img src={profileImage} alt="Profile" className="h-full w-full object-cover rounded-full" />
+                  ) : (
+                    <AvatarFallback className="bg-green-600 text-white text-4xl">
+                      {user?.name?.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  )}
                 </Avatar>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                />
                 <Button
                   size="icon"
-                  className="absolute bottom-0 right-0 rounded-full h-10 w-10 bg-green-600 hover:bg-green-700"
+                  className="absolute bottom-0 right-0 rounded-full h-10 w-10 bg-green-600 hover:bg-green-700 shadow-md border-2 border-white"
+                  onClick={() => fileInputRef.current?.click()}
                 >
                   <Camera className="h-4 w-4" />
                 </Button>
