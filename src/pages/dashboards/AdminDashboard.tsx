@@ -50,6 +50,8 @@ interface FacilityStats {
   normal: number;
   moderate: number;
   severe: number;
+  doctors: number;
+  chws: number;
 }
 
 export const AdminDashboard = () => {
@@ -126,6 +128,10 @@ export const AdminDashboard = () => {
             (s) => s.facilityName === facility.name,
           );
 
+          const facilityUsers = usersData.filter(
+            (u) => u.facilityId === facility.id || u.facilityName === facility.name
+          );
+
           return {
             facility: facility.name,
             normal: facilityScreenings.filter(
@@ -137,6 +143,8 @@ export const AdminDashboard = () => {
             severe: facilityScreenings.filter(
               (s) => s.classification === "SEVERE_ACUTE_MALNUTRITION",
             ).length,
+            doctors: facilityUsers.filter((u) => u.role === "DOCTOR").length,
+            chws: facilityUsers.filter((u) => u.role === "COMMUNITY_HEALTH_WORKER").length,
           };
         });
 
@@ -292,6 +300,63 @@ export const AdminDashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Facility Supervision Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Home className="h-5 w-5" />
+            Health Facility Supervision Overview
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left">
+              <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3">Facility Name</th>
+                  <th className="px-6 py-3 text-center">Doctors</th>
+                  <th className="px-6 py-3 text-center">CHWs</th>
+                  <th className="px-6 py-3 text-center">Total Screenings</th>
+                  <th className="px-6 py-3 text-center">SAM Cases</th>
+                  <th className="px-6 py-3 text-center">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {facilityStats.map((stat, index) => (
+                  <tr key={index} className="bg-white border-b hover:bg-gray-50">
+                    <td className="px-6 py-4 font-medium text-gray-900">{stat.facility}</td>
+                    <td className="px-6 py-4 text-center">
+                      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                        {stat.doctors}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                        {stat.chws}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4 text-center">{stat.normal + stat.moderate + stat.severe}</td>
+                    <td className="px-6 py-4 text-center font-semibold text-red-600">{stat.severe}</td>
+                    <td className="px-6 py-4 text-center">
+                      <Badge className={stat.severe > 0 ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}>
+                        {stat.severe > 5 ? "Critical" : stat.severe > 0 ? "Warning" : "Stable"}
+                      </Badge>
+                    </td>
+                  </tr>
+                ))}
+                {facilityStats.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                      No facility data recorded yet.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Tables */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
