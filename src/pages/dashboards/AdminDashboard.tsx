@@ -325,7 +325,7 @@ export const AdminDashboard = () => {
                   <div className="flex-1">
                     <div className="font-medium">{u.fullName}</div>
                     <div className="text-sm text-gray-500">
-                      {u.role.replace("_", " ")} â€¢ {u.department ?? "N/A"}
+                      {u.role.replace("_", " ")} | {u.department ?? "N/A"}
                     </div>
                   </div>
                   <div className="text-right">
