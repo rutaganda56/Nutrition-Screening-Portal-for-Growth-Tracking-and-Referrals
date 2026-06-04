@@ -102,14 +102,19 @@ export const AdminDashboard = () => {
         ).length;
         setCriticalAlerts(critical);
 
-        // Calculate facility statistics
+        // Calculate facility statistics (Personnel-Driven for accuracy)
         const stats: FacilityStats[] = facilitiesData.map((facility) => {
-          const facilityScreenings = screeningsData.filter(
-            (s) => s.facilityName === facility.name,
-          );
-
+          // Identify all users (Doctors and CHWs) belonging to this facility
           const facilityUsers = usersData.filter(
             (u) => u.facilityId === facility.id || u.facilityName === facility.name
+          );
+
+          const staffNames = new Set(facilityUsers.map(u => u.fullName));
+
+          // Aggregate screenings conducted by the staff of THIS facility
+          // This ensures statistics are accurately tied to the supervising personnel
+          const facilityScreenings = screeningsData.filter(
+            (s) => staffNames.has(s.conductedByName) || s.facilityName === facility.name
           );
 
           return {
