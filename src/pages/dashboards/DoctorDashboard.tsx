@@ -16,8 +16,9 @@ import {
   Send,
   Clock,
   FileText,
+  ClipboardCheck,
 } from "lucide-react";
-import { serviceRequestsApi, ServiceRequestResponse } from "@/services/api";
+import { serviceRequestsApi, ServiceRequestResponse, screeningsApi, ScreeningResponse } from "@/services/api";
 import { cn } from "@/app/components/ui/utils";
 
 export const DoctorDashboard = () => {
@@ -27,13 +28,32 @@ export const DoctorDashboard = () => {
   const [serviceRequests, setServiceRequests] = useState<
     ServiceRequestResponse[]
   >([]);
+  const [totalScreenings, setTotalScreenings] = useState(0);
 
   useEffect(() => {
-    serviceRequestsApi
-      .getByStatus("PENDING")
-      .then(setServiceRequests)
-      .catch(console.error);
-  }, []);
+    const fetchData = async () => {
+      try {
+        const [requests, allScreenings] = await Promise.all([
+          serviceRequestsApi.getByStatus("PENDING"),
+          screeningsApi.getAll()
+        ]);
+        
+        setServiceRequests(requests);
+        
+        // Filter screenings conducted by this doctor
+        if (user) {
+          const doctorScreenings = allScreenings.filter(
+            s => s.conductedByName === user.name
+          ).length;
+          setTotalScreenings(doctorScreenings);
+        }
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+      }
+    };
+
+    fetchData();
+  }, [user]);
 
   const stats = [
     {
@@ -43,6 +63,14 @@ export const DoctorDashboard = () => {
       icon: Send,
       color: "bg-white text-green-600",
       urgent: true,
+    },
+    {
+      label: "My Total Screenings",
+      value: String(totalScreenings),
+      change: "Conducted by me",
+      icon: ClipboardCheck,
+      color: "bg-white text-green-600",
+      urgent: false,
     },
     {
       label: "Total Patients",
@@ -55,7 +83,7 @@ export const DoctorDashboard = () => {
   ];
 
   const getPriorityColor = (priority: string) => {
-    switch (priority) {
+    switch (priority.toLowerCase()) {
       case "urgent":
       case "asap":
         return "destructive";
@@ -79,7 +107,7 @@ export const DoctorDashboard = () => {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Left Column: Stats Cards */}
         <div className="flex flex-col gap-3">
           {stats.map((stat, index) => {
@@ -121,10 +149,10 @@ export const DoctorDashboard = () => {
         </div>
 
         {/* Right Column: Service Requests */}
-        <div className="lg:col-span-2">
-          {/* Service Requests - Primary clinical workflow */}
+        <div className="lg:col-span-3">
+          {/* Service Requests Table */}
           <Card className="h-full border-2 border-red-300">
-            <CardHeader>
+            <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-2">
@@ -141,79 +169,61 @@ export const DoctorDashboard = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {serviceRequests.map((request) => (
-                  <div
-                    key={request.id}
-                    className={`p-4 border-2 rounded-lg ${
-                      request.priority === "URGENT" ||
-                      request.priority === "urgent"
-                        ? "border-red-300 bg-red-50/50"
-                        : "border-gray-200 bg-white"
-                    }`}
-                  >
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-semibold text-gray-900">
-                            {request.patientName}
-                          </h4>
-                          <Badge
-                            variant={getPriorityColor(
-                              request.priority.toLowerCase(),
-                            )}
-                          >
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left">
+                  <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3">Patient</th>
+                      <th className="px-4 py-3">Age</th>
+                      <th className="px-4 py-3">Priority</th>
+                      <th className="px-4 py-3">Reason</th>
+                      <th className="px-4 py-3">Submitted By</th>
+                      <th className="px-4 py-3">Time</th>
+                      <th className="px-4 py-3 text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {serviceRequests.map((request) => (
+                      <tr 
+                        key={request.id} 
+                        className={cn(
+                          "border-b hover:bg-gray-50 transition-colors cursor-pointer",
+                          (request.priority === "URGENT" || request.priority === "urgent") ? "bg-red-50/20" : ""
+                        )}
+                        onClick={() => navigate(`/dashboard/patient-clinical-summary?patient=${request.patientId}&request=${request.id}`)}
+                      >
+                        <td className="px-4 py-4 font-medium text-gray-900">{request.patientName}</td>
+                        <td className="px-4 py-4">{request.patientAge}</td>
+                        <td className="px-4 py-4">
+                          <Badge variant={getPriorityColor(request.priority)}>
                             {request.priority.toUpperCase()}
                           </Badge>
-                        </div>
-                        <p className="text-sm text-gray-500 mt-1">
-                          {request.requestCode} - {request.patientAge}
-                        </p>
-                      </div>
-                      <Clock className="h-4 w-4 text-gray-400" />
-                    </div>
-
-                    <div className="mb-3">
-                      <p className="text-sm font-medium text-gray-700 mb-1">
-                        Reason: {request.reasonCode}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        {request.description}
-                      </p>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-3 border-t">
-                      <div className="text-xs text-gray-500">
-                        <span className="font-medium">Submitted by:</span>{" "}
-                        {request.submittedByName}
-                        <span className="mx-2"> - </span>
-                        {new Date(request.submittedAt).toLocaleString()}
-                      </div>
-                      <Button
-                        size="sm"
-                        className="bg-green-600 hover:bg-green-700"
-                        onClick={() =>
-                          navigate(
-                            `/dashboard/patient-clinical-summary?patient=${request.patientId}&request=${request.id}`,
-                          )
-                        }
-                      >
-                        <FileText className="h-4 w-4 mr-2" />
-                        Review Case
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-                {serviceRequests.length === 0 && (
-                  <div className="rounded-lg border border-dashed bg-gray-50 p-6 text-center">
-                    <p className="text-sm font-medium text-gray-700">
-                      No pending service requests
-                    </p>
-                    <p className="mt-1 text-sm text-gray-500">
-                      New CHW submissions will appear here for clinical review.
-                    </p>
-                  </div>
-                )}
+                        </td>
+                        <td className="px-4 py-4 truncate max-w-[150px]">{request.reasonCode}</td>
+                        <td className="px-4 py-4">{request.submittedByName}</td>
+                        <td className="px-4 py-4 text-xs text-gray-500">
+                          {new Date(request.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </td>
+                        <td className="px-4 py-4 text-right">
+                          <Button size="sm" className="bg-green-600 hover:bg-green-700 h-8 px-3">
+                            Review
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                    {serviceRequests.length === 0 && (
+                      <tr>
+                        <td colSpan={7} className="px-4 py-12 text-center text-gray-500">
+                          <div className="flex flex-col items-center gap-2">
+                            <ClipboardCheck className="h-8 w-8 opacity-20" />
+                            <p className="font-medium text-gray-700">No pending service requests</p>
+                            <p className="text-xs">New CHW submissions will appear here for clinical review.</p>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
             </CardContent>
           </Card>
