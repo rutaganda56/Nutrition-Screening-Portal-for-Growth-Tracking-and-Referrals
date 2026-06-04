@@ -37,8 +37,6 @@ interface SidebarItem {
 const doctorSidebarItems: SidebarItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
   { icon: Send, label: 'Service Request Queue', path: '/dashboard/service-request-queue' },
-  { icon: Bell, label: 'Alerts & Follow-Ups', path: '/dashboard/alerts' },
-  { icon: Send, label: 'Referral Management', path: '/dashboard/referrals' },
   { icon: FileText, label: 'Reports', path: '/dashboard/reports' },
   { icon: User, label: 'Profile', path: '/dashboard/profile' }
 ];
