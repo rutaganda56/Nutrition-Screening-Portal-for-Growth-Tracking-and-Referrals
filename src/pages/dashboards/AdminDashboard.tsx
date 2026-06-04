@@ -181,24 +181,24 @@ export const AdminDashboard = () => {
       {/* Main Content Area: Stats and Chart Side-by-Side */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Stats Cards */}
-        <div className="space-y-4">
+        <div className="flex flex-col gap-3">
           {summaryStats.map((stat, index) => {
             const Icon = stat.icon;
             return (
-              <Card key={index} className="h-full">
-                <CardContent className="p-6">
+              <Card key={index} className="shadow-sm">
+                <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-600">
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
                         {stat.label}
                       </p>
-                      <p className="text-3xl font-bold mt-2">{stat.value}</p>
-                      <p className="text-xs text-green-600 mt-1">
+                      <p className="text-2xl font-bold mt-1 text-gray-900">{stat.value}</p>
+                      <p className="text-[10px] text-green-600 font-medium mt-1">
                         {stat.change}
                       </p>
                     </div>
-                    <div className="h-12 w-12 rounded-md flex items-center justify-center bg-green-50 text-green-600">
-                      <Icon className="h-6 w-6" />
+                    <div className="h-10 w-10 rounded-lg flex items-center justify-center bg-green-50 text-green-600 shrink-0">
+                      <Icon className="h-5 w-5" />
                     </div>
                   </div>
                 </CardContent>
