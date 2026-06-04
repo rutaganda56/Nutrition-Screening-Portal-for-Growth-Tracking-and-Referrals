@@ -18,8 +18,25 @@ import {
   FileText,
   ClipboardCheck,
 } from "lucide-react";
-import { serviceRequestsApi, ServiceRequestResponse, screeningsApi, ScreeningResponse } from "@/services/api";
+import {
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
+import { serviceRequestsApi, ServiceRequestResponse, screeningsApi, ScreeningResponse, referralsApi, ReferralResponse } from "@/services/api";
 import { cn } from "@/app/components/ui/utils";
+
+const COLORS = ["#f59e0b", "#3b82f6", "#10b981", "#ef4444"];
 
 export const DoctorDashboard = () => {
   const { user } = useAuth();
@@ -29,13 +46,15 @@ export const DoctorDashboard = () => {
     ServiceRequestResponse[]
   >([]);
   const [totalScreenings, setTotalScreenings] = useState(0);
+  const [referralData, setReferralData] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [requests, allScreenings] = await Promise.all([
+        const [requests, allScreenings, allReferrals] = await Promise.all([
           serviceRequestsApi.getByStatus("PENDING"),
-          screeningsApi.getAll()
+          screeningsApi.getAll(),
+          referralsApi.getAll()
         ]);
         
         setServiceRequests(requests);
@@ -46,6 +65,24 @@ export const DoctorDashboard = () => {
             s => s.conductedByName === user.name
           ).length;
           setTotalScreenings(doctorScreenings);
+
+          // Process referrals
+          const doctorReferrals = allReferrals.filter(r => r.referredByName === user.name);
+          const statusCounts = {
+            PENDING: doctorReferrals.filter(r => r.status.toUpperCase() === 'PENDING').length,
+            ACCEPTED: doctorReferrals.filter(r => r.status.toUpperCase() === 'ACCEPTED').length,
+            RESOLVED: doctorReferrals.filter(r => r.status.toUpperCase() === 'RESOLVED' || r.status.toUpperCase() === 'COMPLETED').length,
+            REJECTED: doctorReferrals.filter(r => r.status.toUpperCase() === 'REJECTED').length,
+          };
+
+          const pieData = [
+            { name: "Pending", value: statusCounts.PENDING },
+            { name: "Accepted", value: statusCounts.ACCEPTED },
+            { name: "Resolved", value: statusCounts.RESOLVED },
+            { name: "Rejected", value: statusCounts.REJECTED },
+          ].filter(item => item.value > 0);
+          
+          setReferralData(pieData);
         }
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
@@ -107,6 +144,7 @@ export const DoctorDashboard = () => {
         </p>
       </div>
 
+      {/* Top Section: Stats and Referral Chart */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Left Column: Stats Cards */}
         <div className="flex flex-col gap-3">
@@ -148,86 +186,134 @@ export const DoctorDashboard = () => {
           })}
         </div>
 
-        {/* Right Column: Service Requests */}
+        {/* Right Column: Referral Status Pie Chart */}
         <div className="lg:col-span-3">
-          {/* Service Requests Table */}
-          <Card className="h-full border-2 border-red-300">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Send className="h-5 w-5 text-red-600" />
-                    Service Requests Requiring Review
-                  </CardTitle>
-                  <CardDescription className="mt-1">
-                    Clinical decisions needed for CHW submitted cases
-                  </CardDescription>
-                </div>
-                <Badge variant="destructive" className="text-sm">
-                  {serviceRequests.length} Pending
-                </Badge>
-              </div>
+          <Card className="h-full">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg font-semibold">Specialized Referrals Status</CardTitle>
+              <CardDescription>Breakdown of patient referrals assigned to you</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left">
-                  <thead className="text-xs text-gray-700 uppercase bg-gray-50">
-                    <tr>
-                      <th className="px-4 py-3">Patient</th>
-                      <th className="px-4 py-3">Age</th>
-                      <th className="px-4 py-3">Priority</th>
-                      <th className="px-4 py-3">Reason</th>
-                      <th className="px-4 py-3">Submitted By</th>
-                      <th className="px-4 py-3">Time</th>
-                      <th className="px-4 py-3 text-right">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {serviceRequests.map((request) => (
-                      <tr 
-                        key={request.id} 
-                        className={cn(
-                          "border-b hover:bg-gray-50 transition-colors cursor-pointer",
-                          (request.priority === "URGENT" || request.priority === "urgent") ? "bg-red-50/20" : ""
-                        )}
-                        onClick={() => navigate(`/dashboard/patient-clinical-summary?patient=${request.patientId}&request=${request.id}`)}
+              {referralData.length > 0 ? (
+                <div className="flex flex-col md:flex-row items-center justify-around h-[220px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={referralData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="value"
                       >
-                        <td className="px-4 py-4 font-medium text-gray-900">{request.patientName}</td>
-                        <td className="px-4 py-4">{request.patientAge}</td>
-                        <td className="px-4 py-4">
-                          <Badge variant={getPriorityColor(request.priority)}>
-                            {request.priority.toUpperCase()}
-                          </Badge>
-                        </td>
-                        <td className="px-4 py-4 truncate max-w-[150px]">{request.reasonCode}</td>
-                        <td className="px-4 py-4">{request.submittedByName}</td>
-                        <td className="px-4 py-4 text-xs text-gray-500">
-                          {new Date(request.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </td>
-                        <td className="px-4 py-4 text-right">
-                          <Button size="sm" className="bg-green-600 hover:bg-green-700 h-8 px-3">
-                            Review
-                          </Button>
-                        </td>
-                      </tr>
+                        {referralData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend verticalAlign="middle" align="right" layout="vertical" />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="grid grid-cols-2 gap-4 mt-4 md:mt-0 px-4">
+                    {referralData.map((item, index) => (
+                      <div key={item.name} className="flex flex-col">
+                        <span className="text-xs text-gray-500">{item.name}</span>
+                        <span className="text-lg font-bold" style={{ color: COLORS[index % COLORS.length] }}>
+                          {item.value}
+                        </span>
+                      </div>
                     ))}
-                    {serviceRequests.length === 0 && (
-                      <tr>
-                        <td colSpan={7} className="px-4 py-12 text-center text-gray-500">
-                          <div className="flex flex-col items-center gap-2">
-                            <ClipboardCheck className="h-8 w-8 opacity-20" />
-                            <p className="font-medium text-gray-700">No pending service requests</p>
-                            <p className="text-xs">New CHW submissions will appear here for clinical review.</p>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="h-[220px] flex items-center justify-center text-gray-500 italic text-sm">
+                  No referrals issued yet
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
+      </div>
+
+      {/* Bottom Section: Service Requests Table */}
+      <div className="grid grid-cols-1">
+        <Card className="border-2 border-red-300">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Send className="h-5 w-5 text-red-600" />
+                  Service Requests Requiring Review
+                </CardTitle>
+                <CardDescription className="mt-1">
+                  Clinical decisions needed for CHW submitted cases
+                </CardDescription>
+              </div>
+              <Badge variant="destructive" className="text-sm">
+                {serviceRequests.length} Pending
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3">Patient</th>
+                    <th className="px-4 py-3">Age</th>
+                    <th className="px-4 py-3">Priority</th>
+                    <th className="px-4 py-3">Reason</th>
+                    <th className="px-4 py-3">Submitted By</th>
+                    <th className="px-4 py-3">Time</th>
+                    <th className="px-4 py-3 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {serviceRequests.map((request) => (
+                    <tr 
+                      key={request.id} 
+                      className={cn(
+                        "border-b hover:bg-gray-50 transition-colors cursor-pointer",
+                        (request.priority === "URGENT" || request.priority === "urgent") ? "bg-red-50/20" : ""
+                      )}
+                      onClick={() => navigate(`/dashboard/patient-clinical-summary?patient=${request.patientId}&request=${request.id}`)}
+                    >
+                      <td className="px-4 py-4 font-medium text-gray-900">{request.patientName}</td>
+                      <td className="px-4 py-4">{request.patientAge}</td>
+                      <td className="px-4 py-4">
+                        <Badge variant={getPriorityColor(request.priority)}>
+                          {request.priority.toUpperCase()}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-4 truncate max-w-[150px]">{request.reasonCode}</td>
+                      <td className="px-4 py-4">{request.submittedByName}</td>
+                      <td className="px-4 py-4 text-xs text-gray-500">
+                        {new Date(request.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </td>
+                      <td className="px-4 py-4 text-right">
+                        <Button size="sm" className="bg-green-600 hover:bg-green-700 h-8 px-3">
+                          Review
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                  {serviceRequests.length === 0 && (
+                    <tr>
+                      <td colSpan={7} className="px-4 py-12 text-center text-gray-500">
+                        <div className="flex flex-col items-center gap-2">
+                          <ClipboardCheck className="h-8 w-8 opacity-20" />
+                          <p className="font-medium text-gray-700">No pending service requests</p>
+                          <p className="text-xs">New CHW submissions will appear here for clinical review.</p>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Quick Actions */}
