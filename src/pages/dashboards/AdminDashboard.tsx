@@ -62,7 +62,6 @@ export const AdminDashboard = () => {
   const [totalPatients, setTotalPatients] = useState(0);
   const [totalScreenings, setTotalScreenings] = useState(0);
   const [facilityStats, setFacilityStats] = useState<FacilityStats[]>([]);
-  const [usageData, setUsageData] = useState<any[]>([]);
   const [alerts, setAlerts] = useState<AlertResponse[]>([]);
   const [pendingRequests, setPendingRequests] = useState(0);
   const [criticalAlerts, setCriticalAlerts] = useState(0);
@@ -103,25 +102,6 @@ export const AdminDashboard = () => {
         ).length;
         setCriticalAlerts(critical);
 
-        // Calculate usage data by role
-        const doctorCount = usersData.filter((u) => u.role === "DOCTOR").length;
-        const chwCount = usersData.filter(
-          (u) => u.role === "COMMUNITY_HEALTH_WORKER",
-        ).length;
-        const adminCount = usersData.filter(
-          (u) => u.role === "ADMINISTRATOR",
-        ).length;
-
-        const roleUsageData = [
-          {
-            month: "Current",
-            doctors: doctorCount,
-            chw: chwCount,
-            admin: adminCount,
-          },
-        ];
-        setUsageData(roleUsageData);
-
         // Calculate facility statistics
         const stats: FacilityStats[] = facilitiesData.map((facility) => {
           const facilityScreenings = screeningsData.filter(
@@ -159,27 +139,24 @@ export const AdminDashboard = () => {
 
   const activeUsers = users.filter((u) => u.status === "ACTIVE");
 
-  const stats = [
+  const summaryStats = [
     {
       label: "Total Users",
       value: String(users.length),
       change: `${activeUsers.length} active`,
       icon: Users,
-      color: "bg-white text-green-600",
     },
     {
       label: "Pending Requests",
       value: String(pendingRequests),
       change: `${criticalAlerts} critical alerts`,
       icon: Activity,
-      color: "bg-white text-green-600",
     },
     {
       label: "Total Records",
       value: String(totalPatients + totalScreenings),
       change: `${totalPatients} patients, ${totalScreenings} screenings`,
       icon: Database,
-      color: "bg-white text-green-600",
     },
   ];
 
@@ -201,104 +178,70 @@ export const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <Card key={index}>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
+      {/* Main Content Area: Stats and Chart Side-by-Side */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column: Stats Cards */}
+        <div className="space-y-4">
+          {summaryStats.map((stat, index) => {
+            const Icon = stat.icon;
+            return (
+              <Card key={index} className="h-full">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">
+                        {stat.label}
+                      </p>
+                      <p className="text-3xl font-bold mt-2">{stat.value}</p>
+                      <p className="text-xs text-green-600 mt-1">
+                        {stat.change}
+                      </p>
+                    </div>
+                    <div className="h-12 w-12 rounded-md flex items-center justify-center bg-green-50 text-green-600">
+                      <Icon className="h-6 w-6" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+
+        {/* Right Column: Malnutrition Chart */}
+        <div className="lg:col-span-2">
+          <Card className="h-full">
+            <CardHeader>
+              <CardTitle>Malnutrition Statistics by Facility</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {facilityStats.length > 0 ? (
+                <ResponsiveContainer width="100%" height={320}>
+                  <BarChart data={facilityStats}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="facility" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="normal" fill="#10b981" name="Normal" />
+                    <Bar dataKey="moderate" fill="#f59e0b" name="Moderate" />
+                    <Bar dataKey="severe" fill="#ef4444" name="Severe" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-[320px] flex items-center justify-center rounded-lg border border-dashed bg-gray-50 p-6 text-center text-gray-500">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">
-                      {stat.label}
+                    <p className="text-sm font-medium text-gray-700">
+                      No facility statistics available
                     </p>
-                    <p className="text-3xl font-bold mt-2">{stat.value}</p>
-                    <p className="text-xs text-green-600 mt-1">
-                      {stat.change} this month
+                    <p className="mt-1 text-sm text-gray-500">
+                      Add facilities and screenings to populate this chart.
                     </p>
                   </div>
-                  <div
-                    className={`h-12 w-12 rounded-md flex items-center justify-center ${stat.color}`}
-                  >
-                    <Icon className="h-6 w-6" />
-                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>System Usage by Role</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={usageData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line
-                  type="monotone"
-                  dataKey="doctors"
-                  stroke="#3b82f6"
-                  name="Doctors"
-                />
-                <Line
-                  type="monotone"
-                  dataKey="chw"
-                  stroke="#10b981"
-                  name="CHW"
-                />
-                <Line
-                  type="monotone"
-                  dataKey="admin"
-                  stroke="#8b5cf6"
-                  name="Admin"
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Malnutrition Statistics by Facility</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {facilityStats.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={facilityStats}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="facility" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="normal" fill="#10b981" name="Normal" />
-                  <Bar dataKey="moderate" fill="#f59e0b" name="Moderate" />
-                  <Bar dataKey="severe" fill="#ef4444" name="Severe" />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-[300px] flex items-center justify-center rounded-lg border border-dashed bg-gray-50 p-6 text-center text-gray-500">
-                <div>
-                  <p className="text-sm font-medium text-gray-700">
-                    No facility statistics available
-                  </p>
-                  <p className="mt-1 text-sm text-gray-500">
-                    Add facilities and screenings to populate this chart.
-                  </p>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* Facility Supervision Table */}
