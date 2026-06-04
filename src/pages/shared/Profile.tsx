@@ -11,13 +11,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/ta
 import { User, Mail, Phone, MapPin, Calendar, Save, Camera, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
-import { patientsApi, screeningsApi, referralsApi } from '@/services/api';
+import { patientsApi, screeningsApi, referralsApi, serviceRequestsApi } from '@/services/api';
 
 interface ActivityItem {
   id: string;
   action: string;
   patient: string;
   time: Date;
+  type?: string;
 }
 
 export const Profile = () => {
@@ -44,7 +45,8 @@ export const Profile = () => {
       patientsApi.getAll(),
       screeningsApi.getAll(),
       referralsApi.getAll(),
-    ]).then(([patients, screenings, referrals]) => {
+      serviceRequestsApi.getAll(),
+    ]).then(([patients, screenings, referrals, serviceRequests]) => {
       // Calculate Stats
       const thisMonthScreenings = screenings.filter(s => {
         const d = new Date(s.screeningDate);
@@ -66,6 +68,7 @@ export const Profile = () => {
           action: 'Completed screening',
           patient: s.patientName,
           time: new Date(s.screeningDate),
+          type: 'SCREENING'
         }));
 
       const myReferrals = referrals
@@ -75,11 +78,32 @@ export const Profile = () => {
           action: 'Created referral',
           patient: r.patientName,
           time: new Date(r.createdAt),
+          type: 'REFERRAL'
         }));
 
-      const allActivity = [...myScreenings, ...myReferrals]
+      const myRegistrations = patients
+        .filter(p => p.registeredByName === user?.name)
+        .map(p => ({
+          id: `p-${p.id}`,
+          action: 'Registered new patient',
+          patient: `${p.firstName} ${p.lastName}`,
+          time: new Date(p.createdAt || new Date()), // Use fallback if createdAt missing
+          type: 'REGISTRATION'
+        }));
+
+      const myReviews = serviceRequests
+        .filter(r => r.assignedToName === user?.name && r.status !== 'PENDING')
+        .map(r => ({
+          id: `rev-${r.id}`,
+          action: 'Reviewed clinical case',
+          patient: r.patientName,
+          time: new Date(r.submittedAt), // Ideally reviewedAt
+          type: 'REVIEW'
+        }));
+
+      const allActivity = [...myScreenings, ...myReferrals, ...myRegistrations, ...myReviews]
         .sort((a, b) => b.time.getTime() - a.time.getTime())
-        .slice(0, 10);
+        .slice(0, 15);
 
       setActivities(allActivity);
     }).catch((error) => {
