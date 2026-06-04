@@ -30,7 +30,7 @@ export const Settings = () => {
           <h1 className="text-3xl font-bold text-gray-900">Application Settings</h1>
           <p className="text-gray-600 mt-1">Configure general application preferences</p>
         </div>
-        <Button onClick={handleSaveSettings} className="bg-blue-600 hover:bg-blue-700">
+        <Button onClick={handleSaveSettings} className="bg-green-600 hover:bg-green-700">
           <Save className="h-4 w-4 mr-2" />
           Save All Changes
         </Button>

@@ -91,7 +91,7 @@ const FacilityFormComponent: React.FC<FacilityFormProps> = ({ form, errors, subm
       </CardContent>
       <div className="flex gap-2 justify-end p-4">
         <Button variant="outline" type="button" onClick={onCancel}>Cancel</Button>
-        <Button type="submit" disabled={submitting} className="bg-blue-600 hover:bg-blue-700">{submitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}{label}</Button>
+        <Button type="submit" disabled={submitting} className="bg-green-600 hover:bg-green-700">{submitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}{label}</Button>
       </div>
     </Card>
   </form>
@@ -231,7 +231,7 @@ export const FacilityDirectory = () => {
           <h1 className="text-3xl font-bold text-gray-900">Health Center Management</h1>
           <p className="text-gray-600 mt-1">Manage healthcare facilities</p>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => { setForm(emptyForm); setErrors({}); setIsCreateOpen(true); }}>
+        <Button className="bg-green-600 hover:bg-green-700" onClick={() => { setForm(emptyForm); setErrors({}); setIsCreateOpen(true); }}>
           <Plus className="h-4 w-4 mr-2" />Add Facility
         </Button>
       </div>
@@ -283,7 +283,7 @@ export const FacilityDirectory = () => {
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Total Facilities</p><p className="text-3xl font-bold mt-1">{stats.total}</p></div><div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600"><Building className="h-6 w-6" /></div></div></CardContent></Card>
-        <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Active</p><p className="text-3xl font-bold mt-1 text-green-600">{stats.active}</p></div><div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600"><MapPin className="h-6 w-6" /></div></div></CardContent></Card>
+        <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Active</p><p className="text-3xl font-bold mt-1">{stats.active}</p></div><div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600"><MapPin className="h-6 w-6" /></div></div></CardContent></Card>
         <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Total Staff</p><p className="text-3xl font-bold mt-1">{stats.staff}</p></div><div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600"><Users className="h-6 w-6" /></div></div></CardContent></Card>
         <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Total Capacity</p><p className="text-3xl font-bold mt-1">{stats.capacity}</p></div><div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600"><Building className="h-6 w-6" /></div></div></CardContent></Card>
       </div>

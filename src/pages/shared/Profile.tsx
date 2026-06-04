@@ -125,7 +125,7 @@ export const Profile = () => {
                 </Avatar>
                 <Button
                   size="icon"
-                  className="absolute bottom-0 right-0 rounded-full h-10 w-10 bg-blue-600 hover:bg-blue-700"
+                  className="absolute bottom-0 right-0 rounded-full h-10 w-10 bg-green-600 hover:bg-green-700"
                 >
                   <Camera className="h-4 w-4" />
                 </Button>

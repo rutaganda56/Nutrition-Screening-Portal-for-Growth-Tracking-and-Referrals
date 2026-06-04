@@ -111,7 +111,7 @@ export const TwoFactorVerify = () => {
 
         <Card className="border-2 shadow-lg">
           <CardHeader className="text-center pb-4">
-            <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mb-4">
+            <div className="mx-auto w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center mb-4">
               <Shield className="w-8 h-8 text-white" />
             </div>
             <CardTitle className="text-2xl">Emeza Two-Factor Authentication</CardTitle>
@@ -155,7 +155,7 @@ export const TwoFactorVerify = () => {
                   <Button
                     onClick={handleVerifyCode}
                     disabled={code.length !== 6 || isVerifying}
-                    className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+                    className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800"
                     size="lg"
                   >
                     {isVerifying ? (

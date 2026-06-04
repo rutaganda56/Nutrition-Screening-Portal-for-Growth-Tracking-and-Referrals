@@ -425,7 +425,7 @@ export const NewScreening = () => {
                   type="button"
                   onClick={handlePatientLookup}
                   disabled={isLookingUp}
-                  className="bg-blue-600 hover:bg-blue-700 shrink-0"
+                  className="bg-green-600 hover:bg-green-700 shrink-0"
                 >
                   <Search className="h-4 w-4 mr-2" />
                   {isLookingUp ? 'Searching...' : 'Look Up'}
@@ -873,7 +873,7 @@ export const NewScreening = () => {
             <Button variant="outline" onClick={() => setStep(2)}>
               Back to Measurements
             </Button>
-            <Button onClick={handleSaveScreening} className="bg-blue-600 hover:bg-blue-700">
+            <Button onClick={handleSaveScreening} className="bg-green-600 hover:bg-green-700">
               <Save className="h-4 w-4 mr-2" />
               Save Screening & Submit
             </Button>

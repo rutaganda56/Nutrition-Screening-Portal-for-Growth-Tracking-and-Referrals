@@ -248,7 +248,7 @@ export const ReportsAnalytics = () => {
   if (loading) {
     return (
       <div className="flex h-[70vh] flex-col items-center justify-center gap-4">
-        <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
+        <Loader2 className="h-10 w-10 animate-spin text-green-600" />
         <p className="text-gray-600 font-medium animate-pulse">Loading analytics dashboard...</p>
       </div>
     );
@@ -268,7 +268,7 @@ export const ReportsAnalytics = () => {
             <FileText className="h-4 w-4 mr-2" />
             Refresh Data
           </Button>
-          <Button onClick={handleExportReport} className="bg-blue-600 hover:bg-blue-700 shadow-sm">
+          <Button onClick={handleExportReport} className="bg-green-600 hover:bg-green-700 shadow-sm">
             <Download className="h-4 w-4 mr-2" />
             Export Report
           </Button>
@@ -333,7 +333,7 @@ export const ReportsAnalytics = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-500">At-Risk Patients (MAM/SAM)</p>
-                <p className="text-3xl font-extrabold mt-1 text-orange-600">{atRiskCount.toLocaleString()}</p>
+                <p className="text-3xl font-extrabold mt-1 ">{atRiskCount.toLocaleString()}</p>
                 <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
                   Based on active screenings
                 </div>
@@ -350,7 +350,7 @@ export const ReportsAnalytics = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-500">Active Referrals</p>
-                <p className="text-3xl font-extrabold mt-1 text-purple-600">{activeReferralsCount.toLocaleString()}</p>
+                <p className="text-3xl font-extrabold mt-1 ">{activeReferralsCount.toLocaleString()}</p>
                 <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
                   Pending doctor assessment
                 </div>
@@ -367,7 +367,7 @@ export const ReportsAnalytics = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-500">Referral Success Rate</p>
-                <p className="text-3xl font-extrabold mt-1 text-emerald-600">{successRatePercent}%</p>
+                <p className="text-3xl font-extrabold mt-1 ">{successRatePercent}%</p>
                 <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
                   {completedReferralsCount} completed of {referrals.length} total
                 </div>

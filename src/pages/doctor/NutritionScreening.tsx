@@ -390,7 +390,7 @@ export const NutritionScreening = () => {
 
                     <Button 
                       onClick={saveScreening}
-                      className="w-full bg-blue-600 hover:bg-blue-700"
+                      className="w-full bg-green-600 hover:bg-green-700"
                     >
                       Save Screening Record
                     </Button>

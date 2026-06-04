@@ -146,7 +146,7 @@ export const Settings = () => {
                   <Input id="confirm-password" type="password" />
                 </div>
                 <div className="flex justify-end pt-4">
-                  <Button onClick={handleChangePassword} className="bg-blue-600 hover:bg-blue-700">
+                  <Button onClick={handleChangePassword} className="bg-green-600 hover:bg-green-700">
                     Change Password
                   </Button>
                 </div>

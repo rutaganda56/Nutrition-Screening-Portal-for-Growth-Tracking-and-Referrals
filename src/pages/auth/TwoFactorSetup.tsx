@@ -129,7 +129,7 @@ export const TwoFactorSetup = () => {
         {step === 1 && (
           <Card className="border-2">
             <CardHeader className="text-center pb-2">
-              <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mb-4">
+              <div className="mx-auto w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center mb-4">
                 <Shield className="w-8 h-8 text-white" />
               </div>
               <CardTitle className="text-2xl">Shiraho Two-Factor Authentication</CardTitle>
@@ -140,7 +140,7 @@ export const TwoFactorSetup = () => {
             <CardContent className="space-y-6">
               {/* Step Indicator */}
               <div className="flex items-center justify-center space-x-2 mb-6">
-                <Badge variant="default" className="bg-blue-600">Intambwe 1: Shiraho</Badge>
+                <Badge variant="default" className="bg-green-600">Intambwe 1: Shiraho</Badge>
                 <div className="h-px w-8 bg-gray-300" />
                 <Badge variant="outline">Intambwe 2: Emeza</Badge>
                 <div className="h-px w-8 bg-gray-300" />
@@ -203,7 +203,7 @@ export const TwoFactorSetup = () => {
                 <Button
                   onClick={handleVerifyCode}
                   disabled={verificationCode.length !== 6 || isVerifying}
-                  className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+                  className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800"
                 >
                   {isVerifying ? (
                     <>
@@ -246,7 +246,7 @@ export const TwoFactorSetup = () => {
                   Intambwe 2
                 </Badge>
                 <div className="h-px w-8 bg-gray-300" />
-                <Badge variant="default" className="bg-blue-600">Intambwe 3: Amakode</Badge>
+                <Badge variant="default" className="bg-green-600">Intambwe 3: Amakode</Badge>
               </div>
 
               <Alert className="bg-amber-50 border-amber-200">

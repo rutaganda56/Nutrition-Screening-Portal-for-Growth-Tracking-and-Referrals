@@ -543,7 +543,7 @@ export const PatientClinicalSummary = () => {
                 />
               </div>
 
-              <Button onClick={handleCreateNutritionOrder} className="w-full bg-blue-600 hover:bg-blue-700">
+              <Button onClick={handleCreateNutritionOrder} className="w-full bg-green-600 hover:bg-green-700">
                 <Pill className="h-4 w-4 mr-2" />
                 Create Nutrition Order
               </Button>
@@ -636,7 +636,7 @@ export const PatientClinicalSummary = () => {
                   </label>
                 </div>
 
-                <Button onClick={handleCreateReferral} className="w-full bg-purple-600 hover:bg-purple-700">
+                <Button onClick={handleCreateReferral} className="w-full bg-green-600 hover:bg-green-700">
                   <Send className="h-4 w-4 mr-2" />
                   Create Referral
                 </Button>

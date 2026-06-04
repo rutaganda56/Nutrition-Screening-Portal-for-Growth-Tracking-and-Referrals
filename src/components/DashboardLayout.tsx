@@ -26,6 +26,7 @@ import {
   ClipboardCheck,
   Home,
 } from 'lucide-react';
+import { NotificationSystem } from "@/app/components/NotificationSystem";
 
 interface SidebarItem {
   icon: React.ComponentType<{ className?: string }>;
@@ -123,15 +124,12 @@ export const DashboardLayout = () => {
               {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
             <div className="flex items-center gap-2">
-              <Heart className="h-6 w-6 text-green-600" />
-              <h1 className="text-lg font-semibold text-gray-900">Nutrition Portal</h1>
+              <h1 className="text-lg font-semibold text-gray-900">Nutri Track</h1>
             </div>
           </div>
 
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon">
-              <Bell className="h-5 w-5" />
-            </Button>
+            <NotificationSystem />
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

@@ -158,7 +158,7 @@ export const UserManagement = () => {
           <Button variant="outline" onClick={() => downloadCSV(users, 'users')}>
             <Download className="h-4 w-4 mr-2" />Export
           </Button>
-          <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => { setForm(emptyForm); setIsCreateOpen(true); }}>
+          <Button className="bg-green-600 hover:bg-green-700" onClick={() => { setForm(emptyForm); setIsCreateOpen(true); }}>
             <UserPlus className="h-4 w-4 mr-2" />Add User
           </Button>
         </div>
@@ -230,7 +230,7 @@ export const UserManagement = () => {
             </div>
             <div className="flex gap-2 justify-end pt-2">
               <Button variant="outline" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
-              <Button onClick={handleCreate} disabled={submitting} className="bg-blue-600 hover:bg-blue-700">
+              <Button onClick={handleCreate} disabled={submitting} className="bg-green-600 hover:bg-green-700">
                 {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                 Create User
               </Button>
@@ -285,7 +285,7 @@ export const UserManagement = () => {
             </div>
             <div className="flex gap-2 justify-end pt-2">
               <Button variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
-              <Button onClick={handleUpdate} disabled={submitting} className="bg-blue-600 hover:bg-blue-700">
+              <Button onClick={handleUpdate} disabled={submitting} className="bg-green-600 hover:bg-green-700">
                 {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                 Save Changes
               </Button>
@@ -297,9 +297,9 @@ export const UserManagement = () => {
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Total Users</p><p className="text-3xl font-bold mt-1">{stats.total}</p></div><div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600"><Users className="h-6 w-6" /></div></div></CardContent></Card>
-        <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Active</p><p className="text-3xl font-bold mt-1 text-green-600">{stats.active}</p></div><div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600"><Activity className="h-6 w-6" /></div></div></CardContent></Card>
+        <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Active</p><p className="text-3xl font-bold mt-1 ">{stats.active}</p></div><div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600"><Activity className="h-6 w-6" /></div></div></CardContent></Card>
         <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Administrators</p><p className="text-3xl font-bold mt-1">{stats.admins}</p></div><div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600"><Shield className="h-6 w-6" /></div></div></CardContent></Card>
-        <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Inactive</p><p className="text-3xl font-bold mt-1 text-red-600">{stats.inactive}</p></div><div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600"><Ban className="h-6 w-6" /></div></div></CardContent></Card>
+        <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Inactive</p><p className="text-3xl font-bold mt-1">{stats.inactive}</p></div><div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600"><Ban className="h-6 w-6" /></div></div></CardContent></Card>
       </div>
 
       {/* Search */}
