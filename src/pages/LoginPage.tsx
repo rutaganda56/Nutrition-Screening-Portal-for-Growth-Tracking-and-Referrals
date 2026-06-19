@@ -36,7 +36,7 @@ export const LoginPage = () => {
       if (user2FAEnabled) {
         // Navigate to 2FA verification page
         navigate('/2fa-verify', { 
-          state: { email: formData.email, password: formData.password } 
+          state: { email: formData.email, password: formData.password, role: formData.role } 
         });
         toast.info('Please verify with your 2FA code');
       } else {

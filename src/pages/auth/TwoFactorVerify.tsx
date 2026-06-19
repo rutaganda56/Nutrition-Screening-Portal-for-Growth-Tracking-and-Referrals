@@ -28,6 +28,7 @@ export const TwoFactorVerify = () => {
   // Get user info from login page
   const email = location.state?.email || '';
   const password = location.state?.password || '';
+  const role = location.state?.role || '';
 
   useEffect(() => {
     // Redirect if no email/password provided
@@ -52,7 +53,7 @@ export const TwoFactorVerify = () => {
       if (isValid) {
         toast.success('Ikode yemewe! Urakirwa...');
         // Complete login
-        login(email, password);
+        login(email, password, role);
         navigate('/dashboard');
       } else {
         setAttempts(prev => prev + 1);
@@ -82,7 +83,7 @@ export const TwoFactorVerify = () => {
 
       if (isValid) {
         toast.success('Ikode y\'ifunguro yemewe! Urakirwa...');
-        login(email, password);
+        login(email, password, role);
         navigate('/dashboard');
       } else {
         toast.error('Ikode y\'ifunguro si yo. Ongera ugerageze.');
