@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/ca
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { Badge } from '@/app/components/ui/badge';
+import { Skeleton } from '@/app/components/ui/skeleton';
 import { Avatar, AvatarFallback } from '@/app/components/ui/avatar';
 import {
   Table,
@@ -92,7 +93,7 @@ export const PatientManagement = () => {
           <p className="text-gray-600 mt-1">View and manage all patient records</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => downloadCSV(patients)}>
+          <Button variant="outline" onClick={() => downloadCSV(patients, 'patients')}>
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
@@ -135,7 +136,7 @@ export const PatientManagement = () => {
             <div className="text-center">
               <p className="text-sm text-gray-600">Normal</p>
               <p className="text-3xl font-bold mt-2 text-green-600">
-                {patients.filter(p => !p.status || p.status.toUpperCase() === 'NORMAL').length}
+                {patients.filter(p => !p.currentStatus || p.currentStatus.toUpperCase() === 'NORMAL').length}
               </p>
             </div>
           </CardContent>
@@ -145,7 +146,7 @@ export const PatientManagement = () => {
             <div className="text-center">
               <p className="text-sm text-gray-600">Moderate</p>
               <p className="text-3xl font-bold mt-2 text-yellow-600">
-                {patients.filter(p => p.status && (p.status.toUpperCase() === 'MODERATE' || p.status.toUpperCase() === 'MAM')).length}
+                {patients.filter(p => p.currentStatus && (p.currentStatus.toUpperCase() === 'MODERATE' || p.currentStatus.toUpperCase() === 'MAM')).length}
               </p>
             </div>
           </CardContent>
@@ -155,7 +156,7 @@ export const PatientManagement = () => {
             <div className="text-center">
               <p className="text-sm text-gray-600">Severe</p>
               <p className="text-3xl font-bold mt-2 text-red-600">
-                {patients.filter(p => p.status && (p.status.toUpperCase() === 'SEVERE' || p.status.toUpperCase() === 'SAM')).length}
+                {patients.filter(p => p.currentStatus && (p.currentStatus.toUpperCase() === 'SEVERE' || p.currentStatus.toUpperCase() === 'SAM')).length}
               </p>
             </div>
           </CardContent>
@@ -169,7 +170,36 @@ export const PatientManagement = () => {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-center py-10 text-gray-500">Loading patients from database...</div>
+            <div className="space-y-4 pt-4 animate-in fade-in duration-500">
+              <div className="flex gap-4 border-b pb-4">
+                <Skeleton className="h-6 w-24" />
+                <Skeleton className="h-6 w-48" />
+                <Skeleton className="h-6 w-12" />
+                <Skeleton className="h-6 w-16" />
+                <Skeleton className="h-6 w-24" />
+                <Skeleton className="h-6 w-32" />
+                <Skeleton className="h-6 w-32" />
+                <Skeleton className="h-6 w-12" />
+              </div>
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex gap-4 items-center py-2 border-b last:border-0">
+                  <Skeleton className="h-4 w-24" />
+                  <div className="flex items-center gap-2 w-48">
+                    <Skeleton className="h-8 w-8 rounded-full shrink-0" />
+                    <Skeleton className="h-4 w-32" />
+                  </div>
+                  <Skeleton className="h-4 w-12" />
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-6 w-20 rounded-full" />
+                  <Skeleton className="h-4 w-32" />
+                  <div className="w-32 space-y-2">
+                    <Skeleton className="h-3 w-24" />
+                    <Skeleton className="h-3 w-20" />
+                  </div>
+                  <Skeleton className="h-8 w-8 rounded-md" />
+                </div>
+              ))}
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
@@ -202,8 +232,8 @@ export const PatientManagement = () => {
                       <TableCell>{patient.age}</TableCell>
                       <TableCell>{patient.gender}</TableCell>
                       <TableCell>
-                        <Badge variant={getStatusColor(patient.status)}>
-                          {patient.status || 'NORMAL'}
+                        <Badge variant={getStatusColor(patient.currentStatus)}>
+                          {patient.currentStatus || 'NORMAL'}
                         </Badge>
                       </TableCell>
                       <TableCell>{patient.facilityName || 'N/A'}</TableCell>
@@ -258,8 +288,8 @@ export const PatientManagement = () => {
                                       </div>
                                       <div>
                                         <p className="text-sm text-gray-500">Status</p>
-                                        <Badge variant={getStatusColor(selectedPatient.status)}>
-                                          {selectedPatient.status || 'NORMAL'}
+                                        <Badge variant={getStatusColor(selectedPatient.currentStatus)}>
+                                          {selectedPatient.currentStatus || 'NORMAL'}
                                         </Badge>
                                       </div>
                                       <div>

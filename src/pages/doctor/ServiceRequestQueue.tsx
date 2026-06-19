@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { Badge } from '@/app/components/ui/badge';
+import { Skeleton } from '@/app/components/ui/skeleton';
 import { Input } from '@/app/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs';
 import { Alert, AlertDescription } from '@/app/components/ui/alert';
@@ -289,7 +290,48 @@ export const ServiceRequestQueue = () => {
 
       {/* Service Requests Tabs */}
       {loading ? (
-        <div className="text-center py-10 text-gray-500">Loading service requests from database...</div>
+        <div className="space-y-4 pt-4">
+          <div className="flex gap-2 mb-4">
+            <Skeleton className="h-10 w-1/3 rounded-md" />
+            <Skeleton className="h-10 w-1/3 rounded-md" />
+            <Skeleton className="h-10 w-1/3 rounded-md" />
+          </div>
+          {[...Array(3)].map((_, i) => (
+            <Card key={i} className="animate-in fade-in duration-500">
+              <CardContent className="pt-6">
+                <div className="space-y-4">
+                  <div className="flex justify-between">
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <Skeleton className="h-6 w-48" />
+                        <Skeleton className="h-6 w-20 rounded-full" />
+                        <Skeleton className="h-6 w-16 rounded-full" />
+                      </div>
+                      <Skeleton className="h-4 w-32" />
+                    </div>
+                  </div>
+                  <div className="p-3 bg-gray-50 rounded-lg space-y-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-4 w-48" />
+                    <Skeleton className="h-3 w-64" />
+                  </div>
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-4 w-full" />
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <Skeleton className="h-14 w-full rounded" />
+                    <Skeleton className="h-14 w-full rounded" />
+                    <Skeleton className="h-14 w-full rounded" />
+                  </div>
+                  <div className="pt-2 border-t">
+                    <Skeleton className="h-10 w-full rounded-md" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       ) : (
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-3">

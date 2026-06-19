@@ -37,6 +37,7 @@ import { Settings as AdminSettings } from "@/pages/admin/Settings";
 
 // Shared Pages
 import { Profile } from "@/pages/shared/Profile";
+import { NotificationsPage } from "@/pages/shared/NotificationsPage";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -120,6 +121,7 @@ function AppRoutes() {
 
           {/* Shared Routes */}
           <Route path="profile" element={<Profile />} />
+          <Route path="notifications" element={<NotificationsPage />} />
         </Route>
 
         {/* Fallback Route */}

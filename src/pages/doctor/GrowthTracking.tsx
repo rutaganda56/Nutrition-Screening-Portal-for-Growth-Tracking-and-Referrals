@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/app/components/ui/select';
+import { Skeleton } from '@/app/components/ui/skeleton';
 import { Badge } from '@/app/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs';
 import { Alert, AlertDescription } from '@/app/components/ui/alert';
@@ -138,7 +139,7 @@ export const GrowthTracking = () => {
             <div className="flex-1">
               <Label className="text-sm text-gray-600 mb-2 block">Select Patient</Label>
               {loadingPatients ? (
-                <p className="text-sm text-gray-500">Loading patients...</p>
+                <Skeleton className="h-10 w-full max-w-md rounded-md" />
               ) : (
                 <Select value={selectedPatientId} onValueChange={setSelectedPatientId}>
                   <SelectTrigger className="w-full max-w-md">
@@ -166,7 +167,32 @@ export const GrowthTracking = () => {
 
       {/* Growth Charts */}
       {loadingScreenings ? (
-        <div className="text-center py-10 text-gray-500">Loading growth data...</div>
+        <div className="space-y-4 pt-4 animate-in fade-in duration-500">
+          <div className="flex gap-2">
+            <Skeleton className="h-10 w-1/3 rounded-md" />
+            <Skeleton className="h-10 w-1/3 rounded-md" />
+            <Skeleton className="h-10 w-1/3 rounded-md" />
+          </div>
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-48 mb-2" />
+              <Skeleton className="h-4 w-64" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-[400px] w-full rounded-md" />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-48 mb-2" />
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {[...Array(3)].map((_, i) => (
+                <Skeleton key={i} className="h-16 w-full rounded-md" />
+              ))}
+            </CardContent>
+          </Card>
+        </div>
       ) : (
         <>
           <Tabs defaultValue="weight-age" className="space-y-4">

@@ -9,20 +9,21 @@ import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { alertsApi, AlertResponseDto } from "@/services/api";
+import { alertsApi, AlertResponse } from "@/services/api";
 import { cn } from "@/app/components/ui/utils";
 import { formatDistanceToNow } from "date-fns";
 
 export const NotificationSystem = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [notifications, setNotifications] = useState<AlertResponseDto[]>([]);
+  const [notifications, setNotifications] = useState<AlertResponse[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
   // Mock data for new features requested if API doesn't have them yet
   const getMockNotifications = (role: string): any[] => {
+    const normalizedRole = role.toUpperCase();
     const now = new Date();
-    if (role === 'DOCTOR') {
+    if (normalizedRole === 'DOCTOR') {
       return [
         {
           id: 101,
@@ -45,7 +46,7 @@ export const NotificationSystem = () => {
           actionType: 'VIEW_GROWTH'
         }
       ];
-    } else if (role === 'COMMUNITY_HEALTH_WORKER') {
+    } else if (normalizedRole === 'COMMUNITY_HEALTH_WORKER') {
       return [
         {
           id: 201,
@@ -57,7 +58,7 @@ export const NotificationSystem = () => {
           actionType: 'VIEW_INSTRUCTIONS'
         }
       ];
-    } else if (role === 'ADMINISTRATOR') {
+    } else if (normalizedRole === 'ADMINISTRATOR') {
       return [
         {
           id: 301,
@@ -85,17 +86,42 @@ export const NotificationSystem = () => {
   useEffect(() => {
     if (!user) return;
 
-    // In a real app, we'd fetch from API
-    // alertsApi.getAll().then(...)
+    const fetchNotifications = () => {
+      alertsApi.getByUser(Number(user.id))
+        .then(data => {
+          // Map backend alerts to frontend notification structure
+          const mappedNotifications = data.map(alert => ({
+            ...alert,
+            // If it's an INFO alert about doctor review, set action to VIEW_INSTRUCTIONS
+            actionType: alert.message.toLowerCase().includes('doctor review completed') 
+              ? 'VIEW_INSTRUCTIONS' 
+              : alert.alertType === 'CRITICAL' ? 'REVIEW_SUMMARY' : 'VIEW_GROWTH'
+          }));
+          setNotifications(mappedNotifications);
+          setUnreadCount(mappedNotifications.filter(n => n.status === 'UNREAD').length);
+        })
+        .catch(err => {
+          console.error('Failed to fetch notifications:', err);
+          // Fallback to mocks if API fails or for development
+          const roleBasedMocks = getMockNotifications(user.role);
+          setNotifications(roleBasedMocks);
+          setUnreadCount(roleBasedMocks.filter(n => n.status === 'UNREAD').length);
+        });
+    };
+
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 30000); // Poll every 30s
     
-    const roleBasedMocks = getMockNotifications(user.role);
-    setNotifications(roleBasedMocks);
-    setUnreadCount(roleBasedMocks.filter(n => n.status === 'UNREAD').length);
+    return () => clearInterval(interval);
   }, [user]);
 
   const markAsRead = (id: number) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, status: 'READ' } : n));
-    setUnreadCount(prev => Math.max(0, prev - 1));
+    alertsApi.updateStatus(id, 'READ')
+      .then(() => {
+        setNotifications(prev => prev.map(n => n.id === id ? { ...n, status: 'READ' } : n));
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      })
+      .catch(console.error);
   };
 
   const handleAction = (notification: any) => {
@@ -109,7 +135,7 @@ export const NotificationSystem = () => {
         navigate(`/dashboard/growth-tracking?patient=${notification.patientId}`);
         break;
       case 'VIEW_INSTRUCTIONS':
-        navigate(`/dashboard/patient-history?patient=${notification.patientId}`);
+        navigate(`/dashboard/patient-history?patient=${notification.patientId}&tab=feedback`);
         break;
       case 'MANAGE_USER':
         navigate(`/dashboard/user-management`);
@@ -176,7 +202,7 @@ export const NotificationSystem = () => {
               >
                 <div className="flex gap-3">
                   <div className="mt-1 h-8 w-8 rounded-full bg-white border flex items-center justify-center shrink-0">
-                    {getIcon(n.actionType)}
+                    {getIcon(n.actionType || '')}
                   </div>
                   <div className="flex-1 space-y-1">
                     <p className={cn("text-sm", n.status === 'UNREAD' ? "font-semibold" : "text-gray-600")}>
@@ -191,7 +217,7 @@ export const NotificationSystem = () => {
                         className="w-full bg-green-600 hover:bg-green-700 h-8 text-xs"
                         onClick={() => handleAction(n)}
                       >
-                        {getActionButtonLabel(n.actionType)}
+                        {getActionButtonLabel(n.actionType || '')}
                       </Button>
                     </div>
                   </div>
@@ -201,7 +227,11 @@ export const NotificationSystem = () => {
           )}
         </div>
         <div className="p-2 border-t text-center">
-          <Button variant="ghost" className="text-green-600 hover:text-green-700 w-full text-xs font-medium">
+          <Button 
+            variant="ghost" 
+            className="text-green-600 hover:text-green-700 w-full text-xs font-medium"
+            onClick={() => navigate('/dashboard/notifications')}
+          >
             View All Notifications
           </Button>
         </div>

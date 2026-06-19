@@ -1,8 +1,9 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { Badge } from '@/app/components/ui/badge';
+import { Skeleton } from '@/app/components/ui/skeleton';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/app/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/app/components/ui/select';
 import { Label } from '@/app/components/ui/label';
@@ -317,7 +318,30 @@ export const UserManagement = () => {
         <CardHeader><CardTitle>All Users ({filteredUsers.length})</CardTitle></CardHeader>
         <CardContent>
           {loading ? (
-            <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-gray-400" /></div>
+            <div className="space-y-4 py-4 animate-in fade-in duration-500">
+              <div className="flex gap-4 border-b pb-4">
+                <Skeleton className="h-6 w-32" />
+                <Skeleton className="h-6 w-48" />
+                <Skeleton className="h-6 w-24" />
+                <Skeleton className="h-6 w-32" />
+                <Skeleton className="h-6 w-20" />
+                <Skeleton className="h-6 w-32" />
+              </div>
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex gap-4 items-center py-2 border-b last:border-0">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-4 w-48" />
+                  <Skeleton className="h-6 w-24 rounded-full" />
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-6 w-20 rounded-full" />
+                  <div className="flex gap-2">
+                    <Skeleton className="h-8 w-16 rounded-md" />
+                    <Skeleton className="h-8 w-16 rounded-md" />
+                    <Skeleton className="h-8 w-16 rounded-md" />
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>

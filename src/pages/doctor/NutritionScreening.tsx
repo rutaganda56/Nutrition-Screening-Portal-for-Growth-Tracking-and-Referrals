@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/app
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { Label } from '@/app/components/ui/label';
+import { Skeleton } from '@/app/components/ui/skeleton';
 import { Badge } from '@/app/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/app/components/ui/select';
@@ -409,7 +410,22 @@ export const NutritionScreening = () => {
             </CardHeader>
             <CardContent>
               {loadingRecent ? (
-                <div className="text-center py-10 text-gray-500">Loading screening logs...</div>
+                <div className="space-y-3 animate-in fade-in duration-500">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="p-4 border rounded-lg">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center gap-3">
+                            <Skeleton className="h-6 w-48" />
+                            <Skeleton className="h-6 w-20 rounded-full" />
+                          </div>
+                          <Skeleton className="h-4 w-64" />
+                        </div>
+                        <Skeleton className="h-4 w-24" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
               ) : (
                 <div className="space-y-3">
                   {screenings.map((screening) => (

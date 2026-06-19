@@ -7,6 +7,7 @@ export interface RegisterPayload {
   password: string;
   role: string;
   department?: string;
+  facilityId?: number;
 }
 
 export interface UserResponse {
@@ -88,6 +89,8 @@ export interface PatientResponse {
   guardianFirstName: string;
   guardianLastName: string;
   guardianPhone: string;
+  registeredByName?: string;
+  createdAt?: string;
 }
 
 export interface ScreeningResponse {
@@ -104,19 +107,6 @@ export interface ScreeningResponse {
   conductedByName: string;
   facilityName: string;
   observationNotes: string;
-}
-
-export interface AlertResponse {
-  id: number;
-  alertCode: string;
-  alertType: string;
-  patientId: number;
-  patientName: string;
-  message: string;
-  status: string;
-  dueDate: string | null;
-  assignedToName: string;
-  createdAt: string;
 }
 
 export interface ServiceRequestResponse {
@@ -193,12 +183,26 @@ export interface AlertResponse {
   dueDate: string | null;
   assignedToName: string | null;
   createdAt: string;
+  actionType?: string;
+}
+
+export interface AlertCreatePayload {
+  patientId: number | null;
+  assignedToId: number;
+  alertType: string;
+  message: string;
+  dueDate?: string;
 }
 
 export const alertsApi = {
   getAll: () => request<AlertResponse[]>('/alerts', { method: 'GET' }),
-  getByDoctor: (doctorId: number) => request<AlertResponse[]>(`/alerts/doctor/${doctorId}`, { method: 'GET' }),
+  getByUser: (userId: number) => request<AlertResponse[]>(`/alerts/user/${userId}`, { method: 'GET' }),
   updateStatus: (id: number, status: string) => request<AlertResponse>(`/alerts/${id}/status?status=${encodeURIComponent(status)}`, { method: 'PATCH' }),
+  create: (payload: AlertCreatePayload) => 
+    request<AlertResponse>('/alerts', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
 };
 
 export interface ServiceRequestCreatePayload {
@@ -336,12 +340,32 @@ export interface NutritionOrderCreatePayload {
   endDate: string;
 }
 
+export interface NutritionOrderResponse {
+  id: number;
+  patientId: number;
+  serviceRequestId: number | null;
+  screeningId: number | null;
+  orderType: string;
+  supplement: string;
+  dosage: string;
+  frequency: string;
+  duration: string;
+  instructions: string;
+  startDate: string;
+  endDate: string;
+  status: string;
+  prescribedByName: string;
+  createdAt: string;
+}
+
 export const nutritionOrdersApi = {
   create: (payload: NutritionOrderCreatePayload, prescribedBy: number) =>
-    request<any>(`/nutrition-orders?prescribedBy=${prescribedBy}`, {
+    request<NutritionOrderResponse>(`/nutrition-orders?prescribedBy=${prescribedBy}`, {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
+  getByPatient: (patientId: number) =>
+    request<NutritionOrderResponse[]>(`/nutrition-orders/patient/${patientId}`, { method: 'GET' }),
 };
 
 export interface ClinicalAssessmentCreatePayload {

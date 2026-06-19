@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/ca
 import { Button } from '@/app/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/app/components/ui/select';
 import { Label } from '@/app/components/ui/label';
+import { Skeleton } from '@/app/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs';
 import { 
   FileText,
@@ -157,7 +158,40 @@ export const Reports = () => {
 
       {/* Performance Metrics Grid */}
       {loading ? (
-        <div className="text-center py-10 text-gray-500">Computing analytics from database...</div>
+        <div className="space-y-6 animate-in fade-in duration-500">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <Card key={i}>
+                <CardContent className="pt-6">
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-8 w-16" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-4">
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-6 w-48 mb-2" />
+              </CardHeader>
+              <CardContent className="flex justify-center pb-8">
+                <Skeleton className="h-64 w-64 rounded-full" />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-6 w-32 mb-2" />
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <Skeleton key={i} className="h-16 w-full rounded-lg" />
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

@@ -1,17 +1,41 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
-import { Button } from '@/app/components/ui/button';
-import { Input } from '@/app/components/ui/input';
-import { Label } from '@/app/components/ui/label';
-import { Avatar, AvatarFallback } from '@/app/components/ui/avatar';
-import { Badge } from '@/app/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs';
-import { User, Mail, Phone, MapPin, Calendar, Save, Camera, Clock } from 'lucide-react';
-import { toast } from 'sonner';
-import { formatDistanceToNow } from 'date-fns';
-import { patientsApi, screeningsApi, referralsApi, serviceRequestsApi } from '@/services/api';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/app/components/ui/card";
+import { Button } from "@/app/components/ui/button";
+import { Input } from "@/app/components/ui/input";
+import { Label } from "@/app/components/ui/label";
+import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
+import { Badge } from "@/app/components/ui/badge";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/app/components/ui/tabs";
+import {
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  Save,
+  Camera,
+  Clock,
+} from "lucide-react";
+import { toast } from "sonner";
+import { formatDistanceToNow } from "date-fns";
+import {
+  patientsApi,
+  screeningsApi,
+  referralsApi,
+  serviceRequestsApi,
+} from "@/services/api";
 
 interface ActivityItem {
   id: string;
@@ -28,15 +52,20 @@ export const Profile = () => {
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
-    name: user?.name || '',
-    email: user?.email || '',
-    phone: '+250 788 123 456',
-    department: user?.department || 'General Health',
-    address: 'Kigali, Rwanda',
-    joinDate: '2024-01-15'
+    name: user?.name || "",
+    email: user?.email || "",
+    phone: "+250 788 123 456",
+    department: user?.department || "General Health",
+    address: "Kigali, Rwanda",
+    joinDate: "2024-01-15",
   });
 
-  const [stats, setStats] = useState({ patients: 0, screenings: 0, referrals: 0, thisMonth: 0 });
+  const [stats, setStats] = useState({
+    patients: 0,
+    screenings: 0,
+    referrals: 0,
+    thisMonth: 0,
+  });
   const [activities, setActivities] = useState<ActivityItem[]>([]);
 
   useEffect(() => {
@@ -48,101 +77,112 @@ export const Profile = () => {
       screeningsApi.getAll(),
       referralsApi.getAll(),
       serviceRequestsApi.getAll(),
-    ]).then(([patients, screenings, referrals, serviceRequests]) => {
-      // Calculate Stats
-      const thisMonthScreenings = screenings.filter(s => {
-        const d = new Date(s.screeningDate);
-        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-      }).length;
+    ])
+      .then(([patients, screenings, referrals, serviceRequests]) => {
+        // Calculate Stats
+        const thisMonthScreenings = screenings.filter((s) => {
+          const d = new Date(s.screeningDate);
+          return (
+            d.getMonth() === currentMonth && d.getFullYear() === currentYear
+          );
+        }).length;
 
-      setStats({
-        patients: patients.length,
-        screenings: screenings.length,
-        referrals: referrals.length,
-        thisMonth: thisMonthScreenings,
+        setStats({
+          patients: patients.length,
+          screenings: screenings.length,
+          referrals: referrals.length,
+          thisMonth: thisMonthScreenings,
+        });
+
+        // Build Recent Activity
+        const myScreenings = screenings
+          .filter((s) => s.conductedByName === user?.name)
+          .map((s) => ({
+            id: `s-${s.id}`,
+            action: "Completed screening",
+            patient: s.patientName,
+            time: new Date(s.screeningDate),
+            type: "SCREENING",
+          }));
+
+        const myReferrals = referrals
+          .filter((r) => r.referredByName === user?.name)
+          .map((r) => ({
+            id: `r-${r.id}`,
+            action: "Created referral",
+            patient: r.patientName,
+            time: new Date(r.createdAt),
+            type: "REFERRAL",
+          }));
+
+        const myRegistrations = patients
+          .filter((p) => p.registeredByName === user?.name)
+          .map((p) => ({
+            id: `p-${p.id}`,
+            action: "Registered new patient",
+            patient: `${p.firstName} ${p.lastName}`,
+            time: new Date(p.createdAt || new Date()), // Use fallback if createdAt missing
+            type: "REGISTRATION",
+          }));
+
+        const myReviews = serviceRequests
+          .filter(
+            (r) => r.assignedToName === user?.name && r.status !== "PENDING",
+          )
+          .map((r) => ({
+            id: `rev-${r.id}`,
+            action: "Reviewed clinical case",
+            patient: r.patientName,
+            time: new Date(r.submittedAt), // Ideally reviewedAt
+            type: "REVIEW",
+          }));
+
+        const allActivity = [
+          ...myScreenings,
+          ...myReferrals,
+          ...myRegistrations,
+          ...myReviews,
+        ]
+          .sort((a, b) => b.time.getTime() - a.time.getTime())
+          .slice(0, 15);
+
+        setActivities(allActivity);
+      })
+      .catch((error) => {
+        console.error("Error fetching profile data:", error);
       });
-
-      // Build Recent Activity
-      const myScreenings = screenings
-        .filter(s => s.conductedByName === user?.name)
-        .map(s => ({
-          id: `s-${s.id}`,
-          action: 'Completed screening',
-          patient: s.patientName,
-          time: new Date(s.screeningDate),
-          type: 'SCREENING'
-        }));
-
-      const myReferrals = referrals
-        .filter(r => r.referredByName === user?.name)
-        .map(r => ({
-          id: `r-${r.id}`,
-          action: 'Created referral',
-          patient: r.patientName,
-          time: new Date(r.createdAt),
-          type: 'REFERRAL'
-        }));
-
-      const myRegistrations = patients
-        .filter(p => p.registeredByName === user?.name)
-        .map(p => ({
-          id: `p-${p.id}`,
-          action: 'Registered new patient',
-          patient: `${p.firstName} ${p.lastName}`,
-          time: new Date(p.createdAt || new Date()), // Use fallback if createdAt missing
-          type: 'REGISTRATION'
-        }));
-
-      const myReviews = serviceRequests
-        .filter(r => r.assignedToName === user?.name && r.status !== 'PENDING')
-        .map(r => ({
-          id: `rev-${r.id}`,
-          action: 'Reviewed clinical case',
-          patient: r.patientName,
-          time: new Date(r.submittedAt), // Ideally reviewedAt
-          type: 'REVIEW'
-        }));
-
-      const allActivity = [...myScreenings, ...myReferrals, ...myRegistrations, ...myReviews]
-        .sort((a, b) => b.time.getTime() - a.time.getTime())
-        .slice(0, 15);
-
-      setActivities(allActivity);
-    }).catch((error) => {
-      console.error('Error fetching profile data:', error);
-    });
   }, [user?.name]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 2 * 1024 * 1024) {
-        toast.error('Image size should be less than 2MB');
+        toast.error("Image size should be less than 2MB");
         return;
       }
-      
+
       const reader = new FileReader();
       reader.onloadend = () => {
         setProfileImage(reader.result as string);
-        toast.success('Profile picture updated locally');
+        toast.success("Profile picture updated locally");
       };
       reader.readAsDataURL(file);
     }
   };
 
   const handleSave = () => {
-    toast.success('Profile updated successfully');
+    toast.success("Profile updated successfully");
     setIsEditing(false);
   };
 
   const getRoleName = (role: string) => {
     switch (role) {
-      case 'doctor':
-        return 'Doctor';
-      case 'communityhealthworker':
-        return 'Community Health Worker';
-      case 'administrator':
-        return 'Administrator';
+      case "doctor":
+        return "Doctor";
+      case "communityhealthworker":
+        return "Community Health Worker";
+      case "administrator":
+        return "Administrator";
       default:
         return role;
     }
@@ -152,7 +192,9 @@ export const Profile = () => {
     <div className="p-6 space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">My Profile</h1>
-        <p className="text-gray-600 mt-1">Manage your personal information and activities</p>
+        <p className="text-gray-600 mt-1">
+          Manage your personal information and activities
+        </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -160,35 +202,10 @@ export const Profile = () => {
         <Card className="lg:col-span-1">
           <CardContent className="pt-6">
             <div className="flex flex-col items-center">
-              <div className="relative">
-                <Avatar className="h-32 w-32 border-2 border-gray-100 shadow-sm">
-                  {profileImage ? (
-                    <img src={profileImage} alt="Profile" className="h-full w-full object-cover rounded-full" />
-                  ) : (
-                    <AvatarFallback className="bg-green-600 text-white text-4xl">
-                      {user?.name?.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  )}
-                </Avatar>
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  className="hidden"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                />
-                <Button
-                  size="icon"
-                  className="absolute bottom-0 right-0 rounded-full h-10 w-10 bg-green-600 hover:bg-green-700 shadow-md border-2 border-white"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <Camera className="h-4 w-4" />
-                </Button>
-              </div>
               <h2 className="text-2xl font-bold mt-4">{user?.name}</h2>
-              <Badge className="mt-2">{getRoleName(user?.role || '')}</Badge>
+              <Badge className="mt-2">{getRoleName(user?.role || "")}</Badge>
               <p className="text-gray-600 mt-1">{user?.department}</p>
-              
+
               <div className="w-full mt-6 space-y-3">
                 <div className="flex items-center gap-3 text-sm">
                   <Mail className="h-4 w-4 text-gray-500" />
@@ -204,7 +221,9 @@ export const Profile = () => {
                 </div>
                 <div className="flex items-center gap-3 text-sm">
                   <Calendar className="h-4 w-4 text-gray-500" />
-                  <span className="text-gray-700">Joined {formData.joinDate}</span>
+                  <span className="text-gray-700">
+                    Joined {formData.joinDate}
+                  </span>
                 </div>
               </div>
             </div>
@@ -220,7 +239,7 @@ export const Profile = () => {
                 variant="outline"
                 onClick={() => setIsEditing(!isEditing)}
               >
-                {isEditing ? 'Cancel' : 'Edit Profile'}
+                {isEditing ? "Cancel" : "Edit Profile"}
               </Button>
             </div>
           </CardHeader>
@@ -238,7 +257,9 @@ export const Profile = () => {
                     <Input
                       id="name"
                       value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, name: e.target.value })
+                      }
                       disabled={!isEditing}
                     />
                   </div>
@@ -248,7 +269,9 @@ export const Profile = () => {
                       id="email"
                       type="email"
                       value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, email: e.target.value })
+                      }
                       disabled={!isEditing}
                     />
                   </div>
@@ -257,7 +280,9 @@ export const Profile = () => {
                     <Input
                       id="phone"
                       value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, phone: e.target.value })
+                      }
                       disabled={!isEditing}
                     />
                   </div>
@@ -266,7 +291,9 @@ export const Profile = () => {
                     <Input
                       id="department"
                       value={formData.department}
-                      onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, department: e.target.value })
+                      }
                       disabled={!isEditing}
                     />
                   </div>
@@ -275,7 +302,9 @@ export const Profile = () => {
                     <Input
                       id="address"
                       value={formData.address}
-                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, address: e.target.value })
+                      }
                       disabled={!isEditing}
                     />
                   </div>
@@ -283,10 +312,16 @@ export const Profile = () => {
 
                 {isEditing && (
                   <div className="flex gap-2 justify-end pt-4">
-                    <Button variant="outline" onClick={() => setIsEditing(false)}>
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsEditing(false)}
+                    >
                       Cancel
                     </Button>
-                    <Button onClick={handleSave} className="bg-green-600 hover:bg-green-700">
+                    <Button
+                      onClick={handleSave}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
                       <Save className="h-4 w-4 mr-2" />
                       Save Changes
                     </Button>
@@ -297,7 +332,10 @@ export const Profile = () => {
               <TabsContent value="activity" className="space-y-3 mt-4">
                 {activities.length > 0 ? (
                   activities.map((activity) => (
-                    <div key={activity.id} className="p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                    <div
+                      key={activity.id}
+                      className="p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                    >
                       <div className="flex justify-between items-start">
                         <div className="flex gap-3">
                           <div className="mt-1">
@@ -305,11 +343,15 @@ export const Profile = () => {
                           </div>
                           <div>
                             <p className="font-medium">{activity.action}</p>
-                            <p className="text-sm text-gray-600">Patient: {activity.patient}</p>
+                            <p className="text-sm text-gray-600">
+                              Patient: {activity.patient}
+                            </p>
                           </div>
                         </div>
                         <span className="text-sm text-gray-500">
-                          {formatDistanceToNow(activity.time, { addSuffix: true })}
+                          {formatDistanceToNow(activity.time, {
+                            addSuffix: true,
+                          })}
                         </span>
                       </div>
                     </div>

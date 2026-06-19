@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/app/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card';
+import { Badge } from '@/app/components/ui/badge';
 import { Activity, Users, TrendingUp, FileText, Shield, Heart, ClipboardCheck } from 'lucide-react';
 
 export const LandingPage = () => {
@@ -9,190 +10,202 @@ export const LandingPage = () => {
 
   const features = [
     {
-      icon: Activity,
       title: 'Malnutrition Detection',
-      description: 'Classify nutritional status from screening measurements and clinical review.'
+      description: 'Accurately classify nutritional status based on MUAC, weight-for-height, and clinical signs.'
     },
     {
-      icon: TrendingUp,
       title: 'Growth Tracking',
-      description: 'Monitor weight, height, MUAC, and patient progress over time.'
+      description: 'Visualize patient progress with longitudinal tracking of key health indicators.'
     },
     {
-      icon: Users,
-      title: 'Patient Management',
-      description: 'Keep patient records, guardian details, and screening history organized.'
+      title: 'Patient Records',
+      description: 'Maintain comprehensive history including screenings, referrals, and guardian contacts.'
     },
     {
-      icon: FileText,
-      title: 'Service Requests',
-      description: 'Route complex cases from community health workers to doctors.'
-    },
-    {
-      icon: Shield,
-      title: 'Role-Based Access',
-      description: 'Separate dashboards for administrators, doctors, and community health workers.'
-    },
-    {
-      icon: Heart,
       title: 'Care Coordination',
-      description: 'Support nutrition orders, referrals, follow-ups, and reporting workflows.'
+      description: 'Seamlessly transition cases from community screening to clinical consultation.'
+    },
+    {
+      title: 'Secure Access',
+      description: 'Protected workspaces tailored for CHWs, Doctors, and Administrators.'
+    },
+    {
+      title: 'Holistic Management',
+      description: 'Track nutrition orders and follow-up schedules in one centralized system.'
     }
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="sticky top-0 z-50 border-b bg-white/90 backdrop-blur-sm">
-        <div className="container mx-auto flex items-center justify-between px-4 py-4">
+    <div className="min-h-screen bg-white selection:bg-green-100">
+      <header className="sticky top-0 z-50 border-b border-gray-100 bg-white/80 backdrop-blur-md">
+        <div className="container mx-auto flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold text-gray-900">Nutri Track</h1>
+            <div className="h-8 w-8 rounded-full bg-green-600 flex items-center justify-center text-white font-bold">N</div>
+            <h1 className="text-xl font-bold tracking-tight text-gray-900">Nutri Track</h1>
           </div>
-          <div className="flex gap-2">
-            <Button variant="ghost" onClick={() => navigate('/login')}>
-              Login
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="sm" onClick={() => navigate('/login')} className="text-gray-600">
+              Sign In
             </Button>
-            <Button onClick={() => navigate('/register')} className="bg-green-600 hover:bg-green-700">
-              Register
+            <Button size="sm" onClick={() => navigate('/register')} className="bg-green-600 hover:bg-green-700 text-white px-5">
+              Get Started
             </Button>
           </div>
         </div>
       </header>
 
-      <section className="border-b bg-white">
-        <div className="container mx-auto grid gap-10 px-4 py-16 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
-          <div>
-            <div className="mb-4 inline-flex items-center gap-2 rounded-md border border-green-200 bg-green-50 px-3 py-1 text-sm font-medium text-green-700">
-              <ClipboardCheck className="h-4 w-4" />
-              Nutrition screening and referral coordination
-            </div>
-            <h2 className="max-w-4xl text-4xl font-bold leading-tight text-gray-900 lg:text-5xl">
-              Nutri Track
-            </h2>
-            <p className="mt-4 max-w-2xl text-lg text-gray-600">
-              A clinical workflow system for Polyclinique du Bon Berger that helps teams register
-              patients, record nutrition screenings, review urgent cases, and coordinate referrals.
-            </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Button size="lg" onClick={() => navigate('/register')} className="bg-green-600 hover:bg-green-700">
-                Create Account
-              </Button>
-              <Button size="lg" variant="outline" onClick={() => navigate('/login')}>
-                Sign In
-              </Button>
+      <main>
+        {/* Hero Section */}
+        <section className="relative overflow-hidden bg-white py-20 lg:py-32">
+          <div className="container mx-auto px-6">
+            <div className="flex flex-col lg:flex-row items-center gap-16">
+              <div className="flex-1 text-center lg:text-left">
+                <div className="mb-6 inline-flex items-center rounded-full border border-green-100 bg-green-50 px-4 py-1 text-[11px] font-bold uppercase tracking-widest text-green-700">
+                  Clinical Decision Support System
+                </div>
+                <h2 className="mb-6 text-4xl font-bold tracking-tight text-gray-900 md:text-5xl lg:leading-[1.1]">
+                  Better nutrition care <br className="hidden md:block" />
+                  <span className="text-green-600">starts with better data.</span>
+                </h2>
+                <p className="mb-10 max-w-xl mx-auto lg:mx-0 text-lg leading-relaxed text-gray-600">
+                  A professional workflow system for Polyclinique du Bon Berger. 
+                  Empowering clinical teams to screen, track, and coordinate 
+                  malnutrition cases with precision and compassion.
+                </p>
+                <div className="flex flex-col sm:flex-row justify-center lg:justify-start gap-4">
+                  <Button size="lg" onClick={() => navigate('/register')} className="bg-green-600 hover:bg-green-700 h-12 px-8">
+                    Create Clinical Account
+                  </Button>
+                  <Button size="lg" variant="outline" onClick={() => navigate('/login')} className="h-12 px-8 border-gray-200">
+                    Access Dashboard
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex-1 w-full max-w-2xl">
+                <div className="relative rounded-2xl border border-gray-100 bg-gray-50/50 p-6 shadow-2xl shadow-gray-200/50">
+                  <div className="mb-6 flex items-center justify-between">
+                    <div>
+                      <h4 className="text-sm font-bold text-gray-900 uppercase tracking-tight">Service Request Queue</h4>
+                      <p className="text-xs text-gray-500">Real-time clinical coordination</p>
+                    </div>
+                    <Badge className="bg-red-50 text-red-700 border-red-100 hover:bg-red-50 font-bold px-2 py-0">Urgent</Badge>
+                  </div>
+                  <div className="space-y-4">
+                    {[
+                      { label: 'CHW Screening', desc: 'Patient classified as SAM (High Priority)', status: 'Done' },
+                      { label: 'Doctor Review', desc: 'Clinical assessment in progress', status: 'Active' },
+                      { label: 'Nutrition Order', desc: 'Pending RUTF prescription', status: 'Pending' }
+                    ].map((item, i) => (
+                      <div key={i} className={`flex items-start gap-4 rounded-xl border p-4 transition-all ${item.status === 'Active' ? 'bg-white border-green-200 shadow-sm ring-1 ring-green-50' : 'bg-gray-50/50 border-gray-100'}`}>
+                        <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${item.status === 'Done' ? 'bg-green-100 text-green-700' : item.status === 'Active' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-500'}`}>
+                          {i + 1}
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">{item.label}</p>
+                          <p className="text-xs text-gray-500">{item.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
+        </section>
 
-          <div className="rounded-lg border bg-slate-50 p-4 shadow-sm">
-            <div className="mb-4 flex items-center justify-between border-b pb-3">
-              <div>
-                <p className="text-sm font-semibold text-gray-900">Clinical Review Queue</p>
-                <p className="text-xs text-gray-500">Cases submitted by community health workers</p>
-              </div>
-              <span className="rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700">
-                Priority
-              </span>
+        {/* Features Section */}
+        <section className="bg-gray-50/50 py-24">
+          <div className="container mx-auto px-6">
+            <div className="mb-16 text-center">
+              <h3 className="mb-4 text-3xl font-bold text-gray-900">Integrated Care Delivery</h3>
+              <p className="mx-auto max-w-2xl text-lg text-gray-600">
+                A comprehensive toolkit designed for the unique needs of nutrition clinics.
+              </p>
             </div>
-            <div className="space-y-3">
-              {['Screening submitted', 'Doctor assessment', 'Nutrition order or referral'].map((step, index) => (
-                <div key={step} className="flex items-center gap-3 rounded-md border bg-white p-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-green-50 text-sm font-semibold text-green-700">
-                    {index + 1}
+            <div className="grid gap-x-8 gap-y-12 md:grid-cols-2 lg:grid-cols-3">
+              {features.map((feature, index) => {
+                return (
+                  <div key={index} className="group">
+                    <div className="mb-3 h-1 w-12 bg-green-100 group-hover:bg-green-600 transition-colors" />
+                    <h4 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-green-700 transition-colors">
+                      {feature.title}
+                    </h4>
+                    <p className="text-base text-gray-600 leading-relaxed">
+                      {feature.description}
+                    </p>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{step}</p>
-                    <p className="text-xs text-gray-500">Tracked inside the patient record</p>
-                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* Quick Process Section */}
+        <section className="bg-green-700 py-20 text-white">
+          <div className="container mx-auto px-6">
+            <div className="grid gap-12 md:grid-cols-3">
+              {[
+                { title: 'Register', desc: 'Securely capture patient and guardian demographics.' },
+                { title: 'Screen', desc: 'Validate growth measurements against global standards.' },
+                { title: 'Consult', desc: 'Facilitate data-driven clinical decisions and orders.' }
+              ].map((item, i) => (
+                <div key={i} className="relative">
+                  <div className="mb-4 text-5xl font-black text-green-500/20">{i + 1}</div>
+                  <h4 className="mb-3 text-xl font-bold tracking-tight">{item.title}</h4>
+                  <p className="text-green-50 text-lg leading-relaxed">{item.desc}</p>
                 </div>
               ))}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section className="container mx-auto px-4 py-16">
-        <div className="mb-12 text-center">
-          <h3 className="mb-4 text-3xl font-bold text-gray-900">Core Care Workflows</h3>
-          <p className="text-lg text-gray-600">
-            Practical tools for screening, reviewing, and following up on nutrition cases.
-          </p>
-        </div>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {features.map((feature, index) => {
-            const Icon = feature.icon;
-            return (
-              <Card key={index} className="border hover:border-green-200 transition-colors">
-                <CardHeader>
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-md bg-green-50">
-                    <Icon className="h-6 w-6 text-green-600" />
-                  </div>
-                  <CardTitle>{feature.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription>{feature.description}</CardDescription>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      </section>
+        {/* CTA Section */}
+        <section className="py-24 text-center">
+          <div className="container mx-auto px-6">
+            <h3 className="mb-6 text-3xl font-bold text-gray-900">
+              Modernizing nutrition screening in Rwanda
+            </h3>
+            <p className="mb-10 mx-auto max-w-2xl text-lg text-gray-600">
+              Join the clinical team at Polyclinique du Bon Berger and 
+              help improve healthcare outcomes for our community.
+            </p>
+            <Button size="lg" onClick={() => navigate('/register')} className="bg-green-600 hover:bg-green-700 h-14 px-10 text-lg">
+              Create Clinical Account
+            </Button>
+          </div>
+        </section>
+      </main>
 
-      <section className="bg-green-700 py-14 text-white">
-        <div className="container mx-auto px-4">
-          <div className="grid gap-8 md:grid-cols-3">
-            <div>
-              <div className="mb-2 text-lg font-semibold">Register</div>
-              <div className="text-green-100">Capture patient and guardian details in one place.</div>
+      <footer className="border-t border-gray-100 bg-gray-50/30">
+        <div className="container mx-auto px-6 py-12">
+          <div className="grid gap-12 md:grid-cols-4">
+            <div className="col-span-1 md:col-span-2">
+              <h4 className="mb-6 font-bold text-gray-900">Polyclinique du Bon Berger</h4>
+              <p className="max-w-xs text-gray-600 leading-relaxed">
+                Dedicated to providing high-quality, patient-centered nutrition care 
+                through innovative technology and clinical excellence.
+              </p>
             </div>
             <div>
-              <div className="mb-2 text-lg font-semibold">Screen</div>
-              <div className="text-green-100">Record measurements and classify nutrition status.</div>
+              <h4 className="mb-6 font-bold text-gray-900">Support</h4>
+              <ul className="space-y-4 text-sm text-gray-600">
+                <li>Facility Administration</li>
+                <li>IT Support Desk</li>
+                <li>User Training Guide</li>
+              </ul>
             </div>
             <div>
-              <div className="mb-2 text-lg font-semibold">Review</div>
-              <div className="text-green-100">Route complex cases to doctors for clinical decisions.</div>
+              <h4 className="mb-6 font-bold text-gray-900">Security</h4>
+              <ul className="space-y-4 text-sm text-gray-600">
+                <li>Privacy Policy</li>
+                <li>Terms of Service</li>
+                <li>HIPAA Compliance</li>
+              </ul>
             </div>
           </div>
-        </div>
-      </section>
-
-      <section className="container mx-auto px-4 py-16 text-center">
-        <h3 className="mb-4 text-3xl font-bold text-gray-900">
-          Support faster nutrition care decisions
-        </h3>
-        <p className="mb-8 text-lg text-gray-600">
-          Give each role a focused workspace for the work they do every day.
-        </p>
-        <Button size="lg" onClick={() => navigate('/register')} className="bg-green-600 hover:bg-green-700">
-          Create Your Account
-        </Button>
-      </section>
-
-      <footer className="border-t bg-white">
-        <div className="container mx-auto px-4 py-8">
-          <div className="grid gap-8 md:grid-cols-3">
-            <div>
-              <h4 className="mb-4 font-semibold text-gray-900">About</h4>
-              <p className="text-sm text-gray-600">
-                Polyclinique du Bon Berger - Supporting community health through technology.
-              </p>
-            </div>
-            <div>
-              <h4 className="mb-4 font-semibold text-gray-900">Contact</h4>
-              <p className="text-sm text-gray-600">
-                Email: info@bonberger.org
-                <br />
-                Contact the facility administration team for support.
-              </p>
-            </div>
-            <div>
-              <h4 className="mb-4 font-semibold text-gray-900">Privacy</h4>
-              <p className="text-sm text-gray-600">
-                Role-based access | Data security | Privacy policy
-              </p>
-            </div>
-          </div>
-          <div className="mt-8 border-t pt-8 text-center text-sm text-gray-600">
-            2026 Polyclinique du Bon Berger. All rights reserved.
+          <div className="mt-12 border-t border-gray-100 pt-8 text-center text-sm text-gray-500">
+            &copy; 2026 Polyclinique du Bon Berger. All rights reserved.
           </div>
         </div>
       </footer>

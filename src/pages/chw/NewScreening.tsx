@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
-import { patientsApi, screeningsApi, usersApi, serviceRequestsApi, nutritionOrdersApi, PatientResponse } from '@/services/api';
+import { patientsApi, screeningsApi, usersApi, serviceRequestsApi, nutritionOrdersApi, alertsApi, PatientResponse } from '@/services/api';
 
 export const NewScreening = () => {
   const { user } = useAuth();
@@ -261,7 +261,15 @@ export const NewScreening = () => {
           });
         } catch (srErr: any) {
           console.error(srErr);
-          toast.error(`Screening saved, but failed to create service request: ${srErr.message}`);
+          const errorMsg = srErr.message || 'Unknown error';
+          toast.error(`Screening saved, but failed to create service request: ${errorMsg}`);
+          
+          alertsApi.create({
+            patientId: patientId,
+            assignedToId: Number(user?.id),
+            alertType: 'WARNING',
+            message: `Failed to create service request: ${errorMsg}`
+          }).catch(console.error);
         }
       }
 
@@ -527,7 +535,7 @@ export const NewScreening = () => {
               <ClipboardCheck className="h-5 w-5" />
               Step 2: Record Observations
             </CardTitle>
-            <CardDescription>Measure and record anthropometric data</CardDescription>
+            <CardDescription>Measure and record the data</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -556,7 +564,7 @@ export const NewScreening = () => {
                 />
               </div>
               <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="muac">MUAC - Mid-Upper Arm Circumference (cm) *</Label>
+                <Label htmlFor="muac">MUAC   Mid Upper Arm Circumference (cm) *</Label>
                 <Input
                   id="muac"
                   type="number"
@@ -599,7 +607,7 @@ export const NewScreening = () => {
           {/* Classification Result */}
           <Card>
             <CardHeader>
-              <CardTitle>Nutritional Classification (Auto-Calculated - Read Only)</CardTitle>
+              <CardTitle>Nutritional Classification (Auto-Calculated   Read Only)</CardTitle>
               <CardDescription>Based on WHO standards for children under 5</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -707,7 +715,6 @@ export const NewScreening = () => {
                       <SelectContent>
                         <SelectItem value="urgent">Urgent (SAM - Within 24hrs)</SelectItem>
                         <SelectItem value="routine">Routine (MAM - Within 1 week)</SelectItem>
-                        <SelectItem value="asap">ASAP (Complications present)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -723,8 +730,6 @@ export const NewScreening = () => {
                       <SelectContent>
                         <SelectItem value="sam-detected">SAM Detected</SelectItem>
                         <SelectItem value="mam-detected">MAM Detected</SelectItem>
-                        <SelectItem value="rapid-deterioration">Rapid Deterioration</SelectItem>
-                        <SelectItem value="complications">Medical Complications</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -824,10 +829,9 @@ export const NewScreening = () => {
                       <SelectContent>
                         <SelectItem value="rutf">RUTF (Ready-to-Use Therapeutic Food)</SelectItem>
                         <SelectItem value="rusf">RUSF (Ready-to-Use Supplementary Food)</SelectItem>
-                        <SelectItem value="csb">CSB+ (Corn Soy Blend Plus)</SelectItem>
                         <SelectItem value="micronutrients">Micronutrient Powder</SelectItem>
                         <SelectItem value="fortified-porridge">Fortified Porridge</SelectItem>
-                        <SelectItem value="none">None - Counseling Only</SelectItem>
+                        <SelectItem value="none">None(Counseling Only)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

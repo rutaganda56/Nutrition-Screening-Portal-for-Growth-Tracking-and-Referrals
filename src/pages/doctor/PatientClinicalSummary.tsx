@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { Badge } from '@/app/components/ui/badge';
+import { Skeleton } from '@/app/components/ui/skeleton';
 import { Separator } from '@/app/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs';
 import { Alert, AlertDescription } from '@/app/components/ui/alert';
@@ -31,6 +32,7 @@ import {
   clinicalAssessmentsApi, 
   nutritionOrdersApi, 
   referralsApi, 
+  alertsApi,
   PatientResponse, 
   ScreeningResponse, 
   ServiceRequestResponse 
@@ -150,7 +152,15 @@ export const PatientClinicalSummary = () => {
     })
     .catch((err) => {
       console.error(err);
-      toast.error(`Failed to save clinical diagnosis: ${err.message}`);
+      const errorMsg = err.message || 'Unknown error';
+      toast.error(`Failed to save clinical diagnosis: ${errorMsg}`);
+      
+      alertsApi.create({
+        patientId: Number(patientId),
+        assignedToId: Number(user?.id),
+        alertType: 'WARNING',
+        message: `Failed to submit clinical assessment: ${errorMsg}`
+      }).catch(console.error);
     });
   };
 
@@ -245,7 +255,71 @@ export const PatientClinicalSummary = () => {
   };
 
   if (loading) {
-    return <div className="p-6 text-center text-gray-500">Loading patient clinical summary...</div>;
+    return (
+      <div className="p-6 space-y-6 animate-in fade-in duration-500">
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-10 w-48 rounded-md" />
+          <div className="flex-1 space-y-2">
+            <Skeleton className="h-8 w-64" />
+            <Skeleton className="h-4 w-48" />
+          </div>
+        </div>
+        
+        <Card className="border-2 border-blue-100">
+          <CardHeader>
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-4">
+                <Skeleton className="h-16 w-16 rounded-full shrink-0" />
+                <div className="space-y-2">
+                  <Skeleton className="h-8 w-48" />
+                  <Skeleton className="h-4 w-64" />
+                </div>
+              </div>
+              <Skeleton className="h-6 w-24 rounded-full" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Skeleton className="h-3 w-16" />
+                <Skeleton className="h-5 w-32" />
+                <Skeleton className="h-4 w-24" />
+              </div>
+              <div className="space-y-2">
+                <Skeleton className="h-3 w-20" />
+                <Skeleton className="h-5 w-24" />
+              </div>
+              <div className="space-y-2">
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-5 w-48" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="space-y-4">
+          <div className="flex gap-2">
+            <Skeleton className="h-10 w-1/3 rounded-md" />
+            <Skeleton className="h-10 w-1/3 rounded-md" />
+            <Skeleton className="h-10 w-1/3 rounded-md" />
+          </div>
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-48 mb-2" />
+              <Skeleton className="h-4 w-64" />
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <Skeleton className="h-20 w-full" />
+              <div className="grid grid-cols-2 gap-4">
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+              </div>
+              <Skeleton className="h-32 w-full" />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
   }
 
   if (!patient || !serviceRequest) {

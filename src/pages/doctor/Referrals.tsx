@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/app
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { Label } from '@/app/components/ui/label';
+import { Skeleton } from '@/app/components/ui/skeleton';
 import { Badge } from '@/app/components/ui/badge';
 import { Textarea } from '@/app/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/app/components/ui/select';
@@ -187,7 +188,48 @@ export const Referrals = () => {
 
       {/* Referrals List */}
       {loading ? (
-        <div className="text-center py-10 text-gray-500">Loading referrals from database...</div>
+        <div className="space-y-4 pt-4">
+          <div className="flex gap-2 mb-4">
+            <Skeleton className="h-10 w-48 rounded-md" />
+            <Skeleton className="h-10 w-48 rounded-md" />
+          </div>
+          {[...Array(3)].map((_, i) => (
+            <Card key={i} className="animate-in fade-in duration-500">
+              <CardContent className="pt-6">
+                <div className="flex flex-col lg:flex-row gap-4">
+                  <div className="flex-1 space-y-4">
+                    <div className="flex gap-2">
+                      <Skeleton className="h-6 w-48" />
+                      <Skeleton className="h-6 w-24 rounded-full" />
+                      <Skeleton className="h-6 w-24 rounded-full" />
+                    </div>
+                    <Skeleton className="h-4 w-64" />
+                    <div className="space-y-2 pt-2">
+                      <div className="flex gap-2">
+                        <Skeleton className="h-8 w-8 rounded" />
+                        <div className="space-y-1">
+                          <Skeleton className="h-3 w-20" />
+                          <Skeleton className="h-4 w-48" />
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Skeleton className="h-8 w-8 rounded" />
+                        <div className="space-y-1">
+                          <Skeleton className="h-3 w-20" />
+                          <Skeleton className="h-4 w-64" />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="pt-3 border-t">
+                      <Skeleton className="h-3 w-48" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-10 w-full lg:w-32 rounded-md" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       ) : (
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
