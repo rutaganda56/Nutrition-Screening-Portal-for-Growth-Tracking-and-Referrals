@@ -1,8 +1,9 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/app/components/ui/select';
 import { Badge } from '@/app/components/ui/badge';
+import { Skeleton } from '@/app/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs';
 import { 
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area,
@@ -14,15 +15,20 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { downloadCSV, downloadJSON } from '@/utils/exportUtils';
+import { generateProfessionalExcelReport } from '@/utils/excelExportUtils';
 import { 
   patientsApi, 
   screeningsApi, 
   facilitiesApi, 
   referralsApi,
+  usersApi,
+  serviceRequestsApi,
   PatientResponse,
   ScreeningResponse,
   ReferralResponse,
-  FacilityResponse
+  FacilityResponse,
+  UserResponse,
+  ServiceRequestResponse
 } from '@/services/api';
 
 export const ReportsAnalytics = () => {
@@ -35,19 +41,25 @@ export const ReportsAnalytics = () => {
   const [screenings, setScreenings] = useState<ScreeningResponse[]>([]);
   const [referrals, setReferrals] = useState<ReferralResponse[]>([]);
   const [facilities, setFacilities] = useState<FacilityResponse[]>([]);
+  const [users, setUsers] = useState<UserResponse[]>([]);
+  const [serviceRequests, setServiceRequests] = useState<ServiceRequestResponse[]>([]);
 
   useEffect(() => {
     Promise.all([
       patientsApi.getAll(),
       screeningsApi.getAll(),
       referralsApi.getAll(),
-      facilitiesApi.getAll()
+      facilitiesApi.getAll(),
+      usersApi.getAll(),
+      serviceRequestsApi.getAll()
     ])
-      .then(([p, s, r, f]) => {
+      .then(([p, s, r, f, u, sr]) => {
         setPatients(p);
         setScreenings(s);
         setReferrals(r);
         setFacilities(f);
+        setUsers(u);
+        setServiceRequests(sr);
       })
       .catch((err) => {
         console.error(err);
@@ -93,10 +105,11 @@ export const ReportsAnalytics = () => {
       const mName = getMonthName(s.screeningDate);
       if (monthlyMap[mName]) {
         monthlyMap[mName].screenings += 1;
-        if (s.classification === 'MAM' || s.classification === 'SAM') {
+        const cls = s.classification?.toUpperCase();
+        if (cls === 'MAM' || cls === 'SAM') {
           monthlyMap[mName].malnourished += 1;
         }
-        if (s.classification === 'SAM') {
+        if (cls === 'SAM') {
           monthlyMap[mName].severe += 1;
         }
       }
@@ -179,7 +192,7 @@ export const ReportsAnalytics = () => {
         performanceMap[fName] = { facility: fName, screenings: 0, normal: 0 };
       }
       performanceMap[fName].screenings += 1;
-      if (s.classification === 'NORMAL') {
+      if (s.classification?.toUpperCase() === 'NORMAL') {
         performanceMap[fName].normal += 1;
       }
     });
@@ -191,35 +204,40 @@ export const ReportsAnalytics = () => {
     }));
   }, [screenings, facilities]);
 
-  // 6. Dynamic Calculations: Referral Statistics
-  const referralData = React.useMemo(() => {
-    const monthlyMap: Record<string, { month: string; sent: number; completed: number; pending: number }> = {};
+  // 6. Dynamic Calculations: Service Requests (Referrals) by Facility
+  const serviceRequestData = React.useMemo(() => {
+    const dataMap: Record<string, { facility: string; pending: number; resolved: number; total: number }> = {};
     
-    const shortMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const currentMonthIndex = new Date().getMonth();
-    for (let i = 5; i >= 0; i--) {
-      const mIdx = (currentMonthIndex - i + 12) % 12;
-      const mName = shortMonths[mIdx];
-      monthlyMap[mName] = { month: mName, sent: 0, completed: 0, pending: 0 };
-    }
+    // Seed all active facilities
+    facilities.forEach(f => {
+      dataMap[f.name] = { facility: f.name, pending: 0, resolved: 0, total: 0 };
+    });
 
-    referrals.forEach(r => {
-      const dateStr = r.referredDate || r.createdAt;
-      const mName = getMonthName(dateStr);
-      if (monthlyMap[mName]) {
-        monthlyMap[mName].sent += 1;
-        if (r.status.toUpperCase() === 'COMPLETED') {
-          monthlyMap[mName].completed += 1;
-        } else {
-          monthlyMap[mName].pending += 1;
-        }
+    serviceRequests.forEach(req => {
+      // Find the facility of the CHW who submitted it
+      const chw = users.find(u => u.fullName === req.submittedByName);
+      // Fallback to finding by patient's facility
+      const patient = patients.find(p => p.id === req.patientId);
+      const fName = chw?.facilityName || patient?.facilityName || 'Unknown Facility';
+      
+      if (!dataMap[fName]) {
+        dataMap[fName] = { facility: fName, pending: 0, resolved: 0, total: 0 };
+      }
+      
+      dataMap[fName].total += 1;
+      if (req.status.toUpperCase() === 'PENDING') {
+        dataMap[fName].pending += 1;
+      } else {
+        dataMap[fName].resolved += 1;
       }
     });
 
-    return Object.values(monthlyMap);
-  }, [referrals]);
+    return Object.values(dataMap);
+  }, [serviceRequests, facilities, users, patients]);
 
-  const handleExportReport = () => {
+  const handleExportReport = async () => {
+    toast.info('Generating professional Excel report...', { duration: 2000 });
+    
     const exportData = {
       reportDate: new Date().toISOString(),
       summary: {
@@ -232,13 +250,16 @@ export const ReportsAnalytics = () => {
       ageDistribution,
       severityData,
       facilityPerformance,
-      referralData
+      serviceRequestData
     };
     
-    downloadJSON(exportData, 'nutritrack-analytics-report');
-    downloadCSV(facilityPerformance, 'facility-performance-metrics');
-    
-    toast.success('Analytics report exported successfully');
+    try {
+      await generateProfessionalExcelReport(exportData, 'NutriTrack_Analytics_Report');
+      toast.success('Analytics report exported successfully');
+    } catch (error) {
+      console.error('Failed to generate report:', error);
+      toast.error('Failed to generate Excel report');
+    }
   };
 
   const handleGenerateReport = () => {
@@ -247,9 +268,61 @@ export const ReportsAnalytics = () => {
 
   if (loading) {
     return (
-      <div className="flex h-[70vh] flex-col items-center justify-center gap-4">
-        <Loader2 className="h-10 w-10 animate-spin text-green-600" />
-        <p className="text-gray-600 font-medium animate-pulse">Loading analytics dashboard...</p>
+      <div className="p-6 space-y-6 animate-in fade-in duration-500">
+        <div className="flex justify-between items-center">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-64" />
+            <Skeleton className="h-4 w-80" />
+          </div>
+          <div className="flex gap-2">
+            <Skeleton className="h-10 w-32 rounded-md" />
+            <Skeleton className="h-10 w-32 rounded-md" />
+          </div>
+        </div>
+
+        <Card className="shadow-sm">
+          <CardContent className="pt-6">
+            <div className="flex gap-4">
+              <Skeleton className="h-10 w-48 rounded-md" />
+              <Skeleton className="h-10 w-48 rounded-md" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i}>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-8 w-16" />
+                    <Skeleton className="h-3 w-32" />
+                  </div>
+                  <Skeleton className="h-12 w-12 rounded-md" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        <div className="space-y-4 pt-2">
+          <div className="flex gap-2 p-1 bg-gray-100 rounded-lg w-fit">
+            <Skeleton className="h-8 w-32 rounded-md" />
+            <Skeleton className="h-8 w-32 rounded-md" />
+            <Skeleton className="h-8 w-32 rounded-md" />
+            <Skeleton className="h-8 w-32 rounded-md" />
+          </div>
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-48 mb-2" />
+              <Skeleton className="h-4 w-64" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-[350px] w-full rounded-md" />
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
@@ -516,27 +589,38 @@ export const ReportsAnalytics = () => {
         <TabsContent value="referrals" className="space-y-4">
           <Card className="shadow-sm">
             <CardHeader>
-              <CardTitle>Referral Management Trends</CardTitle>
-              <CardDescription>Monthly sent referrals compared against completed and pending actions</CardDescription>
+              <CardTitle>CHW Service Requests by Facility</CardTitle>
+              <CardDescription>Volume of patient service requests sent from CHWs to Doctors grouped by Health Facility</CardDescription>
             </CardHeader>
             <CardContent>
-              {referrals.length === 0 ? (
+              {serviceRequests.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-gray-400">
                   <FileText className="h-12 w-12 mb-2 stroke-1" />
-                  <p className="text-sm font-medium">No patient referrals found in the system.</p>
+                  <p className="text-sm font-medium">No service requests found in the system.</p>
                 </div>
               ) : (
-                <ResponsiveContainer width="100%" height={350}>
-                  <LineChart data={referralData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Line type="monotone" dataKey="sent" stroke="#3b82f6" strokeWidth={2.5} name="Total Sent" activeDot={{ r: 8 }} />
-                    <Line type="monotone" dataKey="completed" stroke="#10b981" strokeWidth={2} name="Completed" />
-                    <Line type="monotone" dataKey="pending" stroke="#f97316" strokeWidth={2} name="Pending Action" />
-                  </LineChart>
+                <ResponsiveContainer width="100%" height={380}>
+                  <BarChart data={serviceRequestData} margin={{ top: 20, right: 30, left: 20, bottom: 70 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                    <XAxis 
+                      dataKey="facility" 
+                      angle={-45} 
+                      textAnchor="end"
+                      tick={{ fill: '#6b7280', fontSize: 12 }}
+                      tickMargin={10}
+                    />
+                    <YAxis 
+                      tick={{ fill: '#6b7280', fontSize: 12 }} 
+                      label={{ value: 'Total Service Requests', angle: -90, position: 'insideLeft', style: { fill: '#6b7280', fontSize: 13, textAnchor: 'middle' }, offset: 0 }}
+                    />
+                    <Tooltip 
+                      cursor={{ fill: '#f3f4f6' }}
+                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                    />
+                    <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                    <Bar dataKey="pending" stackId="a" fill="#f59e0b" name="Pending Requests" radius={[0, 0, 0, 0]} />
+                    <Bar dataKey="resolved" stackId="a" fill="#10b981" name="Resolved/Completed" radius={[4, 4, 0, 0]} />
+                  </BarChart>
                 </ResponsiveContainer>
               )}
             </CardContent>
@@ -579,8 +663,8 @@ export const ReportsAnalytics = () => {
                 <span>{screenings.length} rows</span>
               </div>
               <div className="flex justify-between p-2 bg-gray-50 rounded">
-                <span className="font-semibold text-gray-700">Referrals:</span>
-                <span>{referrals.length} rows</span>
+                <span className="font-semibold text-gray-700">Service Requests:</span>
+                <span>{serviceRequests.length} rows</span>
               </div>
               <div className="flex justify-between p-2 bg-gray-50 rounded">
                 <span className="font-semibold text-gray-700">Facilities:</span>
