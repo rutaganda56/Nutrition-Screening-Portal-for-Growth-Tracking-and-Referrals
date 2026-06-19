@@ -34,6 +34,11 @@ public class ReferralController {
         return referralService.getAllReferrals();
     }
 
+    @GetMapping("/status/{status}")
+    public List<ReferralResponseDto> getReferralsByStatus(@PathVariable String status) {
+        return referralService.getReferralsByStatus(status);
+    }
+
     @GetMapping("/{id}")
     public ReferralResponseDto getReferralById(@PathVariable Long id) {
         return referralService.getReferralById(id);

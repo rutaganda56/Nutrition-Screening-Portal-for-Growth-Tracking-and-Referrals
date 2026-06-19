@@ -28,6 +28,9 @@ public class ClinicalAssessmentService {
     private UserRepository userRepository;
 
     @Autowired
+    private com.nutritrack.repository.AlertRepository alertRepository;
+
+    @Autowired
     private ClinicalAssessmentMapper assessmentMapper;
 
     public ClinicalAssessmentResponseDto createAssessment(ClinicalAssessmentDto dto, Long assessedByUserId) {
@@ -52,7 +55,28 @@ public class ClinicalAssessmentService {
         sr.setStatus("IN_REVIEW");
         serviceRequestRepository.save(sr);
 
-        return assessmentMapper.toResponseDto(assessmentRepository.save(assessment));
+        ClinicalAssessment savedAssessment = assessmentRepository.save(assessment);
+
+        // Generate alert for the originating CHW
+        if (sr.getSubmittedBy() != null) {
+            com.nutritrack.model.Alert alert = new com.nutritrack.model.Alert();
+            alert.setPatient(patient);
+            alert.setAssignedTo(sr.getSubmittedBy());
+            alert.setAlertType("INFO");
+            
+            String patientName = patient != null ? 
+                patient.getFirstName() + " " + patient.getLastName() : "Unknown Patient";
+                
+            alert.setMessage(String.format("Clinical Assessment completed for %s. Diagnosis: %s, Severity: %s", 
+                patientName, savedAssessment.getDiagnosis(), savedAssessment.getSeverity()));
+            alert.setStatus("UNREAD");
+            
+            com.nutritrack.model.Alert savedAlert = alertRepository.save(alert);
+            savedAlert.setAlertCode("A-" + savedAlert.getId());
+            alertRepository.save(savedAlert);
+        }
+
+        return assessmentMapper.toResponseDto(savedAssessment);
     }
 
     public List<ClinicalAssessmentResponseDto> getAssessmentsByPatient(Long patientId) {

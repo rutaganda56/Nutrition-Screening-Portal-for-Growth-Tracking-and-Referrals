@@ -33,9 +33,9 @@ public class AlertController {
         return alertService.getAllAlerts();
     }
 
-    @GetMapping("/doctor/{doctorId}")
-    public List<AlertResponseDto> getAlertsByDoctor(@PathVariable Long doctorId) {
-        return alertService.getAlertsByDoctor(doctorId);
+    @GetMapping("/user/{userId}")
+    public List<AlertResponseDto> getAlertsByUser(@PathVariable Long userId) {
+        return alertService.getAlertsByUser(userId);
     }
 
     @PatchMapping("/{id}/status")

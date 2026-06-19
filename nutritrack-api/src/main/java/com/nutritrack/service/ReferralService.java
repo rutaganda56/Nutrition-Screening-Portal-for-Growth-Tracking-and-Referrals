@@ -32,9 +32,9 @@ public class ReferralService {
 
     public ReferralResponseDto createReferral(ReferralDto dto, Long referredByUserId) {
         Patient patient = patientRepository.findById(dto.patientId())
-                .orElseThrow(() -> new RuntimeException("Patient not found"));
+                .orElseThrow(() -> new RuntimeException("Patient not found with ID: " + dto.patientId()));
         Users referredBy = userRepository.findById(referredByUserId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + referredByUserId));
 
         Referral referral = new Referral();
         referral.setPatient(patient);
@@ -50,7 +50,8 @@ public class ReferralService {
         referral.setFollowUpDate(dto.followUpDate());
 
         if (dto.serviceRequestId() != null) {
-            referral.setServiceRequest(serviceRequestRepository.findById(dto.serviceRequestId()).orElse(null));
+            referral.setServiceRequest(serviceRequestRepository.findById(dto.serviceRequestId())
+                    .orElseThrow(() -> new RuntimeException("Service request not found with ID: " + dto.serviceRequestId())));
         }
 
         Referral saved = referralRepository.save(referral);
@@ -62,6 +63,12 @@ public class ReferralService {
 
     public List<ReferralResponseDto> getAllReferrals() {
         return referralRepository.findAll().stream()
+                .map(referralMapper::toResponseDto)
+                .collect(Collectors.toList());
+    }
+
+    public List<ReferralResponseDto> getReferralsByStatus(String status) {
+        return referralRepository.findByStatus(status.toUpperCase()).stream()
                 .map(referralMapper::toResponseDto)
                 .collect(Collectors.toList());
     }

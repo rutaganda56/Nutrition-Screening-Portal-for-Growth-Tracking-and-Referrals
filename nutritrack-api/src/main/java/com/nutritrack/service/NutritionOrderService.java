@@ -35,21 +35,18 @@ public class NutritionOrderService {
 
     public NutritionOrderResponseDto createOrder(NutritionOrderDto dto, Long prescribedByUserId) {
         Patient patient = patientRepository.findById(dto.patientId())
-                .orElseThrow(() -> new RuntimeException("Patient not found"));
+                .orElseThrow(() -> new RuntimeException("Patient not found with ID: " + dto.patientId()));
         Users prescribedBy = userRepository.findById(prescribedByUserId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + prescribedByUserId));
 
         LocalDate startDate = dto.startDate() != null ? dto.startDate() : LocalDate.now();
         LocalDate endDate = dto.endDate();
 
         // Business rule: no overlapping active orders for same patient
-        if (endDate != null) {
-            List<NutritionOrder> overlapping = nutritionOrderRepository
-                    .findByPatientIdAndStatusAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
-                            dto.patientId(), "ACTIVE", endDate, startDate);
-            if (!overlapping.isEmpty()) {
-                throw new RuntimeException("Patient already has an active nutrition order overlapping these dates");
-            }
+        List<NutritionOrder> overlapping = nutritionOrderRepository.findOverlappingOrders(
+                dto.patientId(), "ACTIVE", startDate, endDate);
+        if (!overlapping.isEmpty()) {
+            throw new RuntimeException("Patient already has an active nutrition order overlapping these dates");
         }
 
         NutritionOrder order = new NutritionOrder();
@@ -66,10 +63,12 @@ public class NutritionOrderService {
         order.setPrescribedBy(prescribedBy);
 
         if (dto.screeningId() != null) {
-            order.setScreening(screeningRepository.findById(dto.screeningId()).orElse(null));
+            order.setScreening(screeningRepository.findById(dto.screeningId())
+                    .orElseThrow(() -> new RuntimeException("Screening not found with ID: " + dto.screeningId())));
         }
         if (dto.serviceRequestId() != null) {
-            order.setServiceRequest(serviceRequestRepository.findById(dto.serviceRequestId()).orElse(null));
+            order.setServiceRequest(serviceRequestRepository.findById(dto.serviceRequestId())
+                    .orElseThrow(() -> new RuntimeException("Service request not found with ID: " + dto.serviceRequestId())));
         }
 
         NutritionOrder saved = nutritionOrderRepository.save(order);
@@ -81,6 +80,12 @@ public class NutritionOrderService {
 
     public List<NutritionOrderResponseDto> getOrdersByPatient(Long patientId) {
         return nutritionOrderRepository.findByPatientId(patientId).stream()
+                .map(nutritionOrderMapper::toResponseDto)
+                .collect(Collectors.toList());
+    }
+
+    public List<NutritionOrderResponseDto> getOrdersByPatientAndStatus(Long patientId, String status) {
+        return nutritionOrderRepository.findByPatientIdAndStatus(patientId, status.toUpperCase()).stream()
                 .map(nutritionOrderMapper::toResponseDto)
                 .collect(Collectors.toList());
     }

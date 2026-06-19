@@ -44,6 +44,11 @@ public class NutritionOrderController {
         return nutritionOrderService.getOrdersByPatient(patientId);
     }
 
+    @GetMapping("/patient/{patientId}/status/{status}")
+    public List<NutritionOrderResponseDto> getOrdersByPatientAndStatus(@PathVariable Long patientId, @PathVariable String status) {
+        return nutritionOrderService.getOrdersByPatientAndStatus(patientId, status);
+    }
+
     @PatchMapping("/{id}/status")
     public NutritionOrderResponseDto updateStatus(@PathVariable Long id, @RequestParam String status) {
         return nutritionOrderService.updateStatus(id, status);

@@ -51,8 +51,8 @@ public class AlertService {
         return alertMapper.toResponseDto(saved);
     }
 
-    public List<AlertResponseDto> getAlertsByDoctor(Long doctorId) {
-        return alertRepository.findByAssignedToId(doctorId).stream()
+    public List<AlertResponseDto> getAlertsByUser(Long userId) {
+        return alertRepository.findByAssignedToId(userId).stream()
                 .map(alertMapper::toResponseDto)
                 .collect(Collectors.toList());
     }

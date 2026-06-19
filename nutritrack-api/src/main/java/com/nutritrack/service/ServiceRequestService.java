@@ -33,6 +33,9 @@ public class ServiceRequestService {
     private UserRepository userRepository;
 
     @Autowired
+    private com.nutritrack.repository.AlertRepository alertRepository;
+
+    @Autowired
     private ServiceRequestMapper serviceRequestMapper;
 
     public ServiceRequestResponseDto createServiceRequest(ServiceRequestDto dto, Long submittedByUserId) {
@@ -67,6 +70,29 @@ public class ServiceRequestService {
         saved.setRequestCode("SR-" + saved.getId());
         saved = serviceRequestRepository.save(saved);
 
+        // Generate alert for the assigned doctor
+        if (saved.getAssignedTo() != null) {
+            com.nutritrack.model.Alert alert = new com.nutritrack.model.Alert();
+            alert.setPatient(saved.getPatient());
+            alert.setAssignedTo(saved.getAssignedTo());
+            
+            String priority = saved.getPriority() != null ? saved.getPriority() : "ROUTINE";
+            alert.setAlertType("URGENT".equalsIgnoreCase(priority) ? "CRITICAL" : "WARNING");
+            
+            String chwName = saved.getSubmittedBy() != null ? 
+                saved.getSubmittedBy().getFullName() : "Unknown CHW";
+            String patientName = saved.getPatient() != null ? 
+                saved.getPatient().getFirstName() + " " + saved.getPatient().getLastName() : "Unknown Patient";
+                
+            alert.setMessage(String.format("New Service Request (Priority: %s): %s submitted by CHW %s", 
+                priority, patientName, chwName));
+            alert.setStatus("UNREAD");
+            
+            com.nutritrack.model.Alert savedAlert = alertRepository.save(alert);
+            savedAlert.setAlertCode("A-" + savedAlert.getId());
+            alertRepository.save(savedAlert);
+        }
+
         return serviceRequestMapper.toResponseDto(saved);
     }
 
@@ -97,7 +123,25 @@ public class ServiceRequestService {
     public ServiceRequestResponseDto updateStatus(Long id, String status) {
         ServiceRequest sr = serviceRequestRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Service request not found"));
+        
+        String oldStatus = sr.getStatus();
         sr.setStatus(status.toUpperCase());
-        return serviceRequestMapper.toResponseDto(serviceRequestRepository.save(sr));
+        ServiceRequest updated = serviceRequestRepository.save(sr);
+
+        // If status changed to COMPLETED, create an alert for the CHW who submitted it
+        if ("COMPLETED".equalsIgnoreCase(status) && !"COMPLETED".equalsIgnoreCase(oldStatus)) {
+            com.nutritrack.model.Alert alert = new com.nutritrack.model.Alert();
+            alert.setPatient(sr.getPatient());
+            alert.setAssignedTo(sr.getSubmittedBy());
+            alert.setAlertType("INFO");
+            alert.setMessage("Doctor review completed for patient: " + sr.getPatient().getFirstName() + " " + sr.getPatient().getLastName());
+            alert.setStatus("UNREAD");
+            
+            com.nutritrack.model.Alert savedAlert = alertRepository.save(alert);
+            savedAlert.setAlertCode("A-" + savedAlert.getId());
+            alertRepository.save(savedAlert);
+        }
+
+        return serviceRequestMapper.toResponseDto(updated);
     }
 }
