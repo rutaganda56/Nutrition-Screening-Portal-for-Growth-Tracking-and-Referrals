@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -61,10 +61,11 @@ export const DoctorDashboard = () => {
         
         // Filter screenings conducted by this doctor
         if (user) {
-          const doctorScreenings = allScreenings.filter(
-            s => s.conductedByName === user.name
-          ).length;
-          setTotalScreenings(doctorScreenings);
+          const myScreenings = allScreenings.filter(s => s.conductedByName === user?.name);
+          setTotalScreenings(myScreenings.length);
+          
+          const myRequests = requests.filter(r => !r.assignedToName || r.assignedToName === user?.name);
+          setServiceRequests(myRequests);
 
           // Process referrals
           const doctorReferrals = allReferrals.filter(r => r.referredByName === user.name);
@@ -89,33 +90,41 @@ export const DoctorDashboard = () => {
       }
     };
 
-    fetchData();
+    if (user) {
+      fetchData();
+    }
   }, [user]);
+
+  const pendingRequests = serviceRequests.filter(r => r.status === "PENDING");
+  const urgentRequests = pendingRequests.filter(r => r.priority === "URGENT" || r.priority === "HIGH");
 
   const stats = [
     {
       label: "Pending Service Requests",
-      value: String(serviceRequests.length),
-      change: "Awaiting review",
+      value: String(pendingRequests.length),
+      change: `${urgentRequests.length} critical/urgent cases`,
       icon: Send,
       color: "bg-white text-green-600",
-      urgent: true,
+      urgent: urgentRequests.length > 0,
+      route: "/dashboard/service-request-queue"
     },
     {
       label: "My Total Screenings",
       value: String(totalScreenings),
-      change: "Conducted by me",
+      change: "Conducted directly by me",
       icon: ClipboardCheck,
       color: "bg-white text-green-600",
       urgent: false,
+      route: "/dashboard/reports"
     },
     {
-      label: "Total Patients",
+      label: "Patients Under Care",
       value: String(new Set(serviceRequests.map((r) => r.patientId)).size),
-      change: "Under care",
+      change: "Active in your queue",
       icon: Users,
       color: "bg-white text-green-600",
       urgent: false,
+      route: "/dashboard/patient-clinical-summary"
     },
   ];
 
@@ -144,97 +153,93 @@ export const DoctorDashboard = () => {
         </p>
       </div>
 
-      {/* Top Section: Stats and Referral Chart */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Left Column: Stats Cards */}
-        <div className="flex flex-col gap-3">
-          {stats.map((stat, index) => {
-            const Icon = stat.icon;
-            return (
-              <Card 
-                key={index} 
-                className={cn(
-                  "shadow-sm",
-                  stat.urgent ? "border-red-200 bg-red-50/30" : ""
-                )}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        {stat.label}
-                      </p>
-                      <p className="text-2xl font-bold mt-1 text-gray-900">{stat.value}</p>
-                      <p className={cn(
-                        "text-[10px] font-medium mt-1 flex items-center gap-1",
-                        stat.urgent ? "text-red-600" : "text-green-600"
-                      )}>
-                        {stat.urgent && <AlertTriangle className="h-2 w-2" />}
-                        {stat.change}
-                      </p>
-                    </div>
-                    <div className={cn(
-                      "h-10 w-10 rounded-lg flex items-center justify-center shrink-0",
-                      stat.urgent ? "bg-red-100 text-red-600" : "bg-green-50 text-green-600"
-                    )}>
-                      <Icon className="h-5 w-5" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-
-        {/* Right Column: Referral Status Pie Chart */}
-        <div className="lg:col-span-3">
-          <Card className="h-full">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-semibold">Specialized Referrals Status</CardTitle>
-              <CardDescription>Breakdown of patient referrals assigned to you</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {referralData.length > 0 ? (
-                <div className="flex flex-col md:flex-row items-center justify-around h-[220px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={referralData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={80}
-                        paddingAngle={5}
-                        dataKey="value"
-                      >
-                        {referralData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                      <Legend verticalAlign="middle" align="right" layout="vertical" />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className="grid grid-cols-2 gap-4 mt-4 md:mt-0 px-4">
-                    {referralData.map((item, index) => (
-                      <div key={item.name} className="flex flex-col">
-                        <span className="text-xs text-gray-500">{item.name}</span>
-                        <span className="text-lg font-bold" style={{ color: COLORS[index % COLORS.length] }}>
-                          {item.value}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="h-[220px] flex items-center justify-center text-gray-500 italic text-sm">
-                  No referrals issued yet
-                </div>
+      {/* Stats Cards Section */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {stats.map((stat, index) => {
+          const Icon = stat.icon;
+          return (
+            <Card 
+              key={index} 
+              className={cn(
+                "shadow-sm cursor-pointer hover:bg-gray-50 transition-colors",
+                stat.urgent ? "border-red-200 bg-red-50/30 hover:bg-red-50/50" : ""
               )}
-            </CardContent>
-          </Card>
-        </div>
+              onClick={() => stat.route && navigate(stat.route)}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {stat.label}
+                    </p>
+                    <p className="text-2xl font-bold mt-1 text-gray-900">{stat.value}</p>
+                    <p className={cn(
+                      "text-[10px] font-medium mt-1 flex items-center gap-1",
+                      stat.urgent ? "text-red-600" : "text-green-600"
+                    )}>
+                      {stat.urgent && <AlertTriangle className="h-2 w-2" />}
+                      {stat.change}
+                    </p>
+                  </div>
+                  <div className={cn(
+                    "h-10 w-10 rounded-lg flex items-center justify-center shrink-0",
+                    stat.urgent ? "bg-red-100 text-red-600" : "bg-green-50 text-green-600"
+                  )}>
+                    <Icon className="h-5 w-5" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
+
+      {/* Referral Status Pie Chart */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg font-semibold">Specialized Referrals Status</CardTitle>
+          <CardDescription>Breakdown of patient referrals assigned to you</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {referralData.length > 0 ? (
+            <div className="flex flex-col md:flex-row items-center justify-around h-[220px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={referralData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {referralData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend verticalAlign="middle" align="right" layout="vertical" />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="grid grid-cols-2 gap-4 mt-4 md:mt-0 px-4">
+                {referralData.map((item, index) => (
+                  <div key={item.name} className="flex flex-col">
+                    <span className="text-xs text-gray-500">{item.name}</span>
+                    <span className="text-lg font-bold" style={{ color: COLORS[index % COLORS.length] }}>
+                      {item.value}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="h-[220px] flex items-center justify-center text-gray-500 italic text-sm">
+              No referrals issued yet
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Bottom Section: Service Requests Table */}
       <div className="grid grid-cols-1">

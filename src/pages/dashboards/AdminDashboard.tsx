@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -6,6 +6,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  CardDescription,
 } from "@/app/components/ui/card";
 import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
@@ -120,13 +121,13 @@ export const AdminDashboard = () => {
           return {
             facility: facility.name,
             normal: facilityScreenings.filter(
-              (s) => s.classification === "NORMAL",
+              (s) => s.classification?.toUpperCase() === "NORMAL",
             ).length,
             moderate: facilityScreenings.filter(
-              (s) => s.classification === "MODERATE_ACUTE_MALNUTRITION",
+              (s) => s.classification?.toUpperCase() === "MAM",
             ).length,
             severe: facilityScreenings.filter(
-              (s) => s.classification === "SEVERE_ACUTE_MALNUTRITION",
+              (s) => s.classification?.toUpperCase() === "SAM",
             ).length,
             doctors: facilityUsers.filter((u) => u.role === "DOCTOR").length,
             chws: facilityUsers.filter((u) => u.role === "COMMUNITY_HEALTH_WORKER").length,
@@ -150,18 +151,21 @@ export const AdminDashboard = () => {
       value: String(users.length),
       change: `${activeUsers.length} active`,
       icon: Users,
+      route: undefined
     },
     {
       label: "Pending Requests",
       value: String(pendingRequests),
       change: `${criticalAlerts} critical alerts`,
       icon: Activity,
+      route: "/dashboard/analytics"
     },
     {
       label: "Total Records",
       value: String(totalPatients + totalScreenings),
       change: `${totalPatients} patients, ${totalScreenings} screenings`,
       icon: Database,
+      route: "/dashboard/analytics"
     },
   ];
 
@@ -183,71 +187,86 @@ export const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* Main Content Area: Stats and Chart Side-by-Side */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column: Stats Cards */}
-        <div className="flex flex-col gap-3">
-          {summaryStats.map((stat, index) => {
-            const Icon = stat.icon;
-            return (
-              <Card key={index} className="shadow-sm">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        {stat.label}
-                      </p>
-                      <p className="text-2xl font-bold mt-1 text-gray-900">{stat.value}</p>
-                      <p className="text-[10px] text-green-600 font-medium mt-1">
-                        {stat.change}
-                      </p>
-                    </div>
-                    <div className="h-10 w-10 rounded-lg flex items-center justify-center bg-green-50 text-green-600 shrink-0">
-                      <Icon className="h-5 w-5" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-
-        {/* Right Column: Malnutrition Chart */}
-        <div className="lg:col-span-2">
-          <Card className="h-full">
-            <CardHeader>
-              <CardTitle>Malnutrition Statistics by Facility</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {facilityStats.length > 0 ? (
-                <ResponsiveContainer width="100%" height={320}>
-                  <BarChart data={facilityStats}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="facility" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="normal" fill="#10b981" name="Normal" />
-                    <Bar dataKey="moderate" fill="#f59e0b" name="Moderate" />
-                    <Bar dataKey="severe" fill="#ef4444" name="Severe" />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-[320px] flex items-center justify-center rounded-lg border border-dashed bg-gray-50 p-6 text-center text-gray-500">
+      {/* Stats Cards Section */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {summaryStats.map((stat, index) => {
+          const Icon = stat.icon;
+          return (
+            <Card
+              key={index}
+              className="shadow-sm cursor-pointer hover:bg-gray-50 transition-colors"
+              onClick={() => stat.route && navigate(stat.route)}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-700">
-                      No facility statistics available
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {stat.label}
                     </p>
-                    <p className="mt-1 text-sm text-gray-500">
-                      Add facilities and screenings to populate this chart.
+                    <p className="text-2xl font-bold mt-1 text-gray-900">{stat.value}</p>
+                    <p className="text-[10px] text-green-600 font-medium mt-1">
+                      {stat.change}
                     </p>
+                  </div>
+                  <div className="h-10 w-10 rounded-lg flex items-center justify-center bg-green-50 text-green-600 shrink-0">
+                    <Icon className="h-5 w-5" />
                   </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
+
+      {/* Malnutrition Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Malnutrition Statistics by Facility</CardTitle>
+          <CardDescription>
+            This stacked bar chart displays the total number of nutrition screenings conducted at each health facility.
+            The total height represents screening volume, while the colored segments indicate the proportion of healthy (Normal) vs. malnourished (MAM/SAM) patients.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {facilityStats.length > 0 ? (
+            <ResponsiveContainer width="100%" height={380}>
+              <BarChart data={facilityStats} margin={{ top: 20, right: 30, left: 20, bottom: 70 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                <XAxis
+                  dataKey="facility"
+                  angle={-45}
+                  textAnchor="end"
+                  tick={{ fill: '#6b7280', fontSize: 12 }}
+                  tickMargin={10}
+                />
+                <YAxis
+                  tick={{ fill: '#6b7280', fontSize: 12 }}
+                  label={{ value: 'Total Screenings', angle: -90, position: 'insideLeft', style: { fill: '#6b7280', fontSize: 13, textAnchor: 'middle' }, offset: 0 }}
+                />
+                <Tooltip
+                  cursor={{ fill: '#f3f4f6' }}
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                />
+                <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                <Bar dataKey="normal" stackId="a" fill="#10b981" name="Normal" radius={[0, 0, 0, 0]} />
+                <Bar dataKey="moderate" stackId="a" fill="#f59e0b" name="Moderate (MAM)" radius={[0, 0, 0, 0]} />
+                <Bar dataKey="severe" stackId="a" fill="#ef4444" name="Severe (SAM)" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-[320px] flex items-center justify-center rounded-lg border border-dashed bg-gray-50 p-6 text-center text-gray-500">
+              <div>
+                <p className="text-sm font-medium text-gray-700">
+                  No facility statistics available
+                </p>
+                <p className="mt-1 text-sm text-gray-500">
+                  Add facilities and screenings to populate this chart.
+                </p>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Facility Supervision Table */}
       <Card>
