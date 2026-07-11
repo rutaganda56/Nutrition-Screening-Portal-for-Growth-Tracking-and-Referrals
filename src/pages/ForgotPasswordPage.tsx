@@ -6,8 +6,9 @@ import { PasswordInput } from '@/app/components/ui/password-input';
 import { Label } from '@/app/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/app/components/ui/input-otp';
-import { Heart, ArrowLeft, Mail, Lock, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Mail, Lock, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { authApi } from '@/services/api';
 
 type Step = 'email' | 'otp' | 'reset' | 'success';
 
@@ -30,15 +31,18 @@ export const ForgotPasswordPage = () => {
     }
 
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      await authApi.forgotPassword(email);
       toast.success('OTP sent to your email');
       setStep('otp');
-    }, 1500);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to send OTP');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Simulate verifying OTP
+  // Verify OTP (local transition, actual verification happens during reset)
   const handleVerifyOTP = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -47,17 +51,13 @@ export const ForgotPasswordPage = () => {
       return;
     }
 
-    setLoading(true);
-    // Simulate API call - In production, verify OTP with backend
-    setTimeout(() => {
-      setLoading(false);
-      // Mock verification - accept any 6-digit code
-      toast.success('OTP verified successfully');
-      setStep('reset');
-    }, 1500);
+    // Since our backend takes both token and new password in one step (/reset-password),
+    // we just move to the reset step here.
+    toast.success('OTP format valid');
+    setStep('reset');
   };
 
-  // Simulate resetting password
+  // Reset password
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -77,9 +77,8 @@ export const ForgotPasswordPage = () => {
     }
 
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      await authApi.resetPassword(otp, newPassword);
       toast.success('Password reset successfully');
       setStep('success');
       
@@ -87,13 +86,22 @@ export const ForgotPasswordPage = () => {
       setTimeout(() => {
         navigate('/login');
       }, 2000);
-    }, 1500);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to reset password');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Resend OTP
-  const handleResendOTP = () => {
-    toast.success('New OTP sent to your email');
-    setOtp('');
+  const handleResendOTP = async () => {
+    try {
+      await authApi.forgotPassword(email);
+      toast.success('New OTP sent to your email');
+      setOtp('');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to resend OTP');
+    }
   };
 
   return (
@@ -103,8 +111,7 @@ export const ForgotPasswordPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link to="/" className="flex items-center gap-2">
-              <Heart className="h-6 w-6 text-green-600" />
-              <span className="text-xl font-semibold text-gray-900">Nutrition Screening Portal</span>
+              <span className="text-xl font-semibold text-gray-900">Nutri Track</span>
             </Link>
             <Link to="/login">
               <Button variant="ghost">

@@ -1,5 +1,6 @@
 package com.nutritrack.controller;
 
+import com.nutritrack.dto.AuthResponseDto;
 import com.nutritrack.dto.LoginDto;
 import com.nutritrack.dto.RegisterDto;
 import com.nutritrack.dto.UserResponseDto;
@@ -22,15 +23,15 @@ public class AuthController {
     @Autowired
     private UserService userService;
 
-    @PostMapping("/register")
-    @ResponseStatus(HttpStatus.CREATED)
-    public UserResponseDto register(@Valid @RequestBody RegisterDto dto) {
-        return userService.register(dto);
-    }
-
     @PostMapping("/login")
-    public UserResponseDto login(@Valid @RequestBody LoginDto dto) {
-        return userService.login(dto);
+    public ResponseEntity<?> login(@Valid @RequestBody LoginDto dto) {
+        try {
+            return ResponseEntity.ok(userService.login(dto));
+        } catch (RuntimeException e) {
+            java.util.Map<String, String> response = new java.util.HashMap<>();
+            response.put("message", "the information you are using are not saved in the database try again");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

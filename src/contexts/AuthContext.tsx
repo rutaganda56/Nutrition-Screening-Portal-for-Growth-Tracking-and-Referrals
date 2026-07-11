@@ -18,6 +18,7 @@ interface AuthContextType {
   login: (email: string, password: string, role: UserRole) => Promise<boolean>;
   logout: () => void;
   register: (userData: Omit<User, 'id'> & { password: string; phone?: string; facilityId?: number }) => Promise<boolean>;
+  updateUser: (updatedData: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -30,14 +31,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (email: string, password: string, role: UserRole): Promise<boolean> => {
     const data = await authApi.login(email, password, role);
+    const responseUser = data.user;
     const user: User = {
-      id: String(data.id),
-      name: data.fullName,
-      email: data.email,
-      role: authApi.toFrontendRole(data.role) as UserRole,
-      department: data.department,
-      facilityId: data.facilityId,
-      facilityName: data.facilityName,
+      id: String(responseUser.id),
+      name: responseUser.fullName,
+      email: responseUser.email,
+      role: authApi.toFrontendRole(responseUser.role) as UserRole,
+      department: responseUser.department,
+      facilityId: responseUser.facilityId,
+      facilityName: responseUser.facilityName,
     };
     setUser(user);
     localStorage.setItem('user', JSON.stringify(user));
@@ -62,8 +64,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem('user');
   };
 
+  const updateUser = (updatedData: Partial<User>) => {
+    setUser(prev => {
+      if (!prev) return null;
+      const newUser = { ...prev, ...updatedData };
+      localStorage.setItem('user', JSON.stringify(newUser));
+      return newUser;
+    });
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, register }}>
+    <AuthContext.Provider value={{ user, login, logout, register, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

@@ -7,7 +7,7 @@ import { PasswordInput } from '@/app/components/ui/password-input';
 import { Label } from '@/app/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/app/components/ui/select';
-import { Heart, LogIn } from 'lucide-react';
+import { LogIn } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const LoginPage = () => {
@@ -47,20 +47,21 @@ export const LoginPage = () => {
           navigate('/dashboard');
         }
       }
-    } catch (error) {
-      toast.error('Invalid credentials. Please try again.');
+    } catch (error: any) {
+      console.error('Login error:', error);
+      toast.error(error.message || 'Invalid credentials. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center p-4">
+    <div className="min-h-screen bg-white flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Welcome Back</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Nutri Track</h1>
           <p className="text-gray-600 mt-2">Sign in to access your dashboard</p>
         </div>
 
@@ -115,9 +116,6 @@ export const LoginPage = () => {
                     <SelectItem value="administrator">Administrator</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-gray-500">
-                  Your role determines which dashboard you'll access
-                </p>
               </div>
 
               <div className="flex items-center justify-between text-sm">
@@ -138,17 +136,6 @@ export const LoginPage = () => {
                 <Button type="submit" className="w-full bg-green-600 hover:bg-green-700" disabled={loading}>
                   Sign In
                 </Button>
-                
-                <div className="text-center text-sm text-gray-600">
-                  Don't have an account?{' '}
-                  <button
-                    type="button"
-                    onClick={() => navigate('/register')}
-                    className="text-green-600 hover:underline font-medium"
-                  >
-                    Register here
-                  </button>
-                </div>
               </div>
             </form>
           </CardContent>

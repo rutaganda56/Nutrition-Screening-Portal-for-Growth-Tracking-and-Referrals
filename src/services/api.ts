@@ -8,6 +8,7 @@ export interface RegisterPayload {
   role: string;
   department?: string;
   facilityId?: number;
+  status?: string;
 }
 
 export interface UserResponse {
@@ -23,11 +24,21 @@ export interface UserResponse {
   createdAt: string;
 }
 
+export interface AuthResponse {
+  token: string;
+  tokenType: 'Bearer';
+  expiresIn: number;
+  user: UserResponse;
+}
+
 async function request<T>(endpoint: string, options: RequestInit): Promise<T> {
   const { headers: optionHeaders, ...restOptions } = options;
+  const token = localStorage.getItem('authToken');
+
   const res = await fetch(`${BASE_URL}${endpoint}`, {
     headers: {
       'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(optionHeaders instanceof Headers
         ? Object.fromEntries(optionHeaders.entries())
         : optionHeaders ?? {}),
@@ -36,11 +47,29 @@ async function request<T>(endpoint: string, options: RequestInit): Promise<T> {
   });
 
   const text = await res.text();
-  const data = text ? JSON.parse(text) : null;
+  let data = null;
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      data = text;
+    }
+  }
 
   if (!res.ok) {
-    const message = typeof data === 'object' && data !== null ? Object.values(data).join(', ') : 'Request failed';
-    throw new Error(message as string);
+    let message = 'Request failed';
+    if (typeof data === 'object' && data !== null) {
+      if (data.message) {
+        message = data.message;
+      } else if (data.error) {
+        message = data.error;
+      } else {
+        message = Object.values(data).join(', ');
+      }
+    } else if (typeof data === 'string' && data.length > 0) {
+      message = data;
+    }
+    throw new Error(message);
   }
 
   return data as T;
@@ -60,7 +89,7 @@ const ROLE_FROM_API: Record<string, string> = {
 
 export const authApi = {
   login: (email: string, password: string, role: string) =>
-    request<UserResponse>('/auth/login', {
+    request<AuthResponse>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password, role: ROLE_TO_API[role] ?? role }),
     }),
@@ -69,6 +98,18 @@ export const authApi = {
     request<UserResponse>('/auth/register', {
       method: 'POST',
       body: JSON.stringify({ ...payload, role: ROLE_TO_API[payload.role] ?? payload.role }),
+    }),
+
+  forgotPassword: (email: string) =>
+    request<{ message: string }>('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
+
+  resetPassword: (token: string, newPassword: string) =>
+    request<{ message: string }>('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, newPassword }),
     }),
 
   toFrontendRole: (apiRole: string): string => ROLE_FROM_API[apiRole] ?? apiRole,
@@ -88,6 +129,7 @@ export interface PatientResponse {
   facilityName: string | null;
   guardianFirstName: string;
   guardianLastName: string;
+  guardianRelationship: string;
   guardianPhone: string;
   registeredByName?: string;
   createdAt?: string;
@@ -117,7 +159,6 @@ export interface ServiceRequestResponse {
   patientAge: string;
   priority: string;
   status: string;
-  reasonCode: string;
   description: string;
   submittedByName: string;
   assignedToName: string | null;
@@ -142,12 +183,19 @@ export interface PatientRegisterPayload {
 }
 
 export const patientsApi = {
-  getAll: () => request<PatientResponse[]>('/patients', { method: 'GET' }),
-  getByStatus: (status: string) => request<PatientResponse[]>(`/patients/status/${status}`, { method: 'GET' }),
+  getAll: (facilityId?: number) => 
+    request<PatientResponse[]>(`/patients${facilityId ? `?facilityId=${facilityId}` : ''}`, { method: 'GET' }),
+  getByStatus: (status: string, facilityId?: number) => 
+    request<PatientResponse[]>(`/patients/status/${status}${facilityId ? `?facilityId=${facilityId}` : ''}`, { method: 'GET' }),
   getById: (id: number) => request<PatientResponse>(`/patients/${id}`, { method: 'GET' }),
   register: (payload: PatientRegisterPayload, registeredBy: number) =>
     request<PatientResponse>(`/patients?registeredBy=${registeredBy}`, {
       method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  update: (id: number, payload: Partial<PatientRegisterPayload>) =>
+    request<PatientResponse>(`/patients/${id}`, {
+      method: 'PUT',
       body: JSON.stringify(payload),
     }),
 };
@@ -209,7 +257,6 @@ export interface ServiceRequestCreatePayload {
   patientId: number;
   screeningId: number;
   priority: string;
-  reasonCode: string;
   description: string;
   assignedToId: number | null;
 }
@@ -244,8 +291,10 @@ export interface UserCreatePayload {
   email: string;
   phone: string;
   role: string;
+  department?: string;
   facilityId?: number;
-  status?: string; // used to pass temp password
+  status?: string;
+  temporaryPassword?: string;
 }
 
 export const usersApi = {
@@ -265,7 +314,10 @@ export const usersApi = {
   delete: (id: number) =>
     request<void>(`/users/${id}`, { method: 'DELETE' }),
   changePassword: (id: number, currentPassword: string, newPassword: string) =>
-    request<UserResponse>(`/users/${id}/change-password?currentPassword=${encodeURIComponent(currentPassword)}&newPassword=${encodeURIComponent(newPassword)}`, { method: 'PATCH' }),
+    request<UserResponse>(`/users/${id}/change-password`, { 
+      method: 'PATCH',
+      body: JSON.stringify({ currentPassword, newPassword })
+    }),
 };
 
 export const facilitiesApi = {
@@ -330,7 +382,7 @@ export interface NutritionOrderCreatePayload {
   patientId: number;
   screeningId?: number | null;
   serviceRequestId?: number | null;
-  orderType: string;
+  supplementType: string;
   supplement?: string;
   dosage?: string;
   frequency?: string;
@@ -345,7 +397,7 @@ export interface NutritionOrderResponse {
   patientId: number;
   serviceRequestId: number | null;
   screeningId: number | null;
-  orderType: string;
+  supplementType: string;
   supplement: string;
   dosage: string;
   frequency: string;
@@ -373,7 +425,6 @@ export interface ClinicalAssessmentCreatePayload {
   patientId: number;
   diagnosis: string;
   severity: string;
-  complications?: string;
   clinicalNotes: string;
 }
 
@@ -383,7 +434,6 @@ export interface ClinicalAssessmentResponse {
   patientId: number;
   diagnosis: string;
   severity: string;
-  complications: string;
   clinicalNotes: string;
   assessedByName: string;
   createdAt: string;
