@@ -1,0 +1,16 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Spring Boot-NutriTrackApplication",
+      "request": "launch",
+      "mainClass": "com.nutritrack.NutriTrackApplication",
+      "projectName": "nutritrack-api",
+      "env": {
+        "MAIL_USERNAME": "valentinrutaganda04@gmail.com",
+        "MAIL_PASSWORD": ""
+      }
+    }
+  ]
+}
