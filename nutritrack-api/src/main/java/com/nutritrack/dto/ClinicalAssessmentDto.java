@@ -8,6 +8,5 @@ public record ClinicalAssessmentDto(
         @NotNull Long patientId,
         @NotEmpty String diagnosis,
         @NotEmpty String severity,
-        String complications,
         @NotEmpty String clinicalNotes
 ) {}

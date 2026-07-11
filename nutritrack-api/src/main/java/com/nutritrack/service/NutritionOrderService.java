@@ -51,7 +51,7 @@ public class NutritionOrderService {
 
         NutritionOrder order = new NutritionOrder();
         order.setPatient(patient);
-        order.setOrderType(dto.orderType().toUpperCase());
+        order.setSupplementType(dto.supplementType());
         order.setSupplement(dto.supplement());
         order.setDosage(dto.dosage());
         order.setFrequency(dto.frequency());

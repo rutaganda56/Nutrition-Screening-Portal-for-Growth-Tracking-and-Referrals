@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.dao.DataIntegrityViolationException;
 
 @Service
 public class UserService {
@@ -29,8 +30,11 @@ public class UserService {
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
 
+    @Autowired
+    private JwtService jwtService;
+
     public UserResponseDto createUser(UserDto dto) {
-        if (userRepository.existsByEmail(dto.email())) {
+        if (userRepository.existsByEmailIgnoreCase(dto.email())) {
             throw new RuntimeException("Email already registered");
         }
         Users user = new Users();
@@ -38,10 +42,15 @@ public class UserService {
         user.setEmail(dto.email());
         user.setPhone(dto.phone());
         user.setRole(dto.role());
+        user.setDepartment(dto.department());
         user.setStatus("ACTIVE");
-        // Use provided password or generate a temporary one
-        String rawPassword = (dto.status() != null && !dto.status().isBlank()) ? dto.status() : "Temp@" + dto.fullName().replaceAll("\\s+", "").substring(0, Math.min(4, dto.fullName().replaceAll("\\s+", "").length())) + "123";
+        
+        // Use provided temporary password or generate a temporary one
+        String rawPassword = (dto.temporaryPassword() != null && !dto.temporaryPassword().isBlank()) 
+                ? dto.temporaryPassword() 
+                : "Temp@" + dto.fullName().replaceAll("\\s+", "").substring(0, Math.min(4, dto.fullName().replaceAll("\\s+", "").length())) + "123";
         user.setPassword(passwordEncoder.encode(rawPassword));
+        
         if (dto.facilityId() != null) {
             HealthFacility facility = facilityRepository.findById(dto.facilityId())
                     .orElseThrow(() -> new RuntimeException("Facility not found"));
@@ -61,7 +70,7 @@ public class UserService {
     }
 
     public UserResponseDto register(RegisterDto dto) {
-        if (userRepository.existsByEmail(dto.email())) {
+        if (userRepository.existsByEmailIgnoreCase(dto.email())) {
             throw new RuntimeException("Email already registered");
         }
         Users user = new Users();
@@ -76,15 +85,29 @@ public class UserService {
                     .orElseThrow(() -> new RuntimeException("Facility not found"));
             user.setFacility(facility);
         }
-        return userMapper.toResponseDto(userRepository.save(user));
+        try {
+            return userMapper.toResponseDto(userRepository.save(user));
+        } catch (DataIntegrityViolationException e) {
+            throw new RuntimeException("Email already registered");
+        }
     }
 
-    public UserResponseDto login(LoginDto dto) {
-        Users user = userRepository.findByEmail(dto.email());
-        if (user == null || !passwordEncoder.matches(dto.password(), user.getPassword())) {
-            throw new RuntimeException("Invalid credentials");
+    public AuthResponseDto login(LoginDto dto) {
+        Users user = userRepository.findByEmailIgnoreCase(dto.email());
+        if (user == null) {
+            throw new RuntimeException("Account not found with this email");
         }
-        return userMapper.toResponseDto(user);
+        if (!passwordEncoder.matches(dto.password(), user.getPassword())) {
+            throw new RuntimeException("Incorrect password");
+        }
+        if (!user.getRole().equalsIgnoreCase(dto.role())) {
+            throw new RuntimeException("Role mismatch. You selected the wrong role.");
+        }
+        return new AuthResponseDto(
+                jwtService.generateToken(user),
+                "Bearer",
+                jwtService.getExpirationMillis() / 1000,
+                userMapper.toResponseDto(user));
     }
 
     public List<UserResponseDto> getAllUsers() {
@@ -106,6 +129,7 @@ public class UserService {
         user.setEmail(dto.email());
         user.setPhone(dto.phone());
         user.setRole(dto.role());
+        user.setDepartment(dto.department());
         if (dto.status() != null) user.setStatus(dto.status());
         if (dto.facilityId() != null) {
             HealthFacility facility = facilityRepository.findById(dto.facilityId())

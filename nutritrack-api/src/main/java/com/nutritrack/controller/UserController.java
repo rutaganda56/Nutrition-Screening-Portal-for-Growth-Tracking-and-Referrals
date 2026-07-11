@@ -1,5 +1,6 @@
 package com.nutritrack.controller;
 
+import com.nutritrack.dto.ChangePasswordDto;
 import com.nutritrack.dto.UserDto;
 import com.nutritrack.dto.UserResponseDto;
 import com.nutritrack.service.UserService;
@@ -45,9 +46,8 @@ public class UserController {
 
     @PatchMapping("/{id}/change-password")
     public UserResponseDto changePassword(@PathVariable Long id,
-                                          @RequestParam String currentPassword,
-                                          @RequestParam String newPassword) {
-        return userService.changePassword(id, currentPassword, newPassword);
+                                          @Valid @RequestBody ChangePasswordDto dto) {
+        return userService.changePassword(id, dto.currentPassword(), dto.newPassword());
     }
 
     @PatchMapping("/{id}/toggle-status")

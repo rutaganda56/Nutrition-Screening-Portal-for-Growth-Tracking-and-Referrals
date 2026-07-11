@@ -47,7 +47,6 @@ public class ClinicalAssessmentService {
         assessment.setAssessedBy(assessedBy);
         assessment.setDiagnosis(dto.diagnosis());
         assessment.setSeverity(dto.severity().toUpperCase());
-        assessment.setComplications(dto.complications());
         assessment.setClinicalNotes(dto.clinicalNotes());
         assessment.setAssessedAt(LocalDate.now());
 

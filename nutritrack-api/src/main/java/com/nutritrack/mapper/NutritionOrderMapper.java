@@ -14,7 +14,6 @@ public class NutritionOrderMapper {
                 order.getPatient() != null ? order.getPatient().getId() : null,
                 order.getPatient() != null
                         ? order.getPatient().getFirstName() + " " + order.getPatient().getLastName() : null,
-                order.getOrderType(),
                 order.getSupplement(),
                 order.getDosage(),
                 order.getFrequency(),

@@ -25,6 +25,7 @@ public class UserMapper {
                 user.getEmail(),
                 user.getPhone(),
                 user.getRole(),
+                user.getDepartment(),
                 user.getStatus(),
                 user.getFacility() != null ? user.getFacility().getName() : null,
                 user.getFacility() != null ? user.getFacility().getId() : null,

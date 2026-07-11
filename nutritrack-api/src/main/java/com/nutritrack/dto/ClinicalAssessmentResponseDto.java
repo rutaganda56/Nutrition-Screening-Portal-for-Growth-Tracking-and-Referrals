@@ -9,7 +9,6 @@ public record ClinicalAssessmentResponseDto(
         String patientName,
         String diagnosis,
         String severity,
-        String complications,
         String clinicalNotes,
         String assessedByName,
         LocalDate assessedAt,

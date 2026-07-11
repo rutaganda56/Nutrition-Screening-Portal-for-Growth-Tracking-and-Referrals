@@ -25,9 +25,7 @@ public class ServiceRequest {
 
     private String status; // PENDING | IN_REVIEW | COMPLETED | DECLINED
 
-    @Column(name = "reason_code")
-    private String reasonCode;
-
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     @CreationTimestamp

@@ -22,7 +22,6 @@ public class ServiceRequestMapper {
                 patientAge,
                 sr.getPriority(),
                 sr.getStatus(),
-                sr.getReasonCode(),
                 sr.getDescription(),
                 sr.getSubmittedBy() != null ? sr.getSubmittedBy().getFullName() : null,
                 sr.getAssignedTo() != null ? sr.getAssignedTo().getFullName() : null,

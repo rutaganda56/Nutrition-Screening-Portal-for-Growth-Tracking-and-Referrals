@@ -23,10 +23,10 @@ public class NutritionOrder {
     private String orderCode;
 
     // THERAPEUTIC | SUPPLEMENTARY | PREVENTIVE | COUNSELING | RUTF | MICRONUTRIENT
-    @Column(name = "order_type")
-    private String orderType;
+    @Column(name = "supplement_type")
+    private String supplementType; // RUTF | RUSF | CSB+ | etc.
 
-    private String supplement; // RUTF | RUSF | CSB+ | etc.
+    private String supplement;
 
     private String dosage;
 

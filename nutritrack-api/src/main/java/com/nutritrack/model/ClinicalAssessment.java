@@ -21,8 +21,6 @@ public class ClinicalAssessment {
 
     private String severity; // CRITICAL | SEVERE | MODERATE | MILD
 
-    private String complications; // comma-separated
-
     @Column(name = "clinical_notes")
     private String clinicalNotes;
 

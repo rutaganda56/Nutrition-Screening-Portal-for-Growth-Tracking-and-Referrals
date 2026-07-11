@@ -30,8 +30,8 @@ public class PatientController {
     }
 
     @GetMapping
-    public List<PatientResponseDto> getAllPatients() {
-        return patientService.getAllPatients();
+    public List<PatientResponseDto> getAllPatients(@RequestParam(required = false) Long facilityId) {
+        return patientService.getAllPatients(facilityId);
     }
 
     @GetMapping("/{id}")
@@ -40,8 +40,14 @@ public class PatientController {
     }
 
     @GetMapping("/status/{status}")
-    public List<PatientResponseDto> getPatientsByStatus(@PathVariable String status) {
-        return patientService.getPatientsByStatus(status);
+    public List<PatientResponseDto> getPatientsByStatus(@PathVariable String status,
+                                                        @RequestParam(required = false) Long facilityId) {
+        return patientService.getPatientsByStatus(status, facilityId);
+    }
+
+    @PutMapping("/{id}")
+    public PatientResponseDto updatePatient(@PathVariable Long id, @Valid @RequestBody PatientDto dto) {
+        return patientService.updatePatient(id, dto);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

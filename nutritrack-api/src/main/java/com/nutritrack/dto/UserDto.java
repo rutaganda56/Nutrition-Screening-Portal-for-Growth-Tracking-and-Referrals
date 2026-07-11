@@ -10,5 +10,6 @@ public record UserDto(
         @NotEmpty String role,
         String department,
         String status,
-        Long facilityId
+        Long facilityId,
+        String temporaryPassword
 ) {}

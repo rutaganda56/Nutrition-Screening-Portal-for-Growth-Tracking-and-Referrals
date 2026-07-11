@@ -21,6 +21,7 @@ public class Users {
     @Column(name = "full_name")
     private String fullName;
 
+    @Column(unique = true, nullable = false)
     private String email;
 
     private String password;
@@ -28,6 +29,8 @@ public class Users {
     private String phone;
 
     private String role; // DOCTOR | COMMUNITY_HEALTH_WORKER | ADMINISTRATOR
+
+    private String department;
 
     private String address;
 

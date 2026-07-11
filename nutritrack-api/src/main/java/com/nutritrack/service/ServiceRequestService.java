@@ -52,7 +52,6 @@ public class ServiceRequestService {
         sr.setSubmittedBy(submittedBy);
         sr.setPriority(dto.priority().toUpperCase());
         sr.setStatus("PENDING");
-        sr.setReasonCode(dto.reasonCode());
         sr.setDescription(dto.description());
 
         if (dto.assignedToId() != null) {

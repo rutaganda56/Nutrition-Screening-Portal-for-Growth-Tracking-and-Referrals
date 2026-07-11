@@ -14,8 +14,8 @@ public interface NutritionOrderRepository extends JpaRepository<NutritionOrder, 
     List<NutritionOrder> findByPatientIdAndStatus(Long patientId, String status);
 
     @Query("SELECT n FROM NutritionOrder n WHERE n.patient.id = :patientId AND n.status = :status " +
-           "AND (:startDate <= n.endDate OR n.endDate IS NULL) " +
-           "AND (:endDate >= n.startDate OR :endDate IS NULL)")
+           "AND (cast(:startDate as date) <= n.endDate OR n.endDate IS NULL) " +
+           "AND (cast(:endDate as date) >= n.startDate OR cast(:endDate as date) IS NULL)")
     List<NutritionOrder> findOverlappingOrders(
             @Param("patientId") Long patientId,
             @Param("status") String status,

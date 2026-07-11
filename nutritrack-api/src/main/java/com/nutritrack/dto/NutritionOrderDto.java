@@ -7,9 +7,9 @@ import java.time.LocalDate;
 
 public record NutritionOrderDto(
         @NotNull Long patientId,
-        Long screeningId,
+        @NotNull Long screeningId,
         Long serviceRequestId,
-        @NotEmpty String orderType,
+        @NotEmpty String supplementType,
         String supplement,
         String dosage,
         String frequency,

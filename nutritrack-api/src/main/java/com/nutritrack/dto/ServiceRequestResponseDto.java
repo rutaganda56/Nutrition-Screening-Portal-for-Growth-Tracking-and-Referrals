@@ -11,7 +11,6 @@ public record ServiceRequestResponseDto(
         String patientAge,
         String priority,
         String status,
-        String reasonCode,
         String description,
         String submittedByName,
         String assignedToName,

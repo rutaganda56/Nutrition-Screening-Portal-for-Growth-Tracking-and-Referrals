@@ -8,7 +8,6 @@ public record NutritionOrderResponseDto(
         String orderCode,
         Long patientId,
         String patientName,
-        String orderType,
         String supplement,
         String dosage,
         String frequency,

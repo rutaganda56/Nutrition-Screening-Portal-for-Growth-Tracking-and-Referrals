@@ -7,7 +7,6 @@ public record ServiceRequestDto(
         @NotNull Long patientId,
         @NotNull Long screeningId,
         @NotEmpty String priority,
-        @NotEmpty String reasonCode,
         @NotEmpty String description,
         Long assignedToId
 ) {}
