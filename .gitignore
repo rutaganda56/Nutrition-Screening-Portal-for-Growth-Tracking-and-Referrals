@@ -42,3 +42,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .eslintcache
+nutritrack-api/apache-maven-3.9.6/
+nutritrack-api/maven.zip
+scratch_db.js
+temp_diff.txt
