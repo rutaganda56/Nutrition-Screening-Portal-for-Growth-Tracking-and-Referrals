@@ -26,6 +26,7 @@ GRANT ALL PRIVILEGES ON DATABASE nutritrack_db TO nutritrack_user;
 | `DB_PORT` | DB port (optional, default: 5432) | `5432` |
 | `DB_NAME` | DB name (optional, default: nutritrack_db) | `nutritrack_db` |
 | `JWT_SECRET` | Base64-encoded JWT secret (min 32 chars) | `dGVzdC1zZWNyZXQta2V5...` |
+| `JWT_EXPIRATION_MS` | JWT lifetime in milliseconds (optional, default: 86400000) | `86400000` |
 
 ## Running the App
 
@@ -54,7 +55,28 @@ mvn test
 | Method | Endpoint | Description |
 |---|---|---|
 | POST | `api/auth/register` | Register new user |
-| POST | `api/auth/login` | Login, returns JWT |
+| POST | `api/auth/login` | Login, returns JWT auth payload |
+
+Successful login response:
+
+```json
+{
+  "token": "<jwt>",
+  "tokenType": "Bearer",
+  "expiresIn": 86400,
+  "user": {
+    "id": 1,
+    "fullName": "Example User",
+    "email": "user@example.com",
+    "phone": "+250700000000",
+    "role": "DOCTOR",
+    "status": "ACTIVE",
+    "facilityName": "Health Center",
+    "facilityId": 1,
+    "createdAt": "2026-07-02T12:00:00"
+  }
+}
+```
 
 ### Users (Admin)
 | Method | Endpoint | Description |

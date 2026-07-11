@@ -1,0 +1,35 @@
+spring:
+  security:
+    user:
+      password: disabled
+      name: disabled
+  datasource:
+    url: jdbc:postgresql://localhost:5432/nutritrack_db
+    username: postgres
+    password: valentin04
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:valentinrutaganda04@gmail.com}
+    password: ${MAIL_PASSWORD:ofeqbbrrueuhuonq}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+app:
+  jwt:
+    secret: dev-only-nutritrack-jwt-secret-key-change-me
