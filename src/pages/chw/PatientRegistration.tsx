@@ -6,7 +6,12 @@ import { Label } from '@/app/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/app/components/ui/select';
 import { Textarea } from '@/app/components/ui/textarea';
 import { Alert, AlertDescription } from '@/app/components/ui/alert';
-import { Users, Save, AlertCircle, MapPin, Phone, Home } from 'lucide-react';
+import PeopleIcon from "@mui/icons-material/People";
+import SaveIcon from "@mui/icons-material/Save";
+import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
+import LocationOnIcon from "@mui/icons-material/LocationOn";
+import PhoneIcon from "@mui/icons-material/Phone";
+import HomeIcon from "@mui/icons-material/Home";
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { patientsApi } from '@/services/api';
@@ -48,9 +53,13 @@ export const PatientRegistration = () => {
     // Required field validations
     if (!formData.firstName.trim()) {
       newErrors.firstName = 'First name is required';
+    } else if (!/^[A-Za-z\s]+$/.test(formData.firstName)) {
+      newErrors.firstName = 'First name can only contain letters';
     }
     if (!formData.lastName.trim()) {
       newErrors.lastName = 'Last name is required';
+    } else if (!/^[A-Za-z\s]+$/.test(formData.lastName)) {
+      newErrors.lastName = 'Last name can only contain letters';
     }
     if (!formData.birthDate) {
       newErrors.birthDate = 'Birth date is required';
@@ -74,17 +83,21 @@ export const PatientRegistration = () => {
     // Guardian validations
     if (!formData.guardianFirstName.trim()) {
       newErrors.guardianFirstName = 'Guardian first name is required';
+    } else if (!/^[A-Za-z\s]+$/.test(formData.guardianFirstName)) {
+      newErrors.guardianFirstName = 'Guardian first name can only contain letters';
     }
     if (!formData.guardianLastName.trim()) {
       newErrors.guardianLastName = 'Guardian last name is required';
+    } else if (!/^[A-Za-z\s]+$/.test(formData.guardianLastName)) {
+      newErrors.guardianLastName = 'Guardian last name can only contain letters';
     }
     if (!formData.guardianRelationship) {
       newErrors.guardianRelationship = 'Relationship to child is required';
     }
     if (!formData.guardianPhone.trim()) {
       newErrors.guardianPhone = 'Guardian phone number is required';
-    } else if (!/^[0-9+\-() ]+$/.test(formData.guardianPhone)) {
-      newErrors.guardianPhone = 'Please enter a valid phone number';
+    } else if (!/^[0-9]{10}$/.test(formData.guardianPhone)) {
+      newErrors.guardianPhone = 'Phone number must be exactly 10 digits';
     }
     
 
@@ -159,7 +172,7 @@ export const PatientRegistration = () => {
 
       {/* Health Center Notice */}
       <Alert>
-        <MapPin className="h-4 w-4" />
+        <LocationOnIcon className="h-4 w-4" />
         <AlertDescription>
           Patients will be registered to your assigned health center: <strong>{assignedHealthCenter}</strong>
         </AlertDescription>
@@ -170,7 +183,7 @@ export const PatientRegistration = () => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
+              <PeopleIcon className="h-5 w-5" />
               Patient Information
             </CardTitle>
             <CardDescription>Basic information about the child (under 5 years)</CardDescription>
@@ -187,10 +200,13 @@ export const PatientRegistration = () => {
                   onChange={(e) => handleInputChange('firstName', e.target.value)}
                   placeholder="Uwase"
                   className={errors.firstName ? 'border-red-500' : ''}
+                  required
+                  pattern="[A-Za-z\s]+"
+                  title="First name can only contain letters"
                 />
                 {errors.firstName && (
                   <p className="text-sm text-red-600 flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3" />
+                    <ErrorOutlineIcon className="h-3 w-3" />
                     {errors.firstName}
                   </p>
                 )}
@@ -206,10 +222,13 @@ export const PatientRegistration = () => {
                   onChange={(e) => handleInputChange('lastName', e.target.value)}
                   placeholder="Aline"
                   className={errors.lastName ? 'border-red-500' : ''}
+                  required
+                  pattern="[A-Za-z\s]+"
+                  title="Last name can only contain letters"
                 />
                 {errors.lastName && (
                   <p className="text-sm text-red-600 flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3" />
+                    <ErrorOutlineIcon className="h-3 w-3" />
                     {errors.lastName}
                   </p>
                 )}
@@ -226,10 +245,11 @@ export const PatientRegistration = () => {
                   onChange={(e) => handleInputChange('birthDate', e.target.value)}
                   max={new Date().toISOString().split('T')[0]}
                   className={errors.birthDate ? 'border-red-500' : ''}
+                  required
                 />
                 {errors.birthDate && (
                   <p className="text-sm text-red-600 flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3" />
+                    <ErrorOutlineIcon className="h-3 w-3" />
                     {errors.birthDate}
                   </p>
                 )}
@@ -238,7 +258,7 @@ export const PatientRegistration = () => {
                 <Label htmlFor="gender">
                   Gender <span className="text-red-600">*</span>
                 </Label>
-                <Select value={formData.gender} onValueChange={(value) => handleInputChange('gender', value)}>
+                <Select required value={formData.gender} onValueChange={(value) => handleInputChange('gender', value)}>
                   <SelectTrigger className={errors.gender ? 'border-red-500' : ''}>
                     <SelectValue placeholder="Select gender" />
                   </SelectTrigger>
@@ -249,7 +269,7 @@ export const PatientRegistration = () => {
                 </Select>
                 {errors.gender && (
                   <p className="text-sm text-red-600 flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3" />
+                    <ErrorOutlineIcon className="h-3 w-3" />
                     {errors.gender}
                   </p>
                 )}
@@ -262,7 +282,7 @@ export const PatientRegistration = () => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Phone className="h-5 w-5" />
+              <PhoneIcon className="h-5 w-5" />
               Guardian Information
             </CardTitle>
             <CardDescription>Contact details for the child's primary caregiver</CardDescription>
@@ -279,10 +299,13 @@ export const PatientRegistration = () => {
                   onChange={(e) => handleInputChange('guardianFirstName', e.target.value)}
                   placeholder="Mukamana"
                   className={errors.guardianFirstName ? 'border-red-500' : ''}
+                  required
+                  pattern="[A-Za-z\s]+"
+                  title="Guardian first name can only contain letters"
                 />
                 {errors.guardianFirstName && (
                   <p className="text-sm text-red-600 flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3" />
+                    <ErrorOutlineIcon className="h-3 w-3" />
                     {errors.guardianFirstName}
                   </p>
                 )}
@@ -298,10 +321,13 @@ export const PatientRegistration = () => {
                   onChange={(e) => handleInputChange('guardianLastName', e.target.value)}
                   placeholder="Josiane"
                   className={errors.guardianLastName ? 'border-red-500' : ''}
+                  required
+                  pattern="[A-Za-z\s]+"
+                  title="Guardian last name can only contain letters"
                 />
                 {errors.guardianLastName && (
                   <p className="text-sm text-red-600 flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3" />
+                    <ErrorOutlineIcon className="h-3 w-3" />
                     {errors.guardianLastName}
                   </p>
                 )}
@@ -312,6 +338,7 @@ export const PatientRegistration = () => {
                   Relationship to Child <span className="text-red-600">*</span>
                 </Label>
                 <Select 
+                  required
                   value={formData.guardianRelationship} 
                   onValueChange={(value) => handleInputChange('guardianRelationship', value)}
                 >
@@ -331,7 +358,7 @@ export const PatientRegistration = () => {
                 </Select>
                 {errors.guardianRelationship && (
                   <p className="text-sm text-red-600 flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3" />
+                    <ErrorOutlineIcon className="h-3 w-3" />
                     {errors.guardianRelationship}
                   </p>
                 )}
@@ -346,12 +373,15 @@ export const PatientRegistration = () => {
                   type="tel"
                   value={formData.guardianPhone}
                   onChange={(e) => handleInputChange('guardianPhone', e.target.value)}
-                  placeholder="+250 XXX XXX XXX"
+                  placeholder="0781234567"
                   className={errors.guardianPhone ? 'border-red-500' : ''}
+                  required
+                  pattern="[0-9]{10}"
+                  title="Phone number must be exactly 10 digits"
                 />
                 {errors.guardianPhone && (
                   <p className="text-sm text-red-600 flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3" />
+                    <ErrorOutlineIcon className="h-3 w-3" />
                     {errors.guardianPhone}
                   </p>
                 )}
@@ -409,7 +439,7 @@ export const PatientRegistration = () => {
             className="bg-green-600 hover:bg-green-700"
             disabled={isSubmitting}
           >
-            <Save className="h-4 w-4 mr-2" />
+            <SaveIcon className="h-4 w-4 mr-2" />
             {isSubmitting ? 'Registering Patient...' : 'Register Patient'}
           </Button>
         </div>

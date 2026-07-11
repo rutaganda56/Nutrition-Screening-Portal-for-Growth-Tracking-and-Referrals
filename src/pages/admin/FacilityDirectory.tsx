@@ -9,7 +9,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/app/components/ui/label';
 import { Textarea } from '@/app/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/app/components/ui/table';
-import { Search, Plus, MapPin, Phone, Mail, Users, Building, Edit, Trash2, Loader2, AlertCircle } from 'lucide-react';
+import SearchIcon from "@mui/icons-material/Search";
+import AddIcon from "@mui/icons-material/Add";
+import LocationOnIcon from "@mui/icons-material/LocationOn";
+import PhoneIcon from "@mui/icons-material/Phone";
+import MailIcon from "@mui/icons-material/Mail";
+import PeopleIcon from "@mui/icons-material/People";
+import BusinessIcon from "@mui/icons-material/Business";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import AutorenewIcon from "@mui/icons-material/Autorenew";
+import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import { toast } from 'sonner';
 import { facilitiesApi, FacilityResponse } from '@/services/api';
 
@@ -44,7 +54,7 @@ const FacilityFormComponent: React.FC<FacilityFormProps> = ({ form, errors, subm
           <div className="space-y-2">
             <Label htmlFor="facilityName">Facility Name <span className="text-red-600">*</span></Label>
             <Input id="facilityName" placeholder="Enter name" value={form.name} onChange={onNameChange} className={errors.name ? 'border-red-500' : ''} />
-            {errors.name && (<p className="text-sm text-red-600 flex items-center gap-1"><AlertCircle className="h-3 w-3" />{errors.name}</p>)}
+            {errors.name && (<p className="text-sm text-red-600 flex items-center gap-1"><ErrorOutlineIcon className="h-3 w-3" />{errors.name}</p>)}
           </div>
           <div className="space-y-2">
             <Label htmlFor="facilityType">Type *</Label>
@@ -61,38 +71,38 @@ const FacilityFormComponent: React.FC<FacilityFormProps> = ({ form, errors, subm
           <div className="space-y-2 col-span-2">
             <Label htmlFor="facilityLocation">Location <span className="text-red-600">*</span></Label>
             <Input id="facilityLocation" placeholder="City, Country" value={form.location} onChange={onLocationChange} className={errors.location ? 'border-red-500' : ''} />
-            {errors.location && (<p className="text-sm text-red-600 flex items-center gap-1"><AlertCircle className="h-3 w-3" />{errors.location}</p>)}
+            {errors.location && (<p className="text-sm text-red-600 flex items-center gap-1"><ErrorOutlineIcon className="h-3 w-3" />{errors.location}</p>)}
           </div>
           <div className="space-y-2">
             <Label htmlFor="facilityPhone">Phone</Label>
-            <Input id="facilityPhone" placeholder="+250 788 123 456" value={form.phone} onChange={onPhoneChange} className={errors.phone ? 'border-red-500' : ''} />
-            {errors.phone && (<p className="text-sm text-red-600 flex items-center gap-1"><AlertCircle className="h-3 w-3" />{errors.phone}</p>)}
+            <Input id="facilityPhone" type="tel" placeholder="0781234567" value={form.phone} onChange={onPhoneChange} className={errors.phone ? 'border-red-500' : ''} pattern="[0-9]{10}" title="Phone number must be exactly 10 digits" />
+            {errors.phone && (<p className="text-sm text-red-600 flex items-center gap-1"><ErrorOutlineIcon className="h-3 w-3" />{errors.phone}</p>)}
           </div>
           <div className="space-y-2">
             <Label htmlFor="facilityEmail">Email</Label>
             <Input id="facilityEmail" type="email" placeholder="facility@example.com" value={form.email} onChange={onEmailChange} className={errors.email ? 'border-red-500' : ''} />
-            {errors.email && (<p className="text-sm text-red-600 flex items-center gap-1"><AlertCircle className="h-3 w-3" />{errors.email}</p>)}
+            {errors.email && (<p className="text-sm text-red-600 flex items-center gap-1"><ErrorOutlineIcon className="h-3 w-3" />{errors.email}</p>)}
           </div>
           <div className="space-y-2">
             <Label htmlFor="facilityStaff">Staff Count</Label>
             <Input id="facilityStaff" type="number" value={form.staff} onChange={onStaffChange} className={errors.staff ? 'border-red-500' : ''} />
-            {errors.staff && (<p className="text-sm text-red-600 flex items-center gap-1"><AlertCircle className="h-3 w-3" />{errors.staff}</p>)}
+            {errors.staff && (<p className="text-sm text-red-600 flex items-center gap-1"><ErrorOutlineIcon className="h-3 w-3" />{errors.staff}</p>)}
           </div>
           <div className="space-y-2">
             <Label htmlFor="facilityCapacity">Patient Capacity</Label>
             <Input id="facilityCapacity" type="number" value={form.capacity} onChange={onCapacityChange} className={errors.capacity ? 'border-red-500' : ''} />
-            {errors.capacity && (<p className="text-sm text-red-600 flex items-center gap-1"><AlertCircle className="h-3 w-3" />{errors.capacity}</p>)}
+            {errors.capacity && (<p className="text-sm text-red-600 flex items-center gap-1"><ErrorOutlineIcon className="h-3 w-3" />{errors.capacity}</p>)}
           </div>
           <div className="space-y-2 col-span-2">
             <Label htmlFor="facilityServices">Services (comma-separated)</Label>
             <Textarea id="facilityServices" placeholder="Nutrition, Pediatrics, Laboratory" value={form.services} onChange={onServicesChange} rows={2} className={errors.services ? 'border-red-500' : ''} />
-            {errors.services && (<p className="text-sm text-red-600 flex items-center gap-1"><AlertCircle className="h-3 w-3" />{errors.services}</p>)}
+            {errors.services && (<p className="text-sm text-red-600 flex items-center gap-1"><ErrorOutlineIcon className="h-3 w-3" />{errors.services}</p>)}
           </div>
         </div>
       </CardContent>
       <div className="flex gap-2 justify-end p-4">
         <Button variant="outline" type="button" onClick={onCancel}>Cancel</Button>
-        <Button type="submit" disabled={submitting} className="bg-green-600 hover:bg-green-700">{submitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}{label}</Button>
+        <Button type="submit" disabled={submitting} className="bg-green-600 hover:bg-green-700">{submitting && <AutorenewIcon className="h-4 w-4 animate-spin mr-2" />}{label}</Button>
       </div>
     </Card>
   </form>
@@ -121,6 +131,7 @@ export const FacilityDirectory = () => {
     const newErrors: Record<string,string> = {};
     if (!form.name || !form.name.trim()) newErrors.name = 'Facility name is required';
     if (!form.location || !form.location.trim()) newErrors.location = 'Location is required';
+    if (form.phone && form.phone.trim() && !/^[0-9]{10}$/.test(form.phone)) newErrors.phone = 'Phone number must be exactly 10 digits';
     if (Object.keys(newErrors).length > 0) { setErrors(newErrors); toast.error('Please correct the errors in the form'); return; }
     setSubmitting(true);
     try {
@@ -139,6 +150,7 @@ export const FacilityDirectory = () => {
     const newErrors: Record<string,string> = {};
     if (!form.name || !form.name.trim()) newErrors.name = 'Facility name is required';
     if (!form.location || !form.location.trim()) newErrors.location = 'Location is required';
+    if (form.phone && form.phone.trim() && !/^[0-9]{10}$/.test(form.phone)) newErrors.phone = 'Phone number must be exactly 10 digits';
     if (Object.keys(newErrors).length > 0) { setErrors(newErrors); toast.error('Please correct the errors in the form'); return; }
     setSubmitting(true);
     try {
@@ -233,7 +245,7 @@ export const FacilityDirectory = () => {
           <p className="text-gray-600 mt-1">Manage healthcare facilities</p>
         </div>
         <Button className="bg-green-600 hover:bg-green-700" onClick={() => { setForm(emptyForm); setErrors({}); setIsCreateOpen(true); }}>
-          <Plus className="h-4 w-4 mr-2" />Add Facility
+          <AddIcon className="h-4 w-4 mr-2" />Add Facility
         </Button>
       </div>
 
@@ -283,10 +295,38 @@ export const FacilityDirectory = () => {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Total Facilities</p><p className="text-3xl font-bold mt-1">{stats.total}</p></div><div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600"><Building className="h-6 w-6" /></div></div></CardContent></Card>
-        <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Active</p><p className="text-3xl font-bold mt-1">{stats.active}</p></div><div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600"><MapPin className="h-6 w-6" /></div></div></CardContent></Card>
-        <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Total Staff</p><p className="text-3xl font-bold mt-1">{stats.staff}</p></div><div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600"><Users className="h-6 w-6" /></div></div></CardContent></Card>
-        <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Total Capacity</p><p className="text-3xl font-bold mt-1">{stats.capacity}</p></div><div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600"><Building className="h-6 w-6" /></div></div></CardContent></Card>
+        <Card className="border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 bg-white group">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div><p className="text-sm font-medium text-gray-500">Total Facilities</p><p className="text-3xl font-bold mt-1 tracking-tight text-gray-900">{stats.total}</p></div>
+              <div className="h-12 w-12 rounded-xl flex items-center justify-center bg-green-50 text-green-600 group-hover:scale-110 transition-transform"><BusinessIcon className="h-6 w-6" /></div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 bg-white group">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div><p className="text-sm font-medium text-gray-500">Active</p><p className="text-3xl font-bold mt-1 tracking-tight text-gray-900">{stats.active}</p></div>
+              <div className="h-12 w-12 rounded-xl flex items-center justify-center bg-green-50 text-green-600 group-hover:scale-110 transition-transform"><LocationOnIcon className="h-6 w-6" /></div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 bg-white group">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div><p className="text-sm font-medium text-gray-500">Total Staff</p><p className="text-3xl font-bold mt-1 tracking-tight text-gray-900">{stats.staff}</p></div>
+              <div className="h-12 w-12 rounded-xl flex items-center justify-center bg-green-50 text-green-600 group-hover:scale-110 transition-transform"><PeopleIcon className="h-6 w-6" /></div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 bg-white group">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div><p className="text-sm font-medium text-gray-500">Total Capacity</p><p className="text-3xl font-bold mt-1 tracking-tight text-gray-900">{stats.capacity}</p></div>
+              <div className="h-12 w-12 rounded-xl flex items-center justify-center bg-green-50 text-green-600 group-hover:scale-110 transition-transform"><BusinessIcon className="h-6 w-6" /></div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Filters */}
@@ -294,7 +334,7 @@ export const FacilityDirectory = () => {
         <CardContent className="pt-6">
           <div className="flex gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input placeholder="Search by name or location..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-10" />
             </div>
             <Select value={filterType} onValueChange={setFilterType}>
@@ -372,11 +412,11 @@ export const FacilityDirectory = () => {
                       <div className="text-xs text-gray-500">{f.services}</div>
                     </TableCell>
                     <TableCell><Badge variant="outline">{f.type}</Badge></TableCell>
-                    <TableCell><div className="flex items-center gap-1"><MapPin className="h-3 w-3 text-gray-400" />{f.location}</div></TableCell>
+                    <TableCell><div className="flex items-center gap-1"><LocationOnIcon className="h-3 w-3 text-gray-400" />{f.location}</div></TableCell>
                     <TableCell>
                       <div className="space-y-1 text-sm">
-                        {f.phone && <div className="flex items-center gap-1"><Phone className="h-3 w-3 text-gray-400" />{f.phone}</div>}
-                        {f.email && <div className="flex items-center gap-1"><Mail className="h-3 w-3 text-gray-400" />{f.email}</div>}
+                        {f.phone && <div className="flex items-center gap-1"><PhoneIcon className="h-3 w-3 text-gray-400" />{f.phone}</div>}
+                        {f.email && <div className="flex items-center gap-1"><MailIcon className="h-3 w-3 text-gray-400" />{f.email}</div>}
                       </div>
                     </TableCell>
                     <TableCell>{f.staff}</TableCell>
@@ -384,9 +424,9 @@ export const FacilityDirectory = () => {
                     <TableCell><Badge variant={f.status === 'ACTIVE' ? 'secondary' : 'destructive'}>{f.status}</Badge></TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <Button size="sm" variant="outline" onClick={() => openEdit(f)}><Edit className="h-3 w-3" /></Button>
+                        <Button size="sm" variant="outline" onClick={() => openEdit(f)}><EditIcon className="h-3 w-3" /></Button>
                         <Button size="sm" variant="ghost" onClick={() => handleToggle(f.id)}>{f.status === 'ACTIVE' ? 'Disable' : 'Enable'}</Button>
-                        <Button size="sm" variant="ghost" onClick={() => handleDelete(f.id)}><Trash2 className="h-3 w-3 text-red-600" /></Button>
+                        <Button size="sm" variant="ghost" onClick={() => handleDelete(f.id)}><DeleteOutlineIcon className="h-3 w-3 text-red-600" /></Button>
                       </div>
                     </TableCell>
                   </TableRow>

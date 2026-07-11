@@ -1,9 +1,9 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/app/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { Badge } from '@/app/components/ui/badge';
-import { Activity, Users, TrendingUp, FileText, Shield, Heart, ClipboardCheck } from 'lucide-react';
+
+import clinicCare from '../assets/images/MUAC tape.jpeg';
 
 export const LandingPage = () => {
   const navigate = useNavigate();
@@ -40,15 +40,11 @@ export const LandingPage = () => {
       <header className="sticky top-0 z-50 border-b border-gray-100 bg-white/80 backdrop-blur-md">
         <div className="container mx-auto flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-full bg-green-600 flex items-center justify-center text-white font-bold">N</div>
             <h1 className="text-xl font-bold tracking-tight text-gray-900">Nutri Track</h1>
           </div>
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/login')} className="text-gray-600">
+            <Button variant="ghost" size="sm" onClick={() => navigate('/login')} className="text-white bg-green-600">
               Sign In
-            </Button>
-            <Button size="sm" onClick={() => navigate('/register')} className="bg-green-600 hover:bg-green-700 text-white px-5">
-              Get Started
             </Button>
           </div>
         </div>
@@ -68,16 +64,13 @@ export const LandingPage = () => {
                   <span className="text-green-600">starts with better data.</span>
                 </h2>
                 <p className="mb-10 max-w-xl mx-auto lg:mx-0 text-lg leading-relaxed text-gray-600">
-                  A professional workflow system for Polyclinique du Bon Berger. 
-                  Empowering clinical teams to screen, track, and coordinate 
+                  A professional workflow system.Empowering 
+                  clinical teams to screen, track, and coordinate 
                   malnutrition cases with precision and compassion.
                 </p>
                 <div className="flex flex-col sm:flex-row justify-center lg:justify-start gap-4">
-                  <Button size="lg" onClick={() => navigate('/register')} className="bg-green-600 hover:bg-green-700 h-12 px-8">
-                    Create Clinical Account
-                  </Button>
-                  <Button size="lg" variant="outline" onClick={() => navigate('/login')} className="h-12 px-8 border-gray-200">
-                    Access Dashboard
+                  <Button size="lg" onClick={() => navigate('login')} className="bg-green-600 hover:bg-green-700 h-12 px-8">
+                     Access Dashboard
                   </Button>
                 </div>
               </div>
@@ -117,26 +110,35 @@ export const LandingPage = () => {
         {/* Features Section */}
         <section className="bg-gray-50/50 py-24">
           <div className="container mx-auto px-6">
-            <div className="mb-16 text-center">
-              <h3 className="mb-4 text-3xl font-bold text-gray-900">Integrated Care Delivery</h3>
-              <p className="mx-auto max-w-2xl text-lg text-gray-600">
-                A comprehensive toolkit designed for the unique needs of nutrition clinics.
-              </p>
-            </div>
-            <div className="grid gap-x-8 gap-y-12 md:grid-cols-2 lg:grid-cols-3">
-              {features.map((feature, index) => {
-                return (
-                  <div key={index} className="group">
-                    <div className="mb-3 h-1 w-12 bg-green-100 group-hover:bg-green-600 transition-colors" />
-                    <h4 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-green-700 transition-colors">
-                      {feature.title}
-                    </h4>
-                    <p className="text-base text-gray-600 leading-relaxed">
-                      {feature.description}
-                    </p>
-                  </div>
-                );
-              })}
+            <div className="flex flex-col lg:flex-row items-center gap-16">
+              <div className="flex-1">
+                <div className="mb-12">
+                  <h3 className="mb-4 text-3xl font-bold text-gray-900">Integrated Care Delivery</h3>
+                  <p className="text-lg text-gray-600 max-w-lg">
+                    A comprehensive toolkit designed for the unique needs of nutrition clinics, connecting communities with clinical excellence.
+                  </p>
+                </div>
+                <div className="grid gap-x-8 gap-y-10 sm:grid-cols-2">
+                  {features.map((feature, index) => {
+                    return (
+                      <div key={index} className="group">
+                        <div className="mb-3 h-1 w-12 bg-green-100 group-hover:bg-green-600 transition-colors" />
+                        <h4 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-green-700 transition-colors">
+                          {feature.title}
+                        </h4>
+                        <p className="text-sm text-gray-600 leading-relaxed">
+                          {feature.description}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="flex-1 w-full">
+                <div className="relative rounded-3xl overflow-hidden shadow-2xl">
+                  <img src={clinicCare} alt="Healthcare worker checking toddler" className="w-full h-[600px] object-cover" />
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -151,8 +153,8 @@ export const LandingPage = () => {
                 { title: 'Consult', desc: 'Facilitate data-driven clinical decisions and orders.' }
               ].map((item, i) => (
                 <div key={i} className="relative">
-                  <div className="mb-4 text-5xl font-black text-green-500/20">{i + 1}</div>
-                  <h4 className="mb-3 text-xl font-bold tracking-tight">{item.title}</h4>
+                  <div className="mb-4 text-5xl font-black text-green-100/20">{i + 1}</div>
+                  <h4 className="mb-3 text-xl font-bold tracking-tight ">{item.title}</h4>
                   <p className="text-green-50 text-lg leading-relaxed">{item.desc}</p>
                 </div>
               ))}
@@ -170,8 +172,8 @@ export const LandingPage = () => {
               Join the clinical team at Polyclinique du Bon Berger and 
               help improve healthcare outcomes for our community.
             </p>
-            <Button size="lg" onClick={() => navigate('/register')} className="bg-green-600 hover:bg-green-700 h-14 px-10 text-lg">
-              Create Clinical Account
+            <Button size="lg" onClick={() => navigate('/login')} className="bg-green-600 hover:bg-green-700 h-14 px-10 text-lg">
+              Want to Navigate to your Account ?
             </Button>
           </div>
         </section>
@@ -181,9 +183,9 @@ export const LandingPage = () => {
         <div className="container mx-auto px-6 py-12">
           <div className="grid gap-12 md:grid-cols-4">
             <div className="col-span-1 md:col-span-2">
-              <h4 className="mb-6 font-bold text-gray-900">Polyclinique du Bon Berger</h4>
+              <h4 className="mb-6 font-bold text-gray-900">Nutri Track</h4>
               <p className="max-w-xs text-gray-600 leading-relaxed">
-                Dedicated to providing high-quality, patient-centered nutrition care 
+                Dedicated to providing high quality, patient centered nutrition care 
                 through innovative technology and clinical excellence.
               </p>
             </div>
@@ -200,12 +202,11 @@ export const LandingPage = () => {
               <ul className="space-y-4 text-sm text-gray-600">
                 <li>Privacy Policy</li>
                 <li>Terms of Service</li>
-                <li>HIPAA Compliance</li>
               </ul>
             </div>
           </div>
           <div className="mt-12 border-t border-gray-100 pt-8 text-center text-sm text-gray-500">
-            &copy; 2026 Polyclinique du Bon Berger. All rights reserved.
+            &copy; 2026 Nutri Track. All rights reserved.
           </div>
         </div>
       </footer>

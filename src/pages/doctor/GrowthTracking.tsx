@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/app/components/ui/select';
@@ -32,7 +33,8 @@ import {
   ReferenceLine
 } from 'recharts';
 import { toast } from 'sonner';
-import { patientsApi, screeningsApi, PatientResponse, ScreeningResponse } from '@/services/api';
+import { ExportDropdown } from '@/app/components/ui/ExportDropdown';
+import { patientsApi, screeningsApi, serviceRequestsApi, PatientResponse, ScreeningResponse } from '@/services/api';
 
 export const GrowthTracking = () => {
   const [patients, setPatients] = useState<PatientResponse[]>([]);
@@ -41,13 +43,26 @@ export const GrowthTracking = () => {
   const [loadingPatients, setLoadingPatients] = useState(true);
   const [loadingScreenings, setLoadingScreenings] = useState(false);
 
+  const { user } = useAuth();
+
   useEffect(() => {
     setLoadingPatients(true);
-    patientsApi.getAll()
-      .then((data) => {
-        setPatients(data);
-        if (data.length > 0) {
-          setSelectedPatientId(String(data[0].id));
+    Promise.all([
+      patientsApi.getAll(),
+      serviceRequestsApi.getAll()
+    ])
+      .then(([patientsData, serviceRequestsData]) => {
+        let finalPatients = patientsData;
+        if (user) {
+          const userNameStr = user.name?.toLowerCase().trim();
+          const myRequests = serviceRequestsData.filter(r => r.assignedToName && r.assignedToName.toLowerCase().trim() === userNameStr);
+          const myPatientIds = new Set(myRequests.map(r => r.patientId));
+          finalPatients = patientsData.filter(p => myPatientIds.has(p.id));
+        }
+
+        setPatients(finalPatients);
+        if (finalPatients.length > 0) {
+          setSelectedPatientId(String(finalPatients[0].id));
         }
       })
       .catch((err) => {
@@ -57,7 +72,7 @@ export const GrowthTracking = () => {
       .finally(() => {
         setLoadingPatients(false);
       });
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     if (!selectedPatientId) return;
@@ -117,7 +132,7 @@ export const GrowthTracking = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div id="growth-tracking-dashboard" className="p-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -125,10 +140,13 @@ export const GrowthTracking = () => {
           <p className="text-gray-600 mt-1">Monitor patient growth progress from active screenings</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => toast.success('Exporting growth chart data...')}>
-            <Download className="h-4 w-4 mr-2" />
-            Export Chart
-          </Button>
+          <ExportDropdown
+            data={growthData}
+            filename={`Growth_Chart_${selectedPatient?.firstName || 'Patient'}`}
+            pdfElementId="growth-tracking-dashboard"
+            variant="outline"
+            label="Export Chart"
+          />
         </div>
       </div>
 

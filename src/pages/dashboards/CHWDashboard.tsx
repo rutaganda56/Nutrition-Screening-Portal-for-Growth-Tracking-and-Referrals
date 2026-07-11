@@ -9,14 +9,12 @@ import {
 } from "@/app/components/ui/card";
 import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
-import {
-  Users,
-  ClipboardCheck,
-  Activity,
-  TrendingUp,
-  Plus,
-  Eye,
-} from "lucide-react";
+import PeopleIcon from "@mui/icons-material/People";
+import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedIn";
+import StarBorderIcon from "@mui/icons-material/StarBorder";
+import TrendingUpIcon from "@mui/icons-material/TrendingUp";
+import AddIcon from "@mui/icons-material/Add";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import {
   patientsApi,
   screeningsApi,
@@ -37,8 +35,8 @@ export const CHWDashboard = () => {
     const fetchData = async () => {
       try {
         const [patientsData, screeningsData] = await Promise.all([
-          patientsApi.getAll(),
-          screeningsApi.getAll(),
+          patientsApi.getAll().catch(() => []),
+          screeningsApi.getAll().catch(() => [])
         ]);
         
         // Filter data specific to this CHW
@@ -50,8 +48,8 @@ export const CHWDashboard = () => {
           p => myPatientIds.has(p.id) || (user?.facilityName && p.facilityName === user?.facilityName)
         );
 
-        setPatients(myPatients.length > 0 ? myPatients : patientsData);
-        setScreenings(myScreenings.length > 0 ? myScreenings : screeningsData);
+        setPatients(myPatients);
+        setScreenings(myScreenings);
         
         setTotalSystemPatients(patientsData.length);
         setTotalSystemScreenings(screeningsData.length);
@@ -72,7 +70,7 @@ export const CHWDashboard = () => {
     {
       label: "Assigned Patients",
       value: String(patients.length),
-      icon: Users,
+      icon: PeopleIcon,
       color: "bg-white text-green-600",
       change: `${Math.round((patients.length / (totalSystemPatients || 1)) * 100)}% of system total`,
       route: "/dashboard/patient-history"
@@ -80,7 +78,7 @@ export const CHWDashboard = () => {
     {
       label: "My Screenings",
       value: String(screenings.length),
-      icon: ClipboardCheck,
+      icon: AssignmentTurnedInIcon,
       color: "bg-white text-green-600",
       change: `${screenings.filter(s => new Date(s.screeningDate).getMonth() === new Date().getMonth()).length} this month`,
       route: "/dashboard/patient-history"
@@ -88,7 +86,7 @@ export const CHWDashboard = () => {
     {
       label: "At Risk (MAM)",
       value: String(mamCount),
-      icon: Activity,
+      icon: StarBorderIcon,
       color: "bg-white text-green-600",
       change: `${patients.length > 0 ? Math.round((mamCount / patients.length) * 100) : 0}% of your patients`,
       route: "/dashboard/patient-history"
@@ -96,7 +94,7 @@ export const CHWDashboard = () => {
     {
       label: "Critical (SAM)",
       value: String(samCount),
-      icon: TrendingUp,
+      icon: TrendingUpIcon,
       color: "bg-white text-green-600",
       change: `${patients.length > 0 ? Math.round((samCount / patients.length) * 100) : 0}% of your patients`,
       route: "/dashboard/patient-history"
@@ -130,7 +128,7 @@ export const CHWDashboard = () => {
           className="bg-green-600 hover:bg-green-700 shadow-sm"
           onClick={() => navigate("/dashboard/patient-registration")}
         >
-          <Plus className="h-4 w-4 mr-2" />
+          <AddIcon className="h-4 w-4 mr-2" />
           Register New Patient
         </Button>
       </div>
@@ -142,22 +140,19 @@ export const CHWDashboard = () => {
           return (
             <Card 
               key={index} 
-              className="shadow-sm cursor-pointer hover:bg-gray-50 transition-colors"
+              className="border border-gray-100 shadow-sm cursor-pointer hover:shadow-md transition-all duration-200 bg-white group"
               onClick={() => stat.route && navigate(stat.route)}
             >
-              <CardContent className="p-4">
+              <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <p className="text-sm font-medium text-gray-500">
                       {stat.label}
                     </p>
-                    <p className="text-2xl font-bold mt-1 text-gray-900">{stat.value}</p>
-                    <p className="text-[10px] text-green-600 font-medium mt-1">
-                      {stat.change}
-                    </p>
+                    <p className="text-3xl font-bold mt-1 text-gray-900 tracking-tight">{stat.value}</p>
                   </div>
-                  <div className="h-10 w-10 rounded-lg flex items-center justify-center bg-green-50 text-green-600 shrink-0">
-                    <Icon className="h-5 w-5" />
+                  <div className="h-12 w-12 rounded-xl flex items-center justify-center bg-green-50 text-green-600 shrink-0 group-hover:scale-110 transition-transform">
+                    <Icon className="h-6 w-6" />
                   </div>
                 </div>
               </CardContent>
@@ -173,7 +168,7 @@ export const CHWDashboard = () => {
           <Card className="h-full">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="flex items-center gap-2 text-lg">
-                <Users className="h-5 w-5 text-green-600" />
+                <PeopleIcon className="h-5 w-5 text-green-600" />
                 Assigned Patients
               </CardTitle>
               <Button
@@ -212,7 +207,7 @@ export const CHWDashboard = () => {
                         className="flex-1 h-8 text-xs"
                         onClick={() => navigate("/dashboard/patient-history")}
                       >
-                        <Eye className="h-3 w-3 mr-1" />
+                        <VisibilityIcon className="h-4 w-4 mr-1" />
                         History
                       </Button>
                       <Button
@@ -220,7 +215,7 @@ export const CHWDashboard = () => {
                         className="flex-1 bg-green-600 hover:bg-green-700 h-8 text-xs"
                         onClick={() => navigate("/dashboard/new-screening")}
                       >
-                        <ClipboardCheck className="h-3 w-3 mr-1" />
+                        <AssignmentTurnedInIcon className="h-3 w-3 mr-1" />
                         Screen
                       </Button>
                     </div>
@@ -241,7 +236,7 @@ export const CHWDashboard = () => {
           <Card className="h-full">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="flex items-center gap-2 text-lg">
-                <ClipboardCheck className="h-5 w-5 text-green-600" />
+                <AssignmentTurnedInIcon className="h-5 w-5 text-green-600" />
                 Recent Screenings
               </CardTitle>
               <Button
@@ -290,45 +285,45 @@ export const CHWDashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Button
                 variant="outline"
-                className="h-auto flex-col gap-2 p-6 hover:bg-green-50/30 transition-all"
+                className="h-auto flex-col gap-3 p-6 border-gray-200 hover:border-green-300 hover:bg-green-50 hover:text-green-700 transition-all group"
                 onClick={() => navigate("/dashboard/patient-registration")}
               >
-                <div className="h-10 w-10 rounded-md flex items-center justify-center bg-green-50 text-green-600">
-                  <Users className="h-6 w-6" />
+                <div className="h-12 w-12 rounded-full flex items-center justify-center bg-green-100 text-green-600 group-hover:scale-110 transition-transform">
+                  <PeopleIcon className="h-6 w-6" />
                 </div>
                 <div className="text-center">
-                  <div className="font-semibold text-gray-900">Register Patient</div>
-                  <div className="text-xs text-gray-500 mt-1">
+                  <div className="font-semibold text-gray-900 group-hover:text-green-700 transition-colors">Register Patient</div>
+                  <div className="text-xs text-gray-500 mt-1 group-hover:text-green-600/70 transition-colors">
                     New enrollment
                   </div>
                 </div>
               </Button>
               <Button
                 variant="outline"
-                className="h-auto flex-col gap-2 p-6 hover:bg-green-50/30 transition-all"
+                className="h-auto flex-col gap-3 p-6 border-gray-200 hover:border-green-300 hover:bg-green-50 hover:text-green-700 transition-all group"
                 onClick={() => navigate("/dashboard/new-screening")}
               >
-                <div className="h-10 w-10 rounded-md flex items-center justify-center bg-green-50 text-green-600">
-                  <ClipboardCheck className="h-6 w-6" />
+                <div className="h-12 w-12 rounded-full flex items-center justify-center bg-green-100 text-green-600 group-hover:scale-110 transition-transform">
+                  <AssignmentTurnedInIcon className="h-6 w-6" />
                 </div>
                 <div className="text-center">
-                  <div className="font-semibold text-gray-900">New Screening</div>
-                  <div className="text-xs text-gray-500 mt-1">
+                  <div className="font-semibold text-gray-900 group-hover:text-green-700 transition-colors">New Screening</div>
+                  <div className="text-xs text-gray-500 mt-1 group-hover:text-green-600/70 transition-colors">
                     Nutrition check
                   </div>
                 </div>
               </Button>
               <Button
                 variant="outline"
-                className="h-auto flex-col gap-2 p-6 hover:bg-green-50/30 transition-all"
+                className="h-auto flex-col gap-3 p-6 border-gray-200 hover:border-green-300 hover:bg-green-50 hover:text-green-700 transition-all group"
                 onClick={() => navigate("/dashboard/patient-history")}
               >
-                <div className="h-10 w-10 rounded-md flex items-center justify-center bg-green-50 text-green-600">
-                  <Activity className="h-6 w-6" />
+                <div className="h-12 w-12 rounded-full flex items-center justify-center bg-green-100 text-green-600 group-hover:scale-110 transition-transform">
+                  <StarBorderIcon className="h-6 w-6" />
                 </div>
                 <div className="text-center">
-                  <div className="font-semibold text-gray-900">Patient History</div>
-                  <div className="text-xs text-gray-500 mt-1">
+                  <div className="font-semibold text-gray-900 group-hover:text-green-700 transition-colors">Patient History</div>
+                  <div className="text-xs text-gray-500 mt-1 group-hover:text-green-600/70 transition-colors">
                     Records & tracking
                   </div>
                 </div>

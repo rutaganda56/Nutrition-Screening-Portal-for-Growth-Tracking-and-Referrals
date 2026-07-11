@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/app/components/ui/select';
@@ -28,8 +29,8 @@ import {
   ResponsiveContainer 
 } from 'recharts';
 import { toast } from 'sonner';
-import { downloadCSV, downloadJSON } from '@/utils/exportUtils';
-import { screeningsApi, referralsApi, patientsApi, PatientResponse, ScreeningResponse, ReferralResponse } from '@/services/api';
+import { ExportDropdown } from '@/app/components/ui/ExportDropdown';
+import { screeningsApi, referralsApi, patientsApi, serviceRequestsApi, PatientResponse, ScreeningResponse, ReferralResponse } from '@/services/api';
 
 export const Reports = () => {
   const [dateRange, setDateRange] = useState('6months');
@@ -40,17 +41,37 @@ export const Reports = () => {
   const [patients, setPatients] = useState<PatientResponse[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const { user } = useAuth();
+
   const fetchReportData = () => {
     setLoading(true);
     Promise.all([
       screeningsApi.getAll(),
       referralsApi.getAll(),
-      patientsApi.getAll()
+      patientsApi.getAll(),
+      serviceRequestsApi.getAll()
     ])
-    .then(([screeningsData, referralsData, patientsData]) => {
-      setScreenings(screeningsData);
-      setReferrals(referralsData);
-      setPatients(patientsData);
+    .then(([screeningsData, referralsData, patientsData, serviceRequestsData]) => {
+      if (user) {
+        const userNameStr = user.name?.toLowerCase().trim();
+        
+        // Find patients strictly assigned to this doctor via service requests
+        const myRequests = serviceRequestsData.filter(r => r.assignedToName && r.assignedToName.toLowerCase().trim() === userNameStr);
+        const myPatientIds = new Set(myRequests.map(r => r.patientId));
+        
+        // Filter patients, screenings, and referrals to only those involving the doctor's patients
+        const myPatients = patientsData.filter(p => myPatientIds.has(p.id));
+        const myScreenings = screeningsData.filter(s => myPatientIds.has(s.patientId));
+        const myReferrals = referralsData.filter(r => myPatientIds.has(r.patientId));
+
+        setScreenings(myScreenings);
+        setReferrals(myReferrals);
+        setPatients(myPatients);
+      } else {
+        setScreenings(screeningsData);
+        setReferrals(referralsData);
+        setPatients(patientsData);
+      }
     })
     .catch((err) => {
       console.error(err);
@@ -63,7 +84,7 @@ export const Reports = () => {
 
   useEffect(() => {
     fetchReportData();
-  }, []);
+  }, [user]);
 
   const totalPatients = patients.length;
   const totalScreened = screenings.length;
@@ -81,46 +102,36 @@ export const Reports = () => {
     { name: 'SAM', value: totalScreened > 0 ? Math.round((samCases / totalScreened) * 100) : 0, color: '#ef4444' }
   ];
 
-  const handleExportReport = () => {
-    const exportData = {
-      reportDate: new Date().toISOString(),
-      dateRange: dateRange,
-      reportType: reportType,
-      summary: {
-        totalPatientsScreened: totalScreened,
-        samCases,
-        mamCases,
-        normalCases,
-        totalReferrals: referrals.length,
-        referralSuccessRate: `${referralSuccessRate}%`
-      },
-      screenings: screenings,
-      referrals: referrals,
-      patients: patients
-    };
-    
-    downloadJSON(exportData, 'doctor-clinical-nutrition-report');
-    toast.success('Report analytics exported successfully');
-  };
+  const exportDataArray = [{
+    TotalScreenings: totalScreened,
+    SAMDetected: samCases,
+    MAMDetected: mamCases,
+    ReferralSuccessRate: `${referralSuccessRate}%`,
+    DateRange: dateRange
+  }];
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6" id="analytics-report-document">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 no-print">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Reports & Analytics</h1>
           <p className="text-gray-600 mt-1">Real-time clinical and program analytics from the active database</p>
         </div>
-        <Button onClick={handleExportReport} className="bg-green-600 hover:bg-green-700">
-          <Download className="h-4 w-4 mr-2" />
-          Export Report
-        </Button>
+        <div className="flex items-center gap-2">
+          <ExportDropdown
+            data={exportDataArray}
+            filename={`Clinical_Analytics_Report_${dateRange}`}
+            pdfElementId="analytics-report-document"
+            buttonClassName="bg-green-600 hover:bg-green-700 text-white"
+          />
+        </div>
       </div>
 
       {/* Filters */}
       <Card>
         <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Report Type</Label>
               <Select value={reportType} onValueChange={setReportType}>
@@ -134,7 +145,7 @@ export const Reports = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
+            <div className="flex.items-end">
               <Label>Date Range</Label>
               <Select value={dateRange} onValueChange={setDateRange}>
                 <SelectTrigger>
@@ -146,12 +157,12 @@ export const Reports = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex items-end">
+            {/* <div className="flex items-end">
               <Button onClick={fetchReportData} variant="outline" className="w-full">
                 <Calendar className="h-4 w-4 mr-2" />
                 Refresh Data
               </Button>
-            </div>
+            </div> */}
           </div>
         </CardContent>
       </Card>
@@ -194,7 +205,7 @@ export const Reports = () => {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <Card>
               <CardContent className="pt-6">
                 <div>
@@ -219,14 +230,14 @@ export const Reports = () => {
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            {/* <Card>
               <CardContent className="pt-6">
                 <div>
                   <p className="text-sm text-gray-600 mb-2">Referrals Success</p>
                   <p className="text-3xl font-bold ">{referralSuccessRate}%</p>
                 </div>
               </CardContent>
-            </Card>
+            </Card> */}
           </div>
 
           {/* Charts Section */}
@@ -308,14 +319,6 @@ export const Reports = () => {
                   <div className="flex justify-between border-b pb-2">
                     <span className="text-gray-600">Total Growth Screenings Conducted</span>
                     <span className="font-semibold">{totalScreened}</span>
-                  </div>
-                  <div className="flex justify-between border-b pb-2">
-                    <span className="text-gray-600">Specialized Referrals Issued</span>
-                    <span className="font-semibold">{referrals.length}</span>
-                  </div>
-                  <div className="flex justify-between pb-2">
-                    <span className="text-gray-600">Referral Success Rate</span>
-                    <span className="font-semibold">{referralSuccessRate}%</span>
                   </div>
                 </CardContent>
               </Card>

@@ -35,6 +35,7 @@ import {
   screeningsApi,
   referralsApi,
   serviceRequestsApi,
+  usersApi,
 } from "@/services/api";
 
 interface ActivityItem {
@@ -46,7 +47,7 @@ interface ActivityItem {
 }
 
 export const Profile = () => {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [profileImage, setProfileImage] = useState<string | null>(null);
@@ -73,24 +74,27 @@ export const Profile = () => {
     const currentYear = new Date().getFullYear();
 
     Promise.all([
-      patientsApi.getAll(),
-      screeningsApi.getAll(),
-      referralsApi.getAll(),
-      serviceRequestsApi.getAll(),
+      patientsApi.getAll().catch(() => []),
+      screeningsApi.getAll().catch(() => []),
+      referralsApi.getAll().catch(() => []),
+      serviceRequestsApi.getAll().catch(() => []),
     ])
       .then(([patients, screenings, referrals, serviceRequests]) => {
+        // Filter data for the current user
+        const userScreenings = screenings.filter(s => s.conductedByName === user?.name);
+        const userReferrals = referrals.filter(r => r.referredByName === user?.name);
+        const userPatients = patients.filter(p => p.registeredByName === user?.name);
+
         // Calculate Stats
-        const thisMonthScreenings = screenings.filter((s) => {
+        const thisMonthScreenings = userScreenings.filter((s) => {
           const d = new Date(s.screeningDate);
-          return (
-            d.getMonth() === currentMonth && d.getFullYear() === currentYear
-          );
+          return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
         }).length;
 
         setStats({
-          patients: patients.length,
-          screenings: screenings.length,
-          referrals: referrals.length,
+          patients: userPatients.length,
+          screenings: userScreenings.length,
+          referrals: userReferrals.length,
           thisMonth: thisMonthScreenings,
         });
 
@@ -170,9 +174,35 @@ export const Profile = () => {
     }
   };
 
-  const handleSave = () => {
-    toast.success("Profile updated successfully");
-    setIsEditing(false);
+  const handleSave = async () => {
+    if (!user) return;
+    
+    let dbRole = user.role.toUpperCase();
+    if (dbRole === "COMMUNITYHEALTHWORKER") {
+      dbRole = "COMMUNITY_HEALTH_WORKER";
+    }
+
+    try {
+      await usersApi.update(Number(user.id), {
+        fullName: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        role: dbRole,
+        department: formData.department,
+        facilityId: user.facilityId ? Number(user.facilityId) : undefined,
+      });
+      
+      updateUser({
+        name: formData.name,
+        email: formData.email,
+        department: formData.department,
+      });
+
+      toast.success("Profile updated successfully");
+      setIsEditing(false);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update profile");
+    }
   };
 
   const getRoleName = (role: string) => {
@@ -363,34 +393,6 @@ export const Profile = () => {
                 )}
               </TabsContent>
             </Tabs>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-gray-600">Total Patients</p>
-            <p className="text-2xl font-bold mt-2">{stats.patients}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-gray-600">Screenings</p>
-            <p className="text-2xl font-bold mt-2">{stats.screenings}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-gray-600">Referrals</p>
-            <p className="text-2xl font-bold mt-2">{stats.referrals}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-gray-600">Screenings This Month</p>
-            <p className="text-2xl font-bold mt-2">{stats.thisMonth}</p>
           </CardContent>
         </Card>
       </div>

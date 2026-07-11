@@ -39,7 +39,16 @@ export const Referrals = () => {
     setLoading(true);
     referralsApi.getAll()
       .then((data) => {
-        setReferrals(data);
+        if (user) {
+          const userNameStr = user.name?.toLowerCase().trim();
+          const filtered = data.filter(r => 
+            r.referredTo?.toLowerCase().trim() === userNameStr || 
+            r.referredByName?.toLowerCase().trim() === userNameStr
+          );
+          setReferrals(filtered);
+        } else {
+          setReferrals(data);
+        }
       })
       .catch((err) => {
         console.error(err);
@@ -52,7 +61,7 @@ export const Referrals = () => {
 
   useEffect(() => {
     fetchReferrals();
-  }, []);
+  }, [user]);
 
   const getStatusColor = (status: string) => {
     switch (status.toUpperCase()) {

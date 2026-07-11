@@ -11,18 +11,18 @@ import {
 import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
-import {
-  Users,
-  Activity,
-  Database,
-  Shield,
-  Download,
-  Settings,
-  AlertCircle,
-  Home,
-  UserPlus,
-  ClipboardCheck,
-} from "lucide-react";
+import PeopleIcon from "@mui/icons-material/People";
+import StarBorderIcon from "@mui/icons-material/StarBorder";
+import StorageIcon from "@mui/icons-material/Storage";
+import SecurityIcon from "@mui/icons-material/Security";
+import DownloadIcon from "@mui/icons-material/Download";
+import SettingsIcon from "@mui/icons-material/Settings";
+import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
+import HomeIcon from "@mui/icons-material/Home";
+import PersonAddIcon from "@mui/icons-material/PersonAdd";
+import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedIn";
+import PieChartIcon from "@mui/icons-material/PieChart";
+import { ExportDropdown } from "@/app/components/ui/ExportDropdown";
 import {
   BarChart,
   Bar,
@@ -34,6 +34,9 @@ import {
   Tooltip,
   ResponsiveContainer,
   Legend,
+  PieChart,
+  Pie,
+  Cell,
 } from "recharts";
 import {
   usersApi,
@@ -44,6 +47,7 @@ import {
   serviceRequestsApi,
   UserResponse,
   AlertResponse,
+  PatientResponse,
 } from "@/services/api";
 
 interface FacilityStats {
@@ -60,6 +64,7 @@ export const AdminDashboard = () => {
   const navigate = useNavigate();
 
   const [users, setUsers] = useState<UserResponse[]>([]);
+  const [patients, setPatients] = useState<PatientResponse[]>([]);
   const [totalPatients, setTotalPatients] = useState(0);
   const [totalScreenings, setTotalScreenings] = useState(0);
   const [facilityStats, setFacilityStats] = useState<FacilityStats[]>([]);
@@ -78,15 +83,16 @@ export const AdminDashboard = () => {
           alertsData,
           serviceRequestsData,
         ] = await Promise.all([
-          usersApi.getAll(),
-          patientsApi.getAll(),
-          screeningsApi.getAll(),
-          facilitiesApi.getAll(),
-          alertsApi.getAll(),
-          serviceRequestsApi.getAll(),
+          usersApi.getAll().catch(() => []),
+          patientsApi.getAll().catch(() => []),
+          screeningsApi.getAll().catch(() => []),
+          facilitiesApi.getAll().catch(() => []),
+          alertsApi.getAll().catch(() => []),
+          serviceRequestsApi.getAll().catch(() => []),
         ]);
 
         setUsers(usersData);
+        setPatients(patientsData);
         setTotalPatients(patientsData.length);
         setTotalScreenings(screeningsData.length);
         setAlerts(alertsData);
@@ -143,6 +149,23 @@ export const AdminDashboard = () => {
     fetchData();
   }, []);
 
+  const severityData = React.useMemo(() => {
+    const counts = { NORMAL: 0, MAM: 0, SAM: 0 };
+    
+    patients.forEach(p => {
+      const status = p.currentStatus ? p.currentStatus.toUpperCase() : 'NORMAL';
+      if (status === 'SAM') counts.SAM += 1;
+      else if (status === 'MAM') counts.MAM += 1;
+      else counts.NORMAL += 1;
+    });
+
+    return [
+      { name: 'Normal', value: counts.NORMAL, color: '#10b981' },
+      { name: 'Moderate (MAM)', value: counts.MAM, color: '#f59e0b' },
+      { name: 'Severe (SAM)', value: counts.SAM, color: '#ef4444' }
+    ].filter(entry => entry.value > 0 || patients.length === 0); 
+  }, [patients]);
+
   const activeUsers = users.filter((u) => u.status === "ACTIVE");
 
   const summaryStats = [
@@ -150,27 +173,27 @@ export const AdminDashboard = () => {
       label: "Total Users",
       value: String(users.length),
       change: `${activeUsers.length} active`,
-      icon: Users,
+      icon: PeopleIcon,
       route: undefined
     },
     {
-      label: "Pending Requests",
-      value: String(pendingRequests),
-      change: `${criticalAlerts} critical alerts`,
-      icon: Activity,
-      route: "/dashboard/analytics"
+      label: "Total Facilities",
+      value: String(facilityStats.length),
+      change: `${pendingRequests} pending requests`,
+      icon: HomeIcon,
+      route: "/dashboard/facilities"
     },
     {
       label: "Total Records",
       value: String(totalPatients + totalScreenings),
       change: `${totalPatients} patients, ${totalScreenings} screenings`,
-      icon: Database,
+      icon: StorageIcon,
       route: "/dashboard/analytics"
     },
   ];
 
   return (
-    <div className="p-6 space-y-6">
+    <div id="admin-dashboard" className="p-6 space-y-6">
       {/* Welcome Section */}
       <div className="flex justify-between items-center">
         <div>
@@ -180,10 +203,12 @@ export const AdminDashboard = () => {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
-            <Download className="h-4 w-4 mr-2" />
-            Export Data
-          </Button>
+          <ExportDropdown 
+            data={facilityStats} 
+            filename={`AdminDashboard_FacilityStats_${new Date().toISOString().split('T')[0]}`} 
+            pdfElementId="admin-dashboard"
+            variant="outline"
+          />
         </div>
       </div>
 
@@ -194,22 +219,19 @@ export const AdminDashboard = () => {
           return (
             <Card
               key={index}
-              className="shadow-sm cursor-pointer hover:bg-gray-50 transition-colors"
+              className="border border-gray-100 shadow-sm cursor-pointer hover:shadow-md transition-all duration-200 bg-white group"
               onClick={() => stat.route && navigate(stat.route)}
             >
-              <CardContent className="p-4">
+              <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <p className="text-sm font-medium text-gray-500">
                       {stat.label}
                     </p>
-                    <p className="text-2xl font-bold mt-1 text-gray-900">{stat.value}</p>
-                    <p className="text-[10px] text-green-600 font-medium mt-1">
-                      {stat.change}
-                    </p>
+                    <p className="text-3xl font-bold mt-1 text-gray-900 tracking-tight">{stat.value}</p>
                   </div>
-                  <div className="h-10 w-10 rounded-lg flex items-center justify-center bg-green-50 text-green-600 shrink-0">
-                    <Icon className="h-5 w-5" />
+                  <div className="h-12 w-12 rounded-xl flex items-center justify-center bg-green-50 text-green-600 shrink-0 group-hover:scale-110 transition-transform">
+                    <Icon className="h-6 w-6" />
                   </div>
                 </div>
               </CardContent>
@@ -218,66 +240,108 @@ export const AdminDashboard = () => {
         })}
       </div>
 
-      {/* Malnutrition Chart */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Malnutrition Statistics by Facility</CardTitle>
-          <CardDescription>
-            This stacked bar chart displays the total number of nutrition screenings conducted at each health facility.
-            The total height represents screening volume, while the colored segments indicate the proportion of healthy (Normal) vs. malnourished (MAM/SAM) patients.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {facilityStats.length > 0 ? (
-            <ResponsiveContainer width="100%" height={380}>
-              <BarChart data={facilityStats} margin={{ top: 20, right: 30, left: 20, bottom: 70 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                <XAxis
-                  dataKey="facility"
-                  angle={-45}
-                  textAnchor="end"
-                  tick={{ fill: '#6b7280', fontSize: 12 }}
-                  tickMargin={10}
-                />
-                <YAxis
-                  tick={{ fill: '#6b7280', fontSize: 12 }}
-                  label={{ value: 'Total Screenings', angle: -90, position: 'insideLeft', style: { fill: '#6b7280', fontSize: 13, textAnchor: 'middle' }, offset: 0 }}
-                />
-                <Tooltip
-                  cursor={{ fill: '#f3f4f6' }}
-                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                />
-                <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                <Bar dataKey="normal" stackId="a" fill="#10b981" name="Normal" radius={[0, 0, 0, 0]} />
-                <Bar dataKey="moderate" stackId="a" fill="#f59e0b" name="Moderate (MAM)" radius={[0, 0, 0, 0]} />
-                <Bar dataKey="severe" stackId="a" fill="#ef4444" name="Severe (SAM)" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="h-[320px] flex items-center justify-center rounded-lg border border-dashed bg-gray-50 p-6 text-center text-gray-500">
-              <div>
-                <p className="text-sm font-medium text-gray-700">
-                  No facility statistics available
-                </p>
-                <p className="mt-1 text-sm text-gray-500">
-                  Add facilities and screenings to populate this chart.
-                </p>
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Malnutrition Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Malnutrition Statistics by Facility</CardTitle>
+            <CardDescription>
+              This stacked bar chart displays the total number of nutrition screenings conducted at each health facility.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {facilityStats.length > 0 ? (
+              <ResponsiveContainer width="100%" height={380}>
+                <BarChart data={facilityStats} margin={{ top: 20, right: 10, left: -20, bottom: 50 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                  <XAxis
+                    dataKey="facility"
+                    angle={-45}
+                    textAnchor="end"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#6b7280', fontSize: 12 }}
+                    dy={10}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#6b7280', fontSize: 12 }}
+                    dx={-10}
+                  />
+                  <Tooltip
+                    cursor={{ fill: '#f9fafb' }}
+                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  />
+                  <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
+                  <Bar dataKey="normal" stackId="a" fill="#10b981" name="Normal" maxBarSize={40} />
+                  <Bar dataKey="moderate" stackId="a" fill="#f59e0b" name="Moderate (MAM)" maxBarSize={40} />
+                  <Bar dataKey="severe" stackId="a" fill="#ef4444" name="Severe (SAM)" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-[320px] flex items-center justify-center rounded-lg border border-dashed bg-gray-50 p-6 text-center text-gray-500">
+                <div>
+                  <p className="text-sm font-medium text-gray-700">
+                    No facility statistics available
+                  </p>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Add facilities and screenings to populate this chart.
+                  </p>
+                </div>
               </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Severity Pie Chart */}
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle>Malnutrition Severity Breakdown</CardTitle>
+            <CardDescription>System-wide patient health classification status</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {patients.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                <PieChartIcon className="h-12 w-12 mb-2 stroke-1" />
+                <p className="text-sm font-medium">No severity stats to display.</p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={380}>
+                <PieChart>
+                  <Pie
+                    data={severityData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={70}
+                    outerRadius={100}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {severityData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                  <Legend iconType="circle" verticalAlign="bottom" height={36} />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Facility Supervision Table */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Home className="h-5 w-5" />
+            <HomeIcon className="h-5 w-5 text-green-600" />
             Health Facility Supervision Overview
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto rounded-lg border border-gray-100">
             <table className="w-full text-sm text-left">
               <thead className="text-xs text-gray-700 uppercase bg-gray-50">
                 <tr>
@@ -291,7 +355,7 @@ export const AdminDashboard = () => {
               </thead>
               <tbody>
                 {facilityStats.map((stat, index) => (
-                  <tr key={index} className="bg-white border-b hover:bg-gray-50">
+                  <tr key={index} className="bg-white border-b last:border-0 hover:bg-green-50/50 transition-colors">
                     <td className="px-6 py-4 font-medium text-gray-900">{stat.facility}</td>
                     <td className="px-6 py-4 text-center">
                       <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
@@ -330,7 +394,7 @@ export const AdminDashboard = () => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
+              <PeopleIcon className="h-5 w-5 text-green-600" />
               Active User Activity
             </CardTitle>
           </CardHeader>
@@ -339,12 +403,12 @@ export const AdminDashboard = () => {
               {users.slice(0, 5).map((u) => (
                 <div
                   key={u.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                  className="flex items-center justify-between p-3 bg-white border border-gray-100 rounded-lg shadow-sm hover:shadow-md hover:border-green-100 transition-all"
                 >
                   <div className="flex-1">
                     <div className="font-medium">{u.fullName}</div>
                     <div className="text-sm text-gray-500">
-                      {u.role.replace("_", " ")} | {u.department ?? "N/A"}
+                      {u.role.replace("_", " ")}{u.department ? ` | ${u.department}` : ""}
                     </div>
                   </div>
                   <div className="text-right">
@@ -372,14 +436,14 @@ export const AdminDashboard = () => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5" />
+              <ErrorOutlineIcon className="h-5 w-5 text-green-600" />
               System Alerts
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {alerts.slice(0, 5).map((alert) => (
-                <div key={alert.id} className="p-3 border rounded-lg">
+                <div key={alert.id} className="p-3 bg-white border border-gray-100 rounded-lg shadow-sm hover:shadow-md transition-all">
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <Badge
@@ -428,43 +492,43 @@ export const AdminDashboard = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Button
               variant="outline"
-              className="h-20 flex flex-col items-center justify-center gap-2"
+              className="h-24 flex flex-col items-center justify-center gap-2 border-gray-200 hover:border-green-300 hover:bg-green-50 hover:text-green-700 transition-all group"
               onClick={() => navigate("/dashboard/facilities")}
             >
-              <div className="h-10 w-10 rounded-md flex items-center justify-center bg-white text-green-600">
-                <Home className="h-5 w-5" />
+              <div className="h-10 w-10 rounded-full flex items-center justify-center bg-green-100 text-green-600 group-hover:scale-110 transition-transform">
+                <HomeIcon className="h-5 w-5" />
               </div>
-              <span>Manage Health Centers</span>
+              <span className="font-medium">Manage Health Centers</span>
             </Button>
             <Button
               variant="outline"
-              className="h-20 flex flex-col items-center justify-center gap-2"
+              className="h-24 flex flex-col items-center justify-center gap-2 border-gray-200 hover:border-green-300 hover:bg-green-50 hover:text-green-700 transition-all group"
               onClick={() => navigate("/dashboard/user-management")}
             >
-              <div className="h-10 w-10 rounded-md flex items-center justify-center bg-white text-green-600">
-                <UserPlus className="h-5 w-5" />
+              <div className="h-10 w-10 rounded-full flex items-center justify-center bg-green-100 text-green-600 group-hover:scale-110 transition-transform">
+                <PersonAddIcon className="h-5 w-5" />
               </div>
-              <span>Add User</span>
+              <span className="font-medium">Add User</span>
             </Button>
             <Button
               variant="outline"
-              className="h-20 flex flex-col items-center justify-center gap-2"
+              className="h-24 flex flex-col items-center justify-center gap-2 border-gray-200 hover:border-green-300 hover:bg-green-50 hover:text-green-700 transition-all group"
               onClick={() => navigate("/dashboard/analytics")}
             >
-              <div className="h-10 w-10 rounded-md flex items-center justify-center bg-white text-green-600">
-                <ClipboardCheck className="h-5 w-5" />
+              <div className="h-10 w-10 rounded-full flex items-center justify-center bg-green-100 text-green-600 group-hover:scale-110 transition-transform">
+                <AssignmentTurnedInIcon className="h-5 w-5" />
               </div>
-              <span>View Reports</span>
+              <span className="font-medium">View Reports</span>
             </Button>
             <Button
               variant="outline"
-              className="h-20 flex flex-col items-center justify-center gap-2"
+              className="h-24 flex flex-col items-center justify-center gap-2 border-gray-200 hover:border-green-300 hover:bg-green-50 hover:text-green-700 transition-all group"
               onClick={() => navigate("/dashboard/settings")}
             >
-              <div className="h-10 w-10 rounded-md flex items-center justify-center bg-white text-green-600">
-                <Settings className="h-5 w-5" />
+              <div className="h-10 w-10 rounded-full flex items-center justify-center bg-green-100 text-green-600 group-hover:scale-110 transition-transform">
+                <SettingsIcon className="h-5 w-5" />
               </div>
-              <span>Settings</span>
+              <span className="font-medium">Settings</span>
             </Button>
           </div>
         </CardContent>

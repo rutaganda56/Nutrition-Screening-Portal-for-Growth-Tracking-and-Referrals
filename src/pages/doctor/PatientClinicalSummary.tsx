@@ -31,12 +31,12 @@ import {
   serviceRequestsApi, 
   clinicalAssessmentsApi, 
   nutritionOrdersApi, 
-  referralsApi, 
   alertsApi,
   PatientResponse, 
   ScreeningResponse, 
   ServiceRequestResponse 
 } from '@/services/api';
+import { ExportDropdown } from '@/app/components/ui/ExportDropdown';
 import { useAuth } from '@/contexts/AuthContext';
 
 export const PatientClinicalSummary = () => {
@@ -44,6 +44,8 @@ export const PatientClinicalSummary = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('clinical');
+
+
   
   // Get patient and service request from URL params
   const patientId = searchParams.get('patient');
@@ -61,12 +63,11 @@ export const PatientClinicalSummary = () => {
     confirmed: false,
     diagnosis: '',
     severity: '',
-    complications: [] as string[],
     clinicalNotes: ''
   });
 
   const [nutritionOrder, setNutritionOrder] = useState({
-    orderType: '',
+    supplementType: '',
     supplement: '',
     dosage: '',
     frequency: '',
@@ -74,13 +75,7 @@ export const PatientClinicalSummary = () => {
     instructions: ''
   });
 
-  const [referral, setReferral] = useState({
-    enabled: false,
-    facility: '',
-    urgency: 'urgent',
-    reason: '',
-    transportArranged: false
-  });
+
 
   useEffect(() => {
     if (!serviceRequestId) {
@@ -128,6 +123,15 @@ export const PatientClinicalSummary = () => {
     });
   }, [patientId, serviceRequestId, navigate]);
 
+  const patientExportData = patient ? [{
+    PatientID: patient.patientCode,
+    Name: `${patient.firstName} ${patient.lastName}`,
+    Age: patient.age,
+    Gender: patient.gender,
+    Status: patient.currentStatus,
+    ServiceRequestPriority: serviceRequest?.priority
+  }] : [];
+
   const handleConfirmDiagnosis = () => {
     if (!clinicalDecision.diagnosis || !clinicalDecision.severity || !clinicalDecision.clinicalNotes.trim()) {
       toast.error('Please complete the diagnosis, severity assessment, and clinical notes');
@@ -139,7 +143,6 @@ export const PatientClinicalSummary = () => {
       patientId: Number(patientId),
       diagnosis: clinicalDecision.diagnosis,
       severity: clinicalDecision.severity,
-      complications: clinicalDecision.complications.join(', '),
       clinicalNotes: clinicalDecision.clinicalNotes
     }, Number(user?.id))
     .then(() => {
@@ -147,8 +150,8 @@ export const PatientClinicalSummary = () => {
       return serviceRequestsApi.updateStatus(Number(serviceRequestId), 'COMPLETED');
     })
     .then(() => {
-      toast.success('Clinical diagnosis confirmed and case marked as resolved!');
-      navigate('/dashboard/service-request-queue');
+      setClinicalDecision({ ...clinicalDecision, confirmed: true });
+      toast.success('Clinical diagnosis confirmed! Please proceed to create a Nutrition Order.');
     })
     .catch((err) => {
       console.error(err);
@@ -165,7 +168,7 @@ export const PatientClinicalSummary = () => {
   };
 
   const handleCreateNutritionOrder = () => {
-    if (!nutritionOrder.orderType || !nutritionOrder.supplement || !nutritionOrder.instructions.trim()) {
+    if (!nutritionOrder.supplementType || !nutritionOrder.supplement || !nutritionOrder.instructions.trim()) {
       toast.error('Please complete the nutrition order details and instructions');
       return;
     }
@@ -184,7 +187,7 @@ export const PatientClinicalSummary = () => {
       patientId: Number(patientId),
       screeningId: latestScreening?.id || null,
       serviceRequestId: Number(serviceRequestId),
-      orderType: nutritionOrder.orderType.toUpperCase(),
+      supplementType: nutritionOrder.supplementType.toUpperCase(),
       supplement: nutritionOrder.supplement,
       dosage: nutritionOrder.dosage || '1 sachet',
       frequency: nutritionOrder.frequency || 'once-daily',
@@ -195,14 +198,7 @@ export const PatientClinicalSummary = () => {
     }, Number(user?.id))
     .then(() => {
       toast.success(`Nutrition order created successfully!`);
-      setNutritionOrder({
-        orderType: '',
-        supplement: '',
-        dosage: '',
-        frequency: '',
-        duration: '',
-        instructions: ''
-      });
+      navigate('/dashboard/service-request-queue');
     })
     .catch((err) => {
       console.error(err);
@@ -210,36 +206,7 @@ export const PatientClinicalSummary = () => {
     });
   };
 
-  const handleCreateReferral = () => {
-    if (!referral.facility || !referral.reason.trim()) {
-      toast.error('Please complete the referral facility and reason');
-      return;
-    }
 
-    const followUpObj = new Date();
-    followUpObj.setDate(followUpObj.getDate() + 7); // Default 7 days
-    const followUpDate = followUpObj.toISOString().split('T')[0];
-
-    referralsApi.create({
-      patientId: Number(patientId),
-      serviceRequestId: Number(serviceRequestId),
-      referredTo: referral.facility,
-      priority: referral.urgency.toUpperCase() === 'URGENT' ? 'URGENT' : 'ROUTINE',
-      urgency: referral.urgency.toUpperCase(),
-      diagnosis: clinicalDecision.diagnosis || latestScreening?.classification || 'SAM',
-      referralReason: referral.reason,
-      transportArranged: referral.transportArranged,
-      followUpDate
-    }, Number(user?.id))
-    .then((savedRef) => {
-      toast.success(`Referral created successfully! Code: ${savedRef.referralCode}`);
-      setReferral({ ...referral, enabled: false });
-    })
-    .catch((err) => {
-      console.error(err);
-      toast.error(`Failed to create referral in database: ${err.message}`);
-    });
-  };
 
   const getClassificationColor = (classification: string) => {
     switch (classification) {
@@ -265,7 +232,7 @@ export const PatientClinicalSummary = () => {
           </div>
         </div>
         
-        <Card className="border-2 border-blue-100">
+        <Card>
           <CardHeader>
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-4">
@@ -327,9 +294,9 @@ export const PatientClinicalSummary = () => {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6" id="clinical-summary-document">
       {/* Header with Back Button */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 no-print">
         <Button 
           variant="outline" 
           onClick={() => navigate('/dashboard/service-request-queue')}
@@ -342,10 +309,17 @@ export const PatientClinicalSummary = () => {
           <h1 className="text-3xl font-bold text-gray-900">Patient Clinical Summary</h1>
           <p className="text-gray-600 mt-1">Review screening data and make clinical decisions</p>
         </div>
+        <ExportDropdown
+          data={patientExportData}
+          filename={`Clinical_Summary_${patient.firstName}_${patient.lastName}`}
+          pdfElementId="clinical-summary-document"
+          variant="outline"
+          buttonClassName="flex items-center gap-2 border-green-200 text-green-700 hover:bg-green-50"
+        />
       </div>
 
       {/* Patient Info Card */}
-      <Card className="border-2 border-blue-300">
+      <Card>
         <CardHeader>
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-4">
@@ -397,13 +371,13 @@ export const PatientClinicalSummary = () => {
           <Alert>
             <Info className="h-4 w-4" />
             <AlertDescription>
-              <strong>Clinical Decision Tools:</strong> Use these forms to confirm diagnosis, create nutrition orders, and manage referrals.
+              <strong>Clinical Decision Tools:</strong> Use these forms to confirm diagnosis and create nutrition orders.
               Your clinical assessment will be stored separately from CHW-collected data.
             </AlertDescription>
           </Alert>
 
           {/* Diagnosis Confirmation */}
-          <Card className="border-2 border-green-300">
+          <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Stethoscope className="h-5 w-5 text-green-600" />
@@ -414,7 +388,7 @@ export const PatientClinicalSummary = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded">
+              <div className="p-3 bg-blue-50 border rounded">
                 <p className="text-sm text-blue-900">
                   <strong>CHW Assessment:</strong> {latestScreening ? latestScreening.classification : 'No Screening'} - 
                   MUAC: {latestScreening ? `${latestScreening.muacCm} cm` : 'N/A'}, Weight: {latestScreening ? `${latestScreening.weightKg} kg` : 'N/A'}
@@ -432,11 +406,9 @@ export const PatientClinicalSummary = () => {
                       <SelectValue placeholder="Select diagnosis" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="sam-confirmed">SAM - Confirmed</SelectItem>
-                      <SelectItem value="mam-confirmed">MAM - Confirmed</SelectItem>
-                      <SelectItem value="normal-confirmed">Normal - Confirmed</SelectItem>
-                      <SelectItem value="sam-with-complications">SAM with Medical Complications</SelectItem>
-                      <SelectItem value="mam-downgraded">Downgrade to MAM</SelectItem>
+                      <SelectItem value="sam-confirmed">SAM is Confirmed</SelectItem>
+                      <SelectItem value="mam-confirmed">MAM is Confirmed</SelectItem>
+                      <SelectItem value="normal-confirmed">Normal is Confirmed</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -451,42 +423,11 @@ export const PatientClinicalSummary = () => {
                       <SelectValue placeholder="Select severity" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="critical">Critical - Immediate hospitalization</SelectItem>
-                      <SelectItem value="severe">Severe - Urgent intervention</SelectItem>
-                      <SelectItem value="moderate">Moderate - Outpatient treatment</SelectItem>
-                      <SelectItem value="mild">Mild - Monitoring required</SelectItem>
+                      <SelectItem value="critical">Immediate hospitalization</SelectItem>
+                      <SelectItem value="moderate"> Outpatient treatment</SelectItem>
+                      <SelectItem value="mild">Monitoring required</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Medical Complications (Check all that apply)</Label>
-                <div className="grid grid-cols-2 gap-3">
-                  {['Dehydration', 'Anemia', 'Infection', 'Respiratory Issues', 'Diarrhea', 'Other'].map((comp) => (
-                    <div key={comp} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={comp}
-                        checked={clinicalDecision.complications.includes(comp)}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setClinicalDecision({
-                              ...clinicalDecision,
-                              complications: [...clinicalDecision.complications, comp]
-                            });
-                          } else {
-                            setClinicalDecision({
-                              ...clinicalDecision,
-                              complications: clinicalDecision.complications.filter((c) => c !== comp)
-                            });
-                          }
-                        }}
-                      />
-                      <label htmlFor={comp} className="text-sm font-medium">
-                        {comp}
-                      </label>
-                    </div>
-                  ))}
                 </div>
               </div>
 
@@ -494,23 +435,30 @@ export const PatientClinicalSummary = () => {
                 <Label htmlFor="clinicalNotes">Clinical Notes *</Label>
                 <Textarea
                   id="clinicalNotes"
-                  placeholder="Provide detailed clinical assessment, examination findings, and reasoning..."
+                  placeholder="Provide detailed clinical assessment..."
                   value={clinicalDecision.clinicalNotes}
                   onChange={(e) => setClinicalDecision({ ...clinicalDecision, clinicalNotes: e.target.value })}
                   rows={4}
                 />
               </div>
 
-              <Button onClick={handleConfirmDiagnosis} className="w-full bg-green-600 hover:bg-green-700">
+              <Button 
+                onClick={handleConfirmDiagnosis} 
+                className="w-full bg-green-600 hover:bg-green-700 no-print"
+                disabled={clinicalDecision.confirmed}
+              >
                 <CheckCircle className="h-4 w-4 mr-2" />
-                Confirm Clinical Diagnosis
+                {clinicalDecision.confirmed ? 'Diagnosis Confirmed' : 'Confirm Clinical Diagnosis'}
               </Button>
             </CardContent>
           </Card>
 
-          {/* Nutrition Order */}
-          <Card className="border-2 border-blue-300">
-            <CardHeader>
+          {/* Nutrition Order - ONLY shown after diagnosis is confirmed */}
+          {clinicalDecision.confirmed && (
+            <>
+              {/* Nutrition Order */}
+              <Card>
+                <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Utensils className="h-5 w-5 text-blue-600" />
                 Create Nutrition Order
@@ -522,10 +470,10 @@ export const PatientClinicalSummary = () => {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="orderType">Order Type *</Label>
+                  <Label htmlFor="supplementType">Order Type *</Label>
                   <Select
-                    value={nutritionOrder.orderType}
-                    onValueChange={(v) => setNutritionOrder({ ...nutritionOrder, orderType: v })}
+                    value={nutritionOrder.supplementType}
+                    onValueChange={(v) => setNutritionOrder({ ...nutritionOrder, supplementType: v })}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select order type" />
@@ -600,7 +548,6 @@ export const PatientClinicalSummary = () => {
                       <SelectItem value="2-weeks">2 weeks</SelectItem>
                       <SelectItem value="4-weeks">4 weeks</SelectItem>
                       <SelectItem value="8-weeks">8 weeks</SelectItem>
-                      <SelectItem value="ongoing">Ongoing</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -617,114 +564,22 @@ export const PatientClinicalSummary = () => {
                 />
               </div>
 
-              <Button onClick={handleCreateNutritionOrder} className="w-full bg-green-600 hover:bg-green-700">
+              <Button onClick={handleCreateNutritionOrder} className="w-full bg-green-600 hover:bg-green-700 no-print">
                 <Pill className="h-4 w-4 mr-2" />
                 Create Nutrition Order
               </Button>
             </CardContent>
           </Card>
-
-          {/* Referral Management */}
-          <Card className="border-2 border-purple-300">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Send className="h-5 w-5 text-purple-600" />
-                    Create Referral
-                  </CardTitle>
-                  <CardDescription>
-                    Refer to specialized care facility if needed
-                  </CardDescription>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="referralEnabled"
-                    checked={referral.enabled}
-                    onCheckedChange={(checked) => setReferral({ ...referral, enabled: checked as boolean })}
-                  />
-                  <label htmlFor="referralEnabled" className="text-sm font-medium">
-                    Create Referral
-                  </label>
-                </div>
-              </div>
-            </CardHeader>
-            {referral.enabled && (
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="facility">Referral Facility *</Label>
-                    <Select
-                      value={referral.facility}
-                      onValueChange={(v) => setReferral({ ...referral, facility: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select facility" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Kigali University Hospital">Kigali University Hospital</SelectItem>
-                        <SelectItem value="Therapeutic Feeding Center">Therapeutic Feeding Center</SelectItem>
-                        <SelectItem value="District Hospital">District Hospital</SelectItem>
-                        <SelectItem value="Specialized Nutrition Clinic">Specialized Nutrition Clinic</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="urgency">Urgency Level *</Label>
-                    <Select
-                      value={referral.urgency}
-                      onValueChange={(v) => setReferral({ ...referral, urgency: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="urgent">Urgent (Within 24 hours)</SelectItem>
-                        <SelectItem value="semi-urgent">Semi-Urgent (Within 3 days)</SelectItem>
-                        <SelectItem value="routine">Routine (Within 1 week)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="referralReason">Reason for Referral *</Label>
-                  <Textarea
-                    id="referralReason"
-                    placeholder="Explain why referral is necessary and what specialized care is needed..."
-                    value={referral.reason}
-                    onChange={(e) => setReferral({ ...referral, reason: e.target.value })}
-                    rows={3}
-                  />
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="transportArranged"
-                    checked={referral.transportArranged}
-                    onCheckedChange={(checked) => setReferral({ ...referral, transportArranged: checked as boolean })}
-                  />
-                  <label htmlFor="transportArranged" className="text-sm font-medium">
-                    Transport arranged for patient
-                  </label>
-                </div>
-
-                <Button onClick={handleCreateReferral} className="w-full bg-green-600 hover:bg-green-700">
-                  <Send className="h-4 w-4 mr-2" />
-                  Create Referral
-                </Button>
-              </CardContent>
-            )}
-          </Card>
+            </>
+          )}
         </TabsContent>
 
         {/* Nutrition Orders Tab */}
         <TabsContent value="nutrition" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Therapeutic Feeding & Supplementary Nutrition</CardTitle>
-              <CardDescription>Nutrition intervention plan for this patient</CardDescription>
+              <CardTitle>Nutrition intervention plan for this patient</CardTitle>
+              <CardDescription></CardDescription>
             </CardHeader>
             <CardContent>
               {latestScreening ? (

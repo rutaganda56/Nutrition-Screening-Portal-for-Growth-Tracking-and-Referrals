@@ -8,30 +8,58 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs';
 import { Bell, Lock, Globe, Palette, Save } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
+import { usersApi } from '@/services/api';
 
 export const Settings = () => {
+  const { user } = useAuth();
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [pushNotifications, setPushNotifications] = useState(true);
   const [smsNotifications, setSmsNotifications] = useState(false);
   const [language, setLanguage] = useState('en');
   const [theme, setTheme] = useState('light');
+  
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   const handleSaveSettings = () => {
+    // Only local storage for now since DB doesn't have these fields
+    localStorage.setItem('user_preferences', JSON.stringify({ emailNotifications, pushNotifications, smsNotifications, language, theme }));
     toast.success('Settings saved successfully');
   };
 
-  const handleChangePassword = () => {
-    toast.success('Password changed successfully');
+  const handleChangePassword = async () => {
+    if (!user) return;
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast.error('Please fill in all password fields');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error('New passwords do not match');
+      return;
+    }
+    
+    try {
+      await usersApi.changePassword(Number(user.id), currentPassword, newPassword);
+      toast.success('Password changed successfully');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to change password');
+    }
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
-        <p className="text-gray-600 mt-1">Manage your application preferences</p>
-      </div>
+    <div className="p-6">
+      <div className="max-w-4xl mx-auto space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
+          <p className="text-gray-600 mt-1">Manage your application preferences</p>
+        </div>
 
-      <Tabs defaultValue="notifications" className="space-y-4">
+        <Tabs defaultValue="notifications" className="space-y-4">
         <TabsList>
           <TabsTrigger value="notifications">
             <Bell className="h-4 w-4 mr-2" />
@@ -135,15 +163,30 @@ export const Settings = () => {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="current-password">Current Password</Label>
-                  <Input id="current-password" type="password" />
+                  <Input 
+                    id="current-password" 
+                    type="password" 
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="new-password">New Password</Label>
-                  <Input id="new-password" type="password" />
+                  <Input 
+                    id="new-password" 
+                    type="password" 
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="confirm-password">Confirm New Password</Label>
-                  <Input id="confirm-password" type="password" />
+                  <Input 
+                    id="confirm-password" 
+                    type="password" 
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                  />
                 </div>
                 <div className="flex justify-end pt-4">
                   <Button onClick={handleChangePassword} className="bg-green-600 hover:bg-green-700">
@@ -284,6 +327,7 @@ export const Settings = () => {
           </Card>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   );
 };

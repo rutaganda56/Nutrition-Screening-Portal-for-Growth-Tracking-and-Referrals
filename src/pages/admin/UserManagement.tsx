@@ -9,9 +9,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/app/components/ui/label';
 import { Alert, AlertDescription } from '@/app/components/ui/alert';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/app/components/ui/table';
-import { Search, UserPlus, Shield, Users, Activity, Ban, Download, Info, Eye, EyeOff, Loader2 } from 'lucide-react';
+import SearchIcon from "@mui/icons-material/Search";
+import PersonAddIcon from "@mui/icons-material/PersonAdd";
+import SecurityIcon from "@mui/icons-material/Security";
+import PeopleIcon from "@mui/icons-material/People";
+import StarBorderIcon from "@mui/icons-material/StarBorder";
+import BlockIcon from "@mui/icons-material/Block";
+import DownloadIcon from "@mui/icons-material/Download";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
+import AutorenewIcon from "@mui/icons-material/Autorenew";
 import { toast } from 'sonner';
-import { downloadCSV } from '@/utils/exportUtils';
+import { ExportDropdown } from '@/app/components/ui/ExportDropdown';
 import { usersApi, facilitiesApi, UserResponse, FacilityResponse } from '@/services/api';
 
 const ROLE_LABELS: Record<string, string> = {
@@ -35,7 +45,10 @@ export const UserManagement = () => {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    Promise.all([usersApi.getAll(), facilitiesApi.getAll()])
+    Promise.all([
+      usersApi.getAll().catch(() => []), 
+      facilitiesApi.getAll().catch(() => [])
+    ])
       .then(([u, f]) => { setUsers(u); setFacilities(f); })
       .catch(() => toast.error('Failed to load data'))
       .finally(() => setLoading(false));
@@ -46,6 +59,14 @@ export const UserManagement = () => {
   const handleCreate = async () => {
     if (!form.fullName || !form.email || !form.role) {
       toast.error('Full name, email and role are required');
+      return;
+    }
+    if (!/^[A-Za-z\s]+$/.test(form.fullName)) {
+      toast.error('Full name can only contain letters');
+      return;
+    }
+    if (form.phone && !/^[0-9]{10}$/.test(form.phone)) {
+      toast.error('Phone number must be exactly 10 digits');
       return;
     }
     // Require facility assignment for clinical roles so admin can view by facility
@@ -76,6 +97,18 @@ export const UserManagement = () => {
 
   const handleUpdate = async () => {
     if (!editingUser) return;
+    if (!form.fullName || !form.email || !form.role) {
+      toast.error('Full name, email and role are required');
+      return;
+    }
+    if (!/^[A-Za-z\s]+$/.test(form.fullName)) {
+      toast.error('Full name can only contain letters');
+      return;
+    }
+    if (form.phone && !/^[0-9]{10}$/.test(form.phone)) {
+      toast.error('Phone number must be exactly 10 digits');
+      return;
+    }
     setSubmitting(true);
     // Require facility assignment for clinical roles when updating
     if ((form.role === 'DOCTOR' || form.role === 'COMMUNITY_HEALTH_WORKER') && !form.facilityId) {
@@ -149,18 +182,21 @@ export const UserManagement = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div id="user-management-container" className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
           <p className="text-gray-600 mt-1">Create and manage system users and their access</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => downloadCSV(users, 'users')}>
-            <Download className="h-4 w-4 mr-2" />Export
-          </Button>
+          <ExportDropdown 
+            data={users}
+            filename={`SystemUsers_${new Date().toISOString().split('T')[0]}`}
+            pdfElementId="user-management-container"
+            variant="outline"
+          />
           <Button className="bg-green-600 hover:bg-green-700" onClick={() => { setForm(emptyForm); setIsCreateOpen(true); }}>
-            <UserPlus className="h-4 w-4 mr-2" />Add User
+            <PersonAddIcon className="h-4 w-4 mr-2" />Add User
           </Button>
         </div>
       </div>
@@ -174,7 +210,7 @@ export const UserManagement = () => {
           </DialogHeader>
           <div className="space-y-4">
             <Alert className="border-blue-200 bg-blue-50">
-              <Info className="h-4 w-4 text-blue-600" />
+              <InfoOutlinedIcon className="h-4 w-4 text-blue-600" />
               <AlertDescription className="text-blue-800 text-sm">
                 A temporary password will be generated. The user should change it after first login via their Profile page.
               </AlertDescription>
@@ -182,7 +218,7 @@ export const UserManagement = () => {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Full Name *</Label>
-                <Input placeholder="John Habineza" value={form.fullName} onChange={e => setForm(f => ({ ...f, fullName: e.target.value }))} />
+                <Input placeholder="John Habineza" value={form.fullName} onChange={e => setForm(f => ({ ...f, fullName: e.target.value }))} required pattern="[A-Za-z\s]+" title="Full name can only contain letters" />
               </div>
               <div className="space-y-2">
                 <Label>Email Address *</Label>
@@ -190,7 +226,7 @@ export const UserManagement = () => {
               </div>
               <div className="space-y-2">
                 <Label>Phone Number</Label>
-                <Input placeholder="+250 788 123 456" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
+                <Input type="tel" placeholder="+250 788 123 456" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} pattern="[0-9]{10}" title="Phone number must be exactly 10 digits" />
               </div>
               <div className="space-y-2">
                 <Label>Role *</Label>
@@ -224,7 +260,7 @@ export const UserManagement = () => {
                     onChange={e => setForm(f => ({ ...f, tempPassword: e.target.value }))}
                   />
                   <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2" onClick={() => setShowPassword(!showPassword)}>
-                    {showPassword ? <EyeOff className="h-4 w-4 text-gray-400" /> : <Eye className="h-4 w-4 text-gray-400" />}
+                    {showPassword ? <VisibilityOffIcon className="h-4 w-4 text-gray-400" /> : <VisibilityIcon className="h-4 w-4 text-gray-400" />}
                   </button>
                 </div>
               </div>
@@ -232,7 +268,7 @@ export const UserManagement = () => {
             <div className="flex gap-2 justify-end pt-2">
               <Button variant="outline" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
               <Button onClick={handleCreate} disabled={submitting} className="bg-green-600 hover:bg-green-700">
-                {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                {submitting ? <AutorenewIcon className="h-4 w-4 animate-spin mr-2" /> : null}
                 Create User
               </Button>
             </div>
@@ -251,7 +287,7 @@ export const UserManagement = () => {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Full Name *</Label>
-                <Input placeholder="John Habineza" value={form.fullName} onChange={e => setForm(f => ({ ...f, fullName: e.target.value }))} />
+                <Input placeholder="John Habineza" value={form.fullName} onChange={e => setForm(f => ({ ...f, fullName: e.target.value }))} required pattern="[A-Za-z\s]+" title="Full name can only contain letters" />
               </div>
               <div className="space-y-2">
                 <Label>Email Address *</Label>
@@ -259,7 +295,7 @@ export const UserManagement = () => {
               </div>
               <div className="space-y-2">
                 <Label>Phone Number</Label>
-                <Input placeholder="+250 788 123 456" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
+                <Input type="tel" placeholder="+250 788 123 456" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} pattern="[0-9]{10}" title="Phone number must be exactly 10 digits" />
               </div>
               <div className="space-y-2">
                 <Label>Role *</Label>
@@ -287,7 +323,7 @@ export const UserManagement = () => {
             <div className="flex gap-2 justify-end pt-2">
               <Button variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
               <Button onClick={handleUpdate} disabled={submitting} className="bg-green-600 hover:bg-green-700">
-                {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                {submitting ? <AutorenewIcon className="h-4 w-4 animate-spin mr-2" /> : null}
                 Save Changes
               </Button>
             </div>
@@ -297,17 +333,45 @@ export const UserManagement = () => {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Total Users</p><p className="text-3xl font-bold mt-1">{stats.total}</p></div><div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600"><Users className="h-6 w-6" /></div></div></CardContent></Card>
-        <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Active</p><p className="text-3xl font-bold mt-1 ">{stats.active}</p></div><div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600"><Activity className="h-6 w-6" /></div></div></CardContent></Card>
-        <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Administrators</p><p className="text-3xl font-bold mt-1">{stats.admins}</p></div><div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600"><Shield className="h-6 w-6" /></div></div></CardContent></Card>
-        <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Inactive</p><p className="text-3xl font-bold mt-1">{stats.inactive}</p></div><div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600"><Ban className="h-6 w-6" /></div></div></CardContent></Card>
+        <Card className="border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 bg-white group">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div><p className="text-sm font-medium text-gray-500">Total Users</p><p className="text-3xl font-bold mt-1 tracking-tight text-gray-900">{stats.total}</p></div>
+              <div className="h-12 w-12 rounded-xl flex items-center justify-center bg-green-50 text-green-600 group-hover:scale-110 transition-transform"><PeopleIcon className="h-6 w-6" /></div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 bg-white group">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div><p className="text-sm font-medium text-gray-500">Active</p><p className="text-3xl font-bold mt-1 tracking-tight text-gray-900">{stats.active}</p></div>
+              <div className="h-12 w-12 rounded-xl flex items-center justify-center bg-green-50 text-green-600 group-hover:scale-110 transition-transform"><StarBorderIcon className="h-6 w-6" /></div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 bg-white group">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div><p className="text-sm font-medium text-gray-500">Administrators</p><p className="text-3xl font-bold mt-1 tracking-tight text-gray-900">{stats.admins}</p></div>
+              <div className="h-12 w-12 rounded-xl flex items-center justify-center bg-green-50 text-green-600 group-hover:scale-110 transition-transform"><SecurityIcon className="h-6 w-6" /></div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 bg-white group">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div><p className="text-sm font-medium text-gray-500">Inactive</p><p className="text-3xl font-bold mt-1 tracking-tight text-gray-900">{stats.inactive}</p></div>
+              <div className="h-12 w-12 rounded-xl flex items-center justify-center bg-green-50 text-green-600 group-hover:scale-110 transition-transform"><BlockIcon className="h-6 w-6" /></div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Search */}
       <Card>
         <CardContent className="pt-6">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input placeholder="Search by name or email..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-10" />
           </div>
         </CardContent>
@@ -365,7 +429,7 @@ export const UserManagement = () => {
                           {ROLE_LABELS[user.role] ?? user.role}
                         </Badge>
                       </TableCell>
-                      <TableCell>{user.facilityName ?? 'N/A'}</TableCell>
+                      <TableCell>{user.facilityName ?? '-'}</TableCell>
                       <TableCell>
                         <Badge variant={user.status === 'ACTIVE' ? 'secondary' : 'outline'}>{user.status}</Badge>
                       </TableCell>

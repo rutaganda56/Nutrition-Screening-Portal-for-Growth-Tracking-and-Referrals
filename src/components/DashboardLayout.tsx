@@ -11,21 +11,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/app/components/ui/dropdown-menu';
-import {
-  LayoutDashboard,
-  Users,
-  Send,
-  Bell,
-  FileText,
-  User,
-  Settings,
-  LogOut,
-  Heart,
-  Menu,
-  X,
-  ClipboardCheck,
-  Home,
-} from 'lucide-react';
+import DashboardIcon from "@mui/icons-material/Dashboard";
+import PeopleIcon from "@mui/icons-material/People";
+import SendIcon from "@mui/icons-material/Send";
+import NotificationsIcon from "@mui/icons-material/Notifications";
+import DescriptionIcon from "@mui/icons-material/Description";
+import PersonIcon from "@mui/icons-material/Person";
+import SettingsIcon from "@mui/icons-material/Settings";
+import LogoutIcon from "@mui/icons-material/Logout";
+import StarIcon from "@mui/icons-material/Star";
+import MenuIcon from "@mui/icons-material/Menu";
+import CloseIcon from "@mui/icons-material/Close";
+import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedIn";
+import HomeIcon from "@mui/icons-material/Home";
 import { NotificationSystem } from "@/app/components/NotificationSystem";
 
 interface SidebarItem {
@@ -35,26 +33,26 @@ interface SidebarItem {
 }
 
 const doctorSidebarItems: SidebarItem[] = [
-  { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-  { icon: Send, label: 'Service Request Queue', path: '/dashboard/service-request-queue' },
-  { icon: FileText, label: 'Reports', path: '/dashboard/reports' },
-  { icon: User, label: 'Profile', path: '/dashboard/profile' }
+  { icon: DashboardIcon, label: 'Dashboard', path: '/dashboard' },
+  { icon: SendIcon, label: 'Service Request Queue', path: '/dashboard/service-request-queue' },
+  { icon: DescriptionIcon, label: 'Reports', path: '/dashboard/reports' },
+  { icon: PersonIcon, label: 'Profile', path: '/dashboard/profile' }
 ];
 
 const chwSidebarItems: SidebarItem[] = [
-  { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-  { icon: Users, label: 'Patient Registration', path: '/dashboard/patient-registration' },
-  { icon: ClipboardCheck, label: 'Screening Form', path: '/dashboard/new-screening' },
-  { icon: FileText, label: 'Patient History', path: '/dashboard/patient-history' },
-  { icon: User, label: 'Profile', path: '/dashboard/profile' }
+  { icon: DashboardIcon, label: 'Dashboard', path: '/dashboard' },
+  { icon: PeopleIcon, label: 'Patient Registration', path: '/dashboard/patient-registration' },
+  { icon: AssignmentTurnedInIcon, label: 'Screening Form', path: '/dashboard/new-screening' },
+  { icon: DescriptionIcon, label: 'Patient History', path: '/dashboard/patient-history' },
+  { icon: PersonIcon, label: 'Profile', path: '/dashboard/profile' }
 ];
 
 const adminSidebarItems: SidebarItem[] = [
-  { icon: LayoutDashboard, label: 'System Overview', path: '/dashboard' },
-  { icon: Home, label: 'Health Center Management', path: '/dashboard/facilities' },
-  { icon: Users, label: 'User Management', path: '/dashboard/user-management' },
-  { icon: FileText, label: 'Reports & Analytics', path: '/dashboard/analytics' },
-  { icon: Settings, label: 'Settings', path: '/dashboard/settings' }
+  { icon: DashboardIcon, label: 'System Overview', path: '/dashboard' },
+  { icon: HomeIcon, label: 'Health Center Management', path: '/dashboard/facilities' },
+  { icon: PeopleIcon, label: 'User Management', path: '/dashboard/user-management' },
+  { icon: DescriptionIcon, label: 'Reports & Analytics', path: '/dashboard/analytics' },
+  { icon: SettingsIcon, label: 'Settings', path: '/dashboard/settings' }
 ];
 
 const getSidebarItems = (role: UserRole): SidebarItem[] => {
@@ -119,7 +117,7 @@ export const DashboardLayout = () => {
               className="lg:hidden"
               onClick={() => setSidebarOpen(!sidebarOpen)}
             >
-              {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              {sidebarOpen ? <CloseIcon className="h-5 w-5" /> : <MenuIcon className="h-5 w-5" />}
             </Button>
             <div className="flex items-center gap-2">
               <h1 className="text-lg font-semibold text-gray-900">Nutri Track</h1>
@@ -134,11 +132,11 @@ export const DashboardLayout = () => {
                 <Button variant="ghost" className="flex items-center gap-2">
                   <Avatar>
                     <AvatarFallback className="bg-green-600 text-white">
-                      {user.name.charAt(0).toUpperCase()}
+                      {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
                     </AvatarFallback>
                   </Avatar>
                   <div className="hidden md:block text-left">
-                    <div className="text-sm font-medium">{user.name}</div>
+                    <div className="text-sm font-medium">{user?.name || "User"}</div>
                     <div className="text-xs text-gray-500">{getRoleDisplayName(user.role)}</div>
                   </div>
                 </Button>
@@ -147,18 +145,18 @@ export const DashboardLayout = () => {
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => navigate('/dashboard/profile')}>
-                  <User className="mr-2 h-4 w-4" />
+                  <PersonIcon className="mr-2 h-4 w-4" />
                   Profile
                 </DropdownMenuItem>
                 {canAccessSettings(user.role) && (
                   <DropdownMenuItem onClick={() => navigate('/dashboard/settings')}>
-                    <Settings className="mr-2 h-4 w-4" />
+                    <SettingsIcon className="mr-2 h-4 w-4" />
                     Settings
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => { logout(); navigate('/'); }}>
-                  <LogOut className="mr-2 h-4 w-4" />
+                  <LogoutIcon className="mr-2 h-4 w-4" />
                   Logout
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -214,7 +212,7 @@ export const DashboardLayout = () => {
                 }}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 transition-colors text-left"
               >
-                <LogOut className="h-5 w-5" />
+                <LogoutIcon className="h-5 w-5" />
                 Logout
               </button>
             </div>

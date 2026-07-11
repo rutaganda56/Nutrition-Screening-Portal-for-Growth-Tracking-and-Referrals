@@ -31,11 +31,26 @@ export const AlertsFollowUps = () => {
       referralsApi.getAll()
     ])
     .then(([allAlerts, allReferrals]) => {
-      // Filter alerts for this doctor or general
-      const filteredAlerts = allAlerts.filter(a => !a.assignedToName || a.assignedToName === user?.name);
-      setAlerts(filteredAlerts.length > 0 ? filteredAlerts : allAlerts);
+      if (user) {
+        const userNameStr = user.name?.toLowerCase().trim();
+        
+        // Filter alerts
+        const filteredAlerts = allAlerts.filter(a => 
+          !a.assignedToName || 
+          a.assignedToName.toLowerCase().trim() === userNameStr
+        );
+        setAlerts(filteredAlerts);
 
-      setReferrals(allReferrals);
+        // Filter referrals
+        const filteredReferrals = allReferrals.filter(r => 
+          r.referredTo?.toLowerCase().trim() === userNameStr || 
+          r.referredByName?.toLowerCase().trim() === userNameStr
+        );
+        setReferrals(filteredReferrals);
+      } else {
+        setAlerts(allAlerts);
+        setReferrals(allReferrals);
+      }
     })
     .catch((err) => {
       console.error(err);
@@ -224,7 +239,7 @@ export const AlertsFollowUps = () => {
               alerts.map((alert) => (
                 <Card 
                   key={alert.id} 
-                  className={`${alert.status.toUpperCase() === 'UNREAD' ? 'border-l-4 border-l-red-500' : ''}`}
+                  className={`${alert.status.toUpperCase() === 'UNREAD' ? 'border-l-4 border-l-primary' : ''}`}
                 >
                   <CardContent className="pt-6">
                     <div className="flex gap-4">

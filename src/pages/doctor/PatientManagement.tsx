@@ -22,21 +22,20 @@ import {
   DialogTrigger,
 } from '@/app/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs';
-import { 
-  Search, 
-  UserPlus, 
-  Filter, 
-  Download,
-  Eye,
-  Edit,
-  Activity,
-  Phone,
-  MapPin,
-  Calendar
-} from 'lucide-react';
+import SearchIcon from "@mui/icons-material/Search";
+import PersonAddIcon from "@mui/icons-material/PersonAdd";
+import FilterListIcon from "@mui/icons-material/FilterList";
+import DownloadIcon from "@mui/icons-material/Download";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import EditIcon from "@mui/icons-material/Edit";
+import StarBorderIcon from "@mui/icons-material/StarBorder";
+import PhoneIcon from "@mui/icons-material/Phone";
+import LocationOnIcon from "@mui/icons-material/LocationOn";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import { toast } from 'sonner';
 import { downloadCSV } from '@/utils/exportUtils';
-import { patientsApi, PatientResponse } from '@/services/api';
+import { patientsApi, serviceRequestsApi, PatientResponse } from '@/services/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const PatientManagement = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -44,11 +43,23 @@ export const PatientManagement = () => {
   const [patients, setPatients] = useState<PatientResponse[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const { user } = useAuth();
+
   const fetchPatients = () => {
     setLoading(true);
-    patientsApi.getAll()
-      .then((data) => {
-        setPatients(data);
+    Promise.all([
+      patientsApi.getAll(),
+      serviceRequestsApi.getAll()
+    ])
+      .then(([patientsData, serviceRequestsData]) => {
+        let finalPatients = patientsData;
+        if (user) {
+          const userNameStr = user.name?.toLowerCase().trim();
+          const myRequests = serviceRequestsData.filter(r => r.assignedToName && r.assignedToName.toLowerCase().trim() === userNameStr);
+          const myPatientIds = new Set(myRequests.map(r => r.patientId));
+          finalPatients = patientsData.filter(p => myPatientIds.has(p.id));
+        }
+        setPatients(finalPatients);
       })
       .catch((err) => {
         console.error(err);
@@ -61,7 +72,7 @@ export const PatientManagement = () => {
 
   useEffect(() => {
     fetchPatients();
-  }, []);
+  }, [user]);
 
   const filteredPatients = patients.filter(patient =>
     `${patient.firstName} ${patient.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -94,7 +105,7 @@ export const PatientManagement = () => {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => downloadCSV(patients, 'patients')}>
-            <Download className="h-4 w-4 mr-2" />
+            <DownloadIcon className="h-4 w-4 mr-2" />
             Export
           </Button>
         </div>
@@ -105,7 +116,7 @@ export const PatientManagement = () => {
         <CardContent className="pt-6">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
                 placeholder="Search patients by name or ID..."
                 value={searchQuery}
@@ -114,7 +125,7 @@ export const PatientManagement = () => {
               />
             </div>
             <Button variant="outline">
-              <Filter className="h-4 w-4 mr-2" />
+              <FilterListIcon className="h-4 w-4 mr-2" />
               Filters
             </Button>
           </div>
@@ -252,7 +263,7 @@ export const PatientManagement = () => {
                                 size="sm"
                                 onClick={() => setSelectedPatient(patient)}
                               >
-                                <Eye className="h-4 w-4" />
+                                <VisibilityIcon className="h-4 w-4" />
                               </Button>
                             </DialogTrigger>
                             <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -303,11 +314,11 @@ export const PatientManagement = () => {
                                       <h4 className="font-semibold">Guardian Information</h4>
                                       <div className="space-y-2">
                                         <div className="flex items-center gap-2 text-sm">
-                                          <Activity className="h-4 w-4 text-gray-500" />
+                                          <StarBorderIcon className="h-4 w-4 text-gray-500" />
                                           <span>{selectedPatient.guardianFirstName} {selectedPatient.guardianLastName}</span>
                                         </div>
                                         <div className="flex items-center gap-2 text-sm">
-                                          <Phone className="h-4 w-4 text-gray-500" />
+                                          <PhoneIcon className="h-4 w-4 text-gray-500" />
                                           <span>{selectedPatient.guardianPhone}</span>
                                         </div>
                                       </div>

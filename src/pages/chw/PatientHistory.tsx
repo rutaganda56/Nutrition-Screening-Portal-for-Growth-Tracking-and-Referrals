@@ -8,20 +8,18 @@ import { Avatar, AvatarFallback } from '@/app/components/ui/avatar';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/app/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs';
 import { Alert, AlertDescription } from '@/app/components/ui/alert';
-import {
-  Search,
-  FileText,
-  Users,
-  Activity,
-  Calendar,
-  Eye,
-  TrendingUp,
-  AlertCircle,
-  Info,
-  Download,
-  Loader2
-} from 'lucide-react';
-import { downloadCSV, downloadJSON } from '@/utils/exportUtils';
+import SearchIcon from "@mui/icons-material/Search";
+import DescriptionIcon from "@mui/icons-material/Description";
+import PeopleIcon from "@mui/icons-material/People";
+import StarBorderIcon from "@mui/icons-material/StarBorder";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import TrendingUpIcon from "@mui/icons-material/TrendingUp";
+import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import DownloadIcon from "@mui/icons-material/Download";
+import AutorenewIcon from "@mui/icons-material/Autorenew";
+import { ExportDropdown } from '@/app/components/ui/ExportDropdown';
 import { toast } from 'sonner';
 import { useSearchParams } from 'react-router-dom';
 import { 
@@ -118,14 +116,17 @@ export const PatientHistory = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Patient History</h1>
-        <p className="text-gray-600 mt-1">View patient screening history (Read-only)</p>
+    <div id="patient-history" className="p-4 sm:p-6 space-y-6 max-w-7xl mx-auto">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Patient History</h1>
+          <p className="text-gray-600 mt-1">View patient screening history (Read-only)</p>
+        </div>
+        <ExportDropdown data={patients} filename="patients_history" />
       </div>
 
       <Alert>
-        <Info className="h-4 w-4" />
+        <InfoOutlinedIcon className="h-4 w-4" />
         <AlertDescription>
           <strong>Read-Only Access:</strong> You can view patient screening history but cannot modify past records.
         </AlertDescription>
@@ -141,7 +142,7 @@ export const PatientHistory = () => {
                 <p className="text-3xl font-bold mt-1">{stats.total}</p>
               </div>
               <div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600">
-                <Users className="h-6 w-6" />
+                <PeopleIcon className="h-6 w-6" />
               </div>
             </div>
           </CardContent>
@@ -154,7 +155,7 @@ export const PatientHistory = () => {
                 <p className="text-3xl font-bold mt-1 ">{stats.normal}</p>
               </div>
               <div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600">
-                <Activity className="h-6 w-6" />
+                <StarBorderIcon className="h-6 w-6" />
               </div>
             </div>
           </CardContent>
@@ -167,7 +168,7 @@ export const PatientHistory = () => {
                 <p className="text-3xl font-bold mt-1 ">{stats.mam}</p>
               </div>
               <div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600">
-                <TrendingUp className="h-6 w-6" />
+                <TrendingUpIcon className="h-6 w-6" />
               </div>
             </div>
           </CardContent>
@@ -180,7 +181,7 @@ export const PatientHistory = () => {
                 <p className="text-3xl font-bold mt-1 ">{stats.sam}</p>
               </div>
               <div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600">
-                <AlertCircle className="h-6 w-6" />
+                <ErrorOutlineIcon className="h-6 w-6" />
               </div>
             </div>
           </CardContent>
@@ -192,7 +193,7 @@ export const PatientHistory = () => {
         <CardContent className="pt-6">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
                 placeholder="Search by patient name or ID..."
                 value={searchQuery}
@@ -259,7 +260,7 @@ export const PatientHistory = () => {
             <Card>
               <CardContent className="pt-6">
                 <div className="text-center py-8 text-gray-500">
-                  <FileText className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+                  <DescriptionIcon className="h-12 w-12 mx-auto mb-3 text-gray-400" />
                   <p>No patients found</p>
                 </div>
               </CardContent>
@@ -325,7 +326,7 @@ export const PatientHistory = () => {
                     >
                       <DialogTrigger asChild>
                         <Button variant="outline" className="w-full lg:w-auto">
-                          <Eye className="h-4 w-4 mr-2" />
+                          <VisibilityIcon className="h-4 w-4 mr-2" />
                           View History
                         </Button>
                       </DialogTrigger>
@@ -375,7 +376,7 @@ export const PatientHistory = () => {
                               <h4 className="font-semibold mb-3">Screening Records</h4>
                               {loadingPatientData[patient.id] ? (
                                 <div className="flex justify-center py-8">
-                                  <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                                  <AutorenewIcon className="h-6 w-6 animate-spin text-gray-400" />
                                 </div>
                               ) : (screeningsMap[patient.id] ?? []).length === 0 ? (
                                 <p className="text-center text-gray-500 py-8">No screening records found</p>
@@ -385,7 +386,7 @@ export const PatientHistory = () => {
                                     <Card key={s.id} className="border-l-4 border-l-blue-500">
                                       <CardContent className="pt-4">
                                         <div className="flex items-center gap-2 mb-3">
-                                          <Calendar className="h-4 w-4 text-gray-500" />
+                                          <CalendarTodayIcon className="h-4 w-4 text-gray-500" />
                                           <span className="font-semibold">{s.screeningDate}</span>
                                           <Badge variant={getStatusColor(s.classification) as any}>
                                             {s.classification}
@@ -422,7 +423,7 @@ export const PatientHistory = () => {
                                 </div>
                               )}
                               <Alert className="mt-4">
-                                <Info className="h-4 w-4" />
+                                <InfoOutlinedIcon className="h-4 w-4" />
                                 <AlertDescription className="text-sm">
                                   These records are read-only. To add new records, use the Screening Form.
                                 </AlertDescription>
@@ -432,7 +433,7 @@ export const PatientHistory = () => {
                             <TabsContent value="feedback" className="space-y-6">
                               {loadingPatientData[patient.id] ? (
                                 <div className="flex justify-center py-8">
-                                  <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                                  <AutorenewIcon className="h-6 w-6 animate-spin text-gray-400" />
                                 </div>
                               ) : (
                                 <>
@@ -460,13 +461,7 @@ export const PatientHistory = () => {
                                                 </span>
                                               </div>
                                               
-                                              {assessment.complications && (
-                                                <div className="mb-3">
-                                                  <span className="text-xs text-gray-500 block mb-1">Complications:</span>
-                                                  <p className="text-sm text-black font-medium">{assessment.complications}</p>
-                                                </div>
-                                              )}
-                                              
+
                                               <div className="bg-gray-50 p-3 rounded text-sm mb-2">
                                                 <span className="text-xs text-gray-500 block mb-1">Clinical Notes:</span>
                                                 <p className="text-gray-800 whitespace-pre-wrap">{assessment.clinicalNotes}</p>
@@ -495,7 +490,7 @@ export const PatientHistory = () => {
                                               <div className="flex justify-between items-start mb-3">
                                                 <div>
                                                   <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 mb-1">
-                                                    {order.orderType.toUpperCase()}
+                                                    {order.supplementType.toUpperCase()}
                                                   </Badge>
                                                   <h5 className="font-bold">{order.supplement}</h5>
                                                 </div>
@@ -549,53 +544,7 @@ export const PatientHistory = () => {
         </div>
       )}
 
-      {/* Export */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Button
-              variant="outline"
-              onClick={() => {
-                const data = patients.map(p => ({
-                  id: p.patientCode,
-                  name: `${p.firstName} ${p.lastName}`,
-                  age: p.age,
-                  gender: p.gender,
-                  currentStatus: p.currentStatus,
-                  lastScreeningDate: p.lastScreeningDate,
-                  totalScreenings: p.totalScreenings,
-                  facility: p.facilityName,
-                }));
-                downloadCSV(data, 'patient_history');
-                toast.success('CSV downloaded successfully!');
-              }}
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Export as CSV
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => {
-                const data = patients.map(p => ({
-                  id: p.patientCode,
-                  name: `${p.firstName} ${p.lastName}`,
-                  age: p.age,
-                  gender: p.gender,
-                  currentStatus: p.currentStatus,
-                  lastScreeningDate: p.lastScreeningDate,
-                  totalScreenings: p.totalScreenings,
-                  facility: p.facilityName,
-                }));
-                downloadJSON(data, 'patient_history');
-                toast.success('JSON downloaded successfully!');
-              }}
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Export as JSON
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+
     </div>
   );
 };

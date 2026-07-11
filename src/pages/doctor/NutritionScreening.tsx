@@ -20,7 +20,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
-import { screeningsApi, ScreeningResponse } from '@/services/api';
+import { screeningsApi, ScreeningResponse, ScreeningCreatePayload } from '@/services/api';
+import { ExportDropdown } from '@/app/components/ui/ExportDropdown';
 
 interface ScreeningResult {
   wfh: string; // Weight-for-Height Z-score
@@ -48,7 +49,13 @@ export const NutritionScreening = () => {
     setLoadingRecent(true);
     screeningsApi.getAll()
       .then((data) => {
-        setScreenings(data);
+        if (user) {
+          const userNameStr = user.name?.toLowerCase().trim();
+          const filtered = data.filter(s => s.conductedByName?.toLowerCase().trim() === userNameStr);
+          setScreenings(filtered);
+        } else {
+          setScreenings(data);
+        }
       })
       .catch((err) => {
         console.error(err);
@@ -195,7 +202,7 @@ export const NutritionScreening = () => {
       </div>
 
       {/* WHO Guidelines Reference */}
-      <Card className="border-blue-200 bg-blue-50">
+      <Card className="bg-blue-50">
         <CardContent className="pt-6">
           <div className="flex items-start gap-3">
             <FileText className="h-5 w-5 text-blue-600 mt-1" />
@@ -370,9 +377,9 @@ export const NutritionScreening = () => {
 
                     {/* Recommendation */}
                     <div className={`p-4 rounded-lg ${
-                      result.classification === 'SAM' ? 'bg-red-50 border border-red-200' :
-                      result.classification === 'MAM' ? 'bg-yellow-50 border border-yellow-200' :
-                      'bg-green-50 border border-green-200'
+                      result.classification === 'SAM' ? 'bg-red-50 border' :
+                      result.classification === 'MAM' ? 'bg-yellow-50 border' :
+                      'bg-green-50 border'
                     }`}>
                       <div className="flex items-start gap-3">
                         {result.classification === 'Normal' ? (

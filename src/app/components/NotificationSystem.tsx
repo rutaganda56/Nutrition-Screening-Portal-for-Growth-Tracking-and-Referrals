@@ -129,7 +129,11 @@ export const NotificationSystem = () => {
     
     switch (notification.actionType) {
       case 'REVIEW_SUMMARY':
-        navigate(`/dashboard/clinical-summary?patient=${notification.patientId}&request=${notification.requestId}`);
+        if (notification.requestId) {
+          navigate(`/dashboard/patient-clinical-summary?patient=${notification.patientId}&request=${notification.requestId}`);
+        } else {
+          navigate(`/dashboard/service-request-queue`);
+        }
         break;
       case 'VIEW_GROWTH':
         navigate(`/dashboard/growth-tracking?patient=${notification.patientId}`);

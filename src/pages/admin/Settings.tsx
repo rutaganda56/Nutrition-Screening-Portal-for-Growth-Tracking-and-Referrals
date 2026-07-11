@@ -20,6 +20,10 @@ export const Settings = () => {
   });
 
   const handleSaveSettings = () => {
+    if (generalSettings.contactPhone && generalSettings.contactPhone.trim() && !/^[0-9]{10}$/.test(generalSettings.contactPhone)) {
+      toast.error('Contact phone number must be exactly 10 digits');
+      return;
+    }
     toast.success('Settings saved successfully');
   };
 
@@ -74,8 +78,11 @@ export const Settings = () => {
             <div className="space-y-2">
               <Label>Contact Phone</Label>
               <Input
+                type="tel"
                 value={generalSettings.contactPhone}
                 onChange={(e) => setGeneralSettings({ ...generalSettings, contactPhone: e.target.value })}
+                pattern="[0-9]{10}"
+                title="Phone number must be exactly 10 digits"
               />
             </div>
           </div>

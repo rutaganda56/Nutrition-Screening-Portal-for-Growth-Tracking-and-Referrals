@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { Badge } from '@/app/components/ui/badge';
@@ -18,6 +19,8 @@ import {
   Calendar,
   FileText
 } from 'lucide-react';
+import { Badge as UIBadge } from '@/app/components/ui/badge';
+import { ExportDropdown } from '@/app/components/ui/ExportDropdown';
 import { toast } from 'sonner';
 import { serviceRequestsApi, ServiceRequestResponse } from '@/services/api';
 
@@ -25,6 +28,7 @@ export const ServiceRequestQueue = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('pending');
   const [searchTerm, setSearchTerm] = useState('');
+  const { user } = useAuth();
   const [serviceRequests, setServiceRequests] = useState<ServiceRequestResponse[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -32,7 +36,13 @@ export const ServiceRequestQueue = () => {
     setLoading(true);
     serviceRequestsApi.getAll()
       .then((data) => {
-        setServiceRequests(data);
+        if (user) {
+          const userNameStr = user.name?.toLowerCase().trim();
+          const filtered = data.filter(r => !r.assignedToName || r.assignedToName.toLowerCase().trim() === userNameStr);
+          setServiceRequests(filtered);
+        } else {
+          setServiceRequests(data);
+        }
       })
       .catch((err) => {
         console.error(err);
@@ -41,7 +51,7 @@ export const ServiceRequestQueue = () => {
       .finally(() => {
         setLoading(false);
       });
-  }, []);
+  }, [user]);
 
   const pendingRequests = serviceRequests.filter(r => r.status.toLowerCase() === 'pending');
   const inReviewRequests = serviceRequests.filter(r => r.status.toLowerCase() === 'in_review' || r.status.toLowerCase() === 'in-review');
@@ -74,11 +84,11 @@ export const ServiceRequestQueue = () => {
   const getClassificationColor = (classification: string) => {
     switch (classification) {
       case 'SAM':
-        return 'bg-red-50 border-red-300 text-red-700';
+        return 'bg-red-50 border text-red-700';
       case 'MAM':
-        return 'bg-yellow-50 border-yellow-300 text-yellow-700';
+        return 'bg-yellow-50 border text-yellow-700';
       default:
-        return 'bg-green-50 border-green-300 text-green-700';
+        return 'bg-green-50 border text-green-700';
     }
   };
 
@@ -113,7 +123,7 @@ export const ServiceRequestQueue = () => {
 
   const ServiceRequestCard = ({ request }: { request: ServiceRequestResponse }) => (
     <Card className={`hover:shadow-lg transition-shadow ${
-      request.priority.toLowerCase() === 'asap' || request.priority.toLowerCase() === 'urgent' ? 'border-2 border-red-400' : ''
+      request.priority.toLowerCase() === 'asap' || request.priority.toLowerCase() === 'urgent' ? 'border-2' : ''
     }`}>
       <CardContent className="pt-6">
         <div className="space-y-4">
@@ -137,7 +147,7 @@ export const ServiceRequestQueue = () => {
           </div>
 
           {/* CHW Information */}
-          <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+          <div className="p-3 bg-gray-50 border rounded-lg">
             <div className="flex items-start gap-2">
               <User className="h-4 w-4 text-gray-600 mt-0.5" />
               <div className="flex-1">
@@ -153,7 +163,7 @@ export const ServiceRequestQueue = () => {
 
           {/* Request Details */}
           <div>
-            <p className="text-sm font-semibold text-gray-700 mb-1">Reason: {request.reasonCode}</p>
+            <p className="text-sm font-semibold text-gray-700 mb-1">Reason: {request.description}</p>
             <p className="text-sm text-gray-600">{request.description}</p>
           </div>
 
@@ -193,15 +203,23 @@ export const ServiceRequestQueue = () => {
   );
 
   return (
-    <div className="p-6 space-y-6">
+    <div id="service-request-queue" className="p-6 space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Service Request Queue</h1>
-        <p className="text-gray-600 mt-1">Review and respond to CHW-submitted service requests requiring clinical decisions</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Service Request Queue</h1>
+          <p className="text-gray-600 mt-1">Review and respond to CHW-submitted service requests requiring clinical decisions</p>
+        </div>
+        <ExportDropdown
+          data={serviceRequests}
+          filename="Service_Request_Queue"
+          pdfElementId="service-request-queue"
+          variant="outline"
+        />
       </div>
 
       {/* Role Information */}
-      <Alert className="border-grey-300 bg-grey-50">
+      <Alert className="bg-grey-50">
         <AlertTriangle className="h-4 w-4 text-grey-600" />
         <AlertDescription className="text-grey-600">
           <strong>Doctor Workflow:</strong> Community Health Workers submit service requests for patients requiring clinical review. 
@@ -211,7 +229,7 @@ export const ServiceRequestQueue = () => {
 
       {/* Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="border-2 border-red-300">
+        <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
