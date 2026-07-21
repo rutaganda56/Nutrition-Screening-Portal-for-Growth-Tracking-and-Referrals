@@ -8,17 +8,15 @@ import { Skeleton } from '@/app/components/ui/skeleton';
 import { Input } from '@/app/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs';
 import { Alert, AlertDescription } from '@/app/components/ui/alert';
-import {
-  Send,
-  Clock,
-  CheckCircle,
-  AlertTriangle,
-  Search,
-  Filter,
-  User,
-  Calendar,
-  FileText
-} from 'lucide-react';
+import SendIcon from "@mui/icons-material/Send";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import SearchIcon from "@mui/icons-material/Search";
+import FilterListIcon from "@mui/icons-material/FilterList";
+import PersonIcon from "@mui/icons-material/Person";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import DescriptionIcon from "@mui/icons-material/Description";
 import { Badge as UIBadge } from '@/app/components/ui/badge';
 import { ExportDropdown } from '@/app/components/ui/ExportDropdown';
 import { toast } from 'sonner';
@@ -38,7 +36,7 @@ export const ServiceRequestQueue = () => {
       .then((data) => {
         if (user) {
           const userNameStr = user.name?.toLowerCase().trim();
-          const filtered = data.filter(r => !r.assignedToName || r.assignedToName.toLowerCase().trim() === userNameStr);
+          const filtered = data.filter(r => r.assignedToName?.toLowerCase().trim() === userNameStr);
           setServiceRequests(filtered);
         } else {
           setServiceRequests(data);
@@ -73,11 +71,11 @@ export const ServiceRequestQueue = () => {
     switch (priority.toLowerCase()) {
       case 'urgent':
       case 'asap':
-        return <AlertTriangle className="h-4 w-4" />;
+        return <WarningAmberIcon className="h-4 w-4" />;
       case 'routine':
-        return <Clock className="h-4 w-4" />;
+        return <AccessTimeIcon className="h-4 w-4" />;
       default:
-        return <Clock className="h-4 w-4" />;
+        return <AccessTimeIcon className="h-4 w-4" />;
     }
   };
 
@@ -149,12 +147,12 @@ export const ServiceRequestQueue = () => {
           {/* CHW Information */}
           <div className="p-3 bg-gray-50 border rounded-lg">
             <div className="flex items-start gap-2">
-              <User className="h-4 w-4 text-gray-600 mt-0.5" />
+              <PersonIcon className="h-4 w-4 text-gray-600 mt-0.5" />
               <div className="flex-1">
                 <p className="text-sm font-medium text-gray-900">Submitted by CHW</p>
                 <p className="text-sm text-gray-700">{request.submittedByName}</p>
                 <p className="text-xs text-gray-600 mt-1">
-                  <Calendar className="h-3 w-3 inline mr-1" />
+                  <CalendarTodayIcon className="h-3 w-3 inline mr-1" />
                   {new Date(request.submittedAt).toLocaleString()}  Screening: {request.screeningCode}
                 </p>
               </div>
@@ -193,7 +191,7 @@ export const ServiceRequestQueue = () => {
               onClick={() => handleReviewCase(String(request.id), String(request.patientId))}
               className="flex-1 bg-green-600 hover:bg-green-700"
             >
-              <FileText className="h-4 w-4 mr-2" />
+              <DescriptionIcon className="h-4 w-4 mr-2" />
               Review Case
             </Button>
           </div>
@@ -220,7 +218,7 @@ export const ServiceRequestQueue = () => {
 
       {/* Role Information */}
       <Alert className="bg-grey-50">
-        <AlertTriangle className="h-4 w-4 text-grey-600" />
+        <WarningAmberIcon className="h-4 w-4 text-grey-600" />
         <AlertDescription className="text-grey-600">
           <strong>Doctor Workflow:</strong> Community Health Workers submit service requests for patients requiring clinical review. 
           All patient access is through these service requests  you cannot browse patients directly. Review each case to make clinical decisions.
@@ -237,7 +235,7 @@ export const ServiceRequestQueue = () => {
                 <p className="text-3xl font-bold  mt-1">{pendingRequests.length}</p>
               </div>
               <div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600">
-                <AlertTriangle className="h-8 w-8" />
+                <WarningAmberIcon className="h-8 w-8" />
               </div>
             </div>
           </CardContent>
@@ -250,7 +248,7 @@ export const ServiceRequestQueue = () => {
                 <p className="text-3xl font-bold  mt-1">{inReviewRequests.length}</p>
               </div>
               <div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600">
-                <Clock className="h-8 w-8" />
+                <AccessTimeIcon className="h-8 w-8" />
               </div>
             </div>
           </CardContent>
@@ -265,7 +263,7 @@ export const ServiceRequestQueue = () => {
                 </p>
               </div>
               <div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600">
-                <Send className="h-8 w-8" />
+                <SendIcon className="h-8 w-8" />
               </div>
             </div>
           </CardContent>
@@ -278,7 +276,7 @@ export const ServiceRequestQueue = () => {
                 <p className="text-3xl font-bold  mt-1">{completedRequests.length}</p>
               </div>
               <div className="h-12 w-12 rounded-md flex items-center justify-center bg-white text-green-600">
-                <CheckCircle className="h-8 w-8" />
+                <CheckCircleIcon className="h-8 w-8" />
               </div>
             </div>
           </CardContent>
@@ -290,7 +288,7 @@ export const ServiceRequestQueue = () => {
         <CardContent className="pt-6">
           <div className="flex gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 placeholder="Search by patient name, ID, or request number..."
                 value={searchTerm}
@@ -299,7 +297,7 @@ export const ServiceRequestQueue = () => {
               />
             </div>
             <Button variant="outline">
-              <Filter className="h-4 w-4 mr-2" />
+              <FilterListIcon className="h-4 w-4 mr-2" />
               Filter
             </Button>
           </div>
@@ -354,15 +352,15 @@ export const ServiceRequestQueue = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="pending" className="flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4" />
+              <WarningAmberIcon className="h-4 w-4" />
               Pending ({pendingRequests.length})
             </TabsTrigger>
             <TabsTrigger value="in-review" className="flex items-center gap-2">
-              <Clock className="h-4 w-4" />
+              <AccessTimeIcon className="h-4 w-4" />
               In Review ({inReviewRequests.length})
             </TabsTrigger>
             <TabsTrigger value="completed" className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4" />
+              <CheckCircleIcon className="h-4 w-4" />
               Completed ({completedRequests.length})
             </TabsTrigger>
           </TabsList>
@@ -375,7 +373,7 @@ export const ServiceRequestQueue = () => {
             ) : (
               <Card>
                 <CardContent className="pt-6 text-center text-gray-500">
-                  <CheckCircle className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                  <CheckCircleIcon className="h-12 w-12 mx-auto mb-2 text-gray-300" />
                   <p>No pending service requests</p>
                 </CardContent>
               </Card>
@@ -390,7 +388,7 @@ export const ServiceRequestQueue = () => {
             ) : (
               <Card>
                 <CardContent className="pt-6 text-center text-gray-500">
-                  <Clock className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                  <AccessTimeIcon className="h-12 w-12 mx-auto mb-2 text-gray-300" />
                   <p>No requests currently in review</p>
                 </CardContent>
               </Card>
@@ -405,7 +403,7 @@ export const ServiceRequestQueue = () => {
             ) : (
               <Card>
                 <CardContent className="pt-6 text-center text-gray-500">
-                  <FileText className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                  <DescriptionIcon className="h-12 w-12 mx-auto mb-2 text-gray-300" />
                   <p>No completed requests</p>
                 </CardContent>
               </Card>

@@ -61,7 +61,12 @@ export const GrowthTracking = () => {
         }
 
         setPatients(finalPatients);
-        if (finalPatients.length > 0) {
+        const searchParams = new URLSearchParams(window.location.search);
+        const patientParam = searchParams.get('patient');
+        
+        if (patientParam && finalPatients.some(p => String(p.id) === patientParam)) {
+          setSelectedPatientId(patientParam);
+        } else if (finalPatients.length > 0) {
           setSelectedPatientId(String(finalPatients[0].id));
         }
       })
@@ -141,7 +146,7 @@ export const GrowthTracking = () => {
         </div>
         <div className="flex gap-2">
           <ExportDropdown
-            data={growthData}
+            data={chartData}
             filename={`Growth_Chart_${selectedPatient?.firstName || 'Patient'}`}
             pdfElementId="growth-tracking-dashboard"
             variant="outline"

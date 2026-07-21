@@ -21,9 +21,6 @@ public class ClinicalAssessment {
 
     private String severity; // CRITICAL | SEVERE | MODERATE | MILD
 
-    @Column(name = "clinical_notes")
-    private String clinicalNotes;
-
     @Column(name = "assessed_at")
     private LocalDate assessedAt;
 

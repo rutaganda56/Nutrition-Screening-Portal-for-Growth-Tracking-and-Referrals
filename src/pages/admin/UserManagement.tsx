@@ -20,7 +20,7 @@ import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import AutorenewIcon from "@mui/icons-material/Autorenew";
-import { toast } from 'sonner';
+import { toast } from 'sonner'; 
 import { ExportDropdown } from '@/app/components/ui/ExportDropdown';
 import { usersApi, facilitiesApi, UserResponse, FacilityResponse } from '@/services/api';
 
@@ -82,7 +82,7 @@ export const UserManagement = () => {
         phone: form.phone,
         role: form.role,
         facilityId: form.facilityId ? Number(form.facilityId) : undefined,
-        status: form.tempPassword || undefined,
+        temporaryPassword: form.tempPassword || undefined,
       });
       toast.success(`User created! Temporary password: ${form.tempPassword || `Temp@${form.fullName.replace(/\s+/g, '').substring(0, 4)}123`}`);
       setIsCreateOpen(false);
@@ -209,12 +209,6 @@ export const UserManagement = () => {
             <DialogDescription>Fill in the details to create a new user account</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <Alert className="border-blue-200 bg-blue-50">
-              <InfoOutlinedIcon className="h-4 w-4 text-blue-600" />
-              <AlertDescription className="text-blue-800 text-sm">
-                A temporary password will be generated. The user should change it after first login via their Profile page.
-              </AlertDescription>
-            </Alert>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Full Name *</Label>

@@ -75,21 +75,48 @@ export const ReportsAnalytics = () => {
       .finally(() => setLoading(false));
   }, []);
 
+  // 0. Filter Data based on dateRange
+  const { filteredPatients, filteredScreenings, filteredServiceRequests } = React.useMemo(() => {
+    if (dateRange === 'all') {
+      return { filteredPatients: patients, filteredScreenings: screenings, filteredServiceRequests: serviceRequests };
+    }
+
+    const cutoff = new Date();
+    if (dateRange === '30days') cutoff.setDate(cutoff.getDate() - 30);
+    else if (dateRange === '90days') cutoff.setDate(cutoff.getDate() - 90);
+    else if (dateRange === '6months') cutoff.setMonth(cutoff.getMonth() - 6);
+
+    const filterByDate = (dateStr?: string | null) => {
+      if (!dateStr) return true;
+      const d = new Date(dateStr);
+      return !isNaN(d.getTime()) && d >= cutoff;
+    };
+
+    return {
+      // Patients often use 'createdAt' or 'lastScreeningDate'
+      filteredPatients: patients.filter(p => filterByDate(p.createdAt || p.lastScreeningDate)),
+      filteredScreenings: screenings.filter(s => filterByDate(s.screeningDate)),
+      filteredServiceRequests: serviceRequests.filter(sr => filterByDate(sr.submittedAt))
+    };
+  }, [patients, screenings, serviceRequests, dateRange]);
+
   // 1. Dynamic Calculations: Key Metrics
-  const totalScreeningsCount = screenings.length;
-  const atRiskCount = patients.filter(p => p.currentStatus === 'MAM' || p.currentStatus === 'SAM').length;
-  const activeReferralsCount = referrals.filter(r => r.status.toUpperCase() === 'PENDING' || r.status.toUpperCase() === 'ACTIVE').length;
+  const totalScreeningsCount = filteredScreenings.length;
+  const atRiskCount = filteredPatients.filter(p => p.currentStatus === 'MAM' || p.currentStatus === 'SAM').length;
+  const activeReferralsCount = filteredServiceRequests.filter(sr => sr.status.toUpperCase() === 'PENDING').length;
   
-  const completedReferralsCount = referrals.filter(r => r.status.toUpperCase() === 'COMPLETED').length;
-  const successRatePercent = referrals.length > 0 
-    ? Math.round((completedReferralsCount / referrals.length) * 100) 
+  const completedReferralsCount = filteredServiceRequests.filter(sr => sr.status.toUpperCase() === 'COMPLETED').length;
+  const successRatePercent = filteredServiceRequests.length > 0 
+    ? Math.round((completedReferralsCount / filteredServiceRequests.length) * 100) 
     : 0;
 
   // Helpers to safely parse dates for filtering
   const getMonthName = (dateStr: string) => {
     try {
       const date = new Date(dateStr);
-      return date.toLocaleString('default', { month: 'short' });
+      if (isNaN(date.getTime())) return 'Unknown';
+      const shortMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return shortMonths[date.getMonth()];
     } catch {
       return 'Unknown';
     }
@@ -108,7 +135,7 @@ export const ReportsAnalytics = () => {
       monthlyMap[mName] = { month: mName, screenings: 0, malnourished: 0, severe: 0 };
     }
 
-    screenings.forEach(s => {
+    filteredScreenings.forEach(s => {
       const mName = getMonthName(s.screeningDate);
       if (monthlyMap[mName]) {
         monthlyMap[mName].screenings += 1;
@@ -123,7 +150,7 @@ export const ReportsAnalytics = () => {
     });
 
     return Object.values(monthlyMap);
-  }, [screenings]);
+  }, [filteredScreenings]);
 
   // 3. Dynamic Calculations: Patient Age Distribution
   const ageDistribution = React.useMemo(() => {
@@ -135,7 +162,7 @@ export const ReportsAnalytics = () => {
       '5+ years': 0
     };
 
-    patients.forEach(p => {
+    filteredPatients.forEach(p => {
       if (!p.age) return;
       const lower = p.age.toLowerCase();
       if (lower.includes('month')) {
@@ -143,7 +170,10 @@ export const ReportsAnalytics = () => {
         if (match) {
           const months = parseInt(match[1]);
           if (months <= 6) ageGroups['0-6 months'] += 1;
-          else ageGroups['6-12 months'] += 1;
+          else if (months <= 12) ageGroups['6-12 months'] += 1;
+          else if (months < 24) ageGroups['1-2 years'] += 1;
+          else if (months < 60) ageGroups['2-5 years'] += 1;
+          else ageGroups['5+ years'] += 1;
           return;
         }
       }
@@ -163,13 +193,13 @@ export const ReportsAnalytics = () => {
     });
 
     return Object.entries(ageGroups).map(([name, value]) => ({ name, value }));
-  }, [patients]);
+  }, [filteredPatients]);
 
   // 4. Dynamic Calculations: Malnutrition Severity
   const severityData = React.useMemo(() => {
     const counts = { NORMAL: 0, MAM: 0, SAM: 0 };
     
-    patients.forEach(p => {
+    filteredPatients.forEach(p => {
       const status = p.currentStatus ? p.currentStatus.toUpperCase() : 'NORMAL';
       if (status === 'SAM') counts.SAM += 1;
       else if (status === 'MAM') counts.MAM += 1;
@@ -180,9 +210,9 @@ export const ReportsAnalytics = () => {
       { name: 'Normal', value: counts.NORMAL, color: '#10b981' },
       { name: 'Moderate (MAM)', value: counts.MAM, color: '#f97316' },
       { name: 'Severe (SAM)', value: counts.SAM, color: '#ef4444' }
-    ].filter(entry => entry.value > 0 || patients.length === 0); 
+    ].filter(entry => entry.value > 0 || filteredPatients.length === 0); 
     // Show all if dataset is completely empty to draw an empty state chart
-  }, [patients]);
+  }, [filteredPatients]);
 
   // 5. Dynamic Calculations: Facility Performance
   const facilityPerformance = React.useMemo(() => {
@@ -193,7 +223,7 @@ export const ReportsAnalytics = () => {
       performanceMap[f.name] = { facility: f.name, screenings: 0, normal: 0 };
     });
 
-    screenings.forEach(s => {
+    filteredScreenings.forEach(s => {
       const fName = s.facilityName || 'Unknown Facility';
       if (!performanceMap[fName]) {
         performanceMap[fName] = { facility: fName, screenings: 0, normal: 0 };
@@ -209,7 +239,7 @@ export const ReportsAnalytics = () => {
       screenings: item.screenings,
       rate: item.screenings > 0 ? Math.round((item.normal / item.screenings) * 100) : 0
     }));
-  }, [screenings, facilities]);
+  }, [filteredScreenings, facilities]);
 
   // 6. Dynamic Calculations: Service Requests (Referrals) by Facility
   const serviceRequestData = React.useMemo(() => {
@@ -220,11 +250,11 @@ export const ReportsAnalytics = () => {
       dataMap[f.name] = { facility: f.name, pending: 0, resolved: 0, total: 0 };
     });
 
-    serviceRequests.forEach(req => {
+    filteredServiceRequests.forEach(req => {
       // Find the facility of the CHW who submitted it
       const chw = users.find(u => u.fullName === req.submittedByName);
       // Fallback to finding by patient's facility
-      const patient = patients.find(p => p.id === req.patientId);
+      const patient = filteredPatients.find(p => p.id === req.patientId);
       const fName = chw?.facilityName || patient?.facilityName || 'Unknown Facility';
       
       if (!dataMap[fName]) {
@@ -240,7 +270,7 @@ export const ReportsAnalytics = () => {
     });
 
     return Object.values(dataMap);
-  }, [serviceRequests, facilities, users, patients]);
+  }, [filteredServiceRequests, facilities, users, filteredPatients]);
 
   const handleExportReport = async () => {
     toast.info('Generating professional Excel report...', { duration: 2000 });
@@ -344,10 +374,6 @@ export const ReportsAnalytics = () => {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleGenerateReport}>
-            <DescriptionIcon className="h-4 w-4 mr-2" />
-            Refresh Data
-          </Button>
           <ExportDropdown 
             data={facilityPerformance}
             filename="NutriTrack_Analytics_Report"
@@ -374,16 +400,6 @@ export const ReportsAnalytics = () => {
                   <SelectItem value="6months">Last 6 Months</SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={reportType} onValueChange={setReportType}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Report Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="overview">Overview Dashboard</SelectItem>
-                  <SelectItem value="screening">Nutritional Screenings</SelectItem>
-                  <SelectItem value="referrals">Patient Referrals</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
             <p className="text-xs text-gray-500 italic">
               Showing analytics calculated from {patients.length} patients and {screenings.length} screenings.
@@ -400,9 +416,6 @@ export const ReportsAnalytics = () => {
               <div>
                 <p className="text-sm font-medium text-gray-500">Total Screenings</p>
                 <p className="text-3xl font-bold mt-1 text-gray-900 tracking-tight">{totalScreeningsCount.toLocaleString()}</p>
-                <div className="flex items-center gap-1 mt-2 text-xs text-gray-500 font-medium">
-                  Total recorded evaluations
-                </div>
               </div>
               <div className="h-12 w-12 rounded-xl flex items-center justify-center bg-green-50 text-green-600 group-hover:scale-110 transition-transform">
                 <StarBorderIcon className="h-6 w-6" />
@@ -417,9 +430,6 @@ export const ReportsAnalytics = () => {
               <div>
                 <p className="text-sm font-medium text-gray-500">At-Risk Patients (MAM/SAM)</p>
                 <p className="text-3xl font-bold mt-1 text-gray-900 tracking-tight">{atRiskCount.toLocaleString()}</p>
-                <div className="flex items-center gap-1 mt-2 text-xs text-gray-500 font-medium">
-                  Based on active screenings
-                </div>
               </div>
               <div className="h-12 w-12 rounded-xl flex items-center justify-center bg-green-50 text-green-600 group-hover:scale-110 transition-transform">
                 <PeopleIcon className="h-6 w-6" />
@@ -432,11 +442,8 @@ export const ReportsAnalytics = () => {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-500">Active Referrals</p>
+                <p className="text-sm font-medium text-gray-500">Active Referrals(Pending doctor assessment)</p>
                 <p className="text-3xl font-bold mt-1 text-gray-900 tracking-tight">{activeReferralsCount.toLocaleString()}</p>
-                <div className="flex items-center gap-1 mt-2 text-xs text-gray-500 font-medium">
-                  Pending doctor assessment
-                </div>
               </div>
               <div className="h-12 w-12 rounded-xl flex items-center justify-center bg-green-50 text-green-600 group-hover:scale-110 transition-transform">
                 <DescriptionIcon className="h-6 w-6" />
@@ -449,11 +456,8 @@ export const ReportsAnalytics = () => {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-500">Referral Success Rate</p>
+                <p className="text-sm font-medium text-gray-500">Referral Success Rate({completedReferralsCount} completed of {serviceRequests.length} total)</p>
                 <p className="text-3xl font-bold mt-1 text-gray-900 tracking-tight">{successRatePercent}%</p>
-                <div className="flex items-center gap-1 mt-2 text-xs text-gray-500 font-medium">
-                  {completedReferralsCount} completed of {referrals.length} total
-                </div>
               </div>
               <div className="h-12 w-12 rounded-xl flex items-center justify-center bg-green-50 text-green-600 group-hover:scale-110 transition-transform">
                 <BarChartIcon className="h-6 w-6" />

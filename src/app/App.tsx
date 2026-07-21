@@ -22,6 +22,7 @@ import { AdminDashboard } from "@/pages/dashboards/AdminDashboard";
 import { Reports } from "@/pages/doctor/Reports";
 import { PatientClinicalSummary } from "@/pages/doctor/PatientClinicalSummary";
 import { ServiceRequestQueue } from "@/pages/doctor/ServiceRequestQueue";
+import { GrowthTracking } from "@/pages/doctor/GrowthTracking";
 
 // Community Health Worker Pages
 import { PatientRegistration } from "@/pages/chw/PatientRegistration";
@@ -101,6 +102,7 @@ function AppRoutes() {
             path="patient-clinical-summary"
             element={<PatientClinicalSummary />}
           />
+          <Route path="growth-tracking" element={<GrowthTracking />} />
           <Route path="reports" element={<Reports />} />
 
           {/* CHW Routes */}

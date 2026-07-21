@@ -120,7 +120,7 @@ export const LoginPage = () => {
 
               <div className="flex items-center justify-between text-sm">
                 <label className="flex items-center gap-2">
-                  <input type="checkbox" className="rounded" />
+                  <input type="checkbox" className="rounded" required/>
                   <span className="text-gray-600">Remember me</span>
                 </label>
                 <button

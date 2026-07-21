@@ -93,7 +93,7 @@ export const ExportDropdown: React.FC<ExportDropdownProps> = ({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant={variant} className={buttonClassName} disabled={isExporting}>
+        <Button className={`bg-green-600 hover:bg-green-700 text-white border-0 ${buttonClassName || ''}`} disabled={isExporting}>
           {isExporting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
           {isExporting ? 'Exporting...' : label}
         </Button>

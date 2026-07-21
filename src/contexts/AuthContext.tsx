@@ -7,6 +7,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  phone?: string;
   role: UserRole;
   department?: string;
   facilityId?: number | null;
@@ -36,6 +37,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       id: String(responseUser.id),
       name: responseUser.fullName,
       email: responseUser.email,
+      phone: responseUser.phone,
       role: authApi.toFrontendRole(responseUser.role) as UserRole,
       department: responseUser.department,
       facilityId: responseUser.facilityId,
@@ -43,6 +45,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
     setUser(user);
     localStorage.setItem('user', JSON.stringify(user));
+    localStorage.setItem('authToken', data.token);
     return true;
   };
 
@@ -62,6 +65,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = () => {
     setUser(null);
     localStorage.removeItem('user');
+    localStorage.removeItem('authToken');
   };
 
   const updateUser = (updatedData: Partial<User>) => {

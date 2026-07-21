@@ -144,10 +144,12 @@ export const DashboardLayout = () => {
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate('/dashboard/profile')}>
-                  <PersonIcon className="mr-2 h-4 w-4" />
-                  Profile
-                </DropdownMenuItem>
+                {user.role !== 'administrator' && (
+                  <DropdownMenuItem onClick={() => navigate('/dashboard/profile')}>
+                    <PersonIcon className="mr-2 h-4 w-4" />
+                    Profile
+                  </DropdownMenuItem>
+                )}
                 {canAccessSettings(user.role) && (
                   <DropdownMenuItem onClick={() => navigate('/dashboard/settings')}>
                     <SettingsIcon className="mr-2 h-4 w-4" />
@@ -169,11 +171,11 @@ export const DashboardLayout = () => {
         {/* Sidebar */}
         <aside
           className={`
-            fixed lg:static inset-y-0 left-0 z-30
+            fixed lg:sticky left-0 z-30
             w-64 bg-white border-r
             transform transition-transform duration-200 ease-in-out
-            ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}\
-            top-16 lg:top-0
+            ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+            top-16 h-[calc(100vh-4rem)]
           `}
         >
           <div className="flex flex-col h-full">

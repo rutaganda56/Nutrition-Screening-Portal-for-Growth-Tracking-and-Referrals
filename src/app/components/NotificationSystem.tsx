@@ -9,7 +9,7 @@ import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { alertsApi, AlertResponse } from "@/services/api";
+import { alertsApi, AlertResponse, serviceRequestsApi } from "@/services/api";
 import { cn } from "@/app/components/ui/utils";
 import { formatDistanceToNow } from "date-fns";
 
@@ -136,7 +136,20 @@ export const NotificationSystem = () => {
         }
         break;
       case 'VIEW_GROWTH':
-        navigate(`/dashboard/growth-tracking?patient=${notification.patientId}`);
+        if (notification.requestId) {
+          navigate(`/dashboard/patient-clinical-summary?patient=${notification.patientId}&request=${notification.requestId}&tab=history`);
+        } else {
+          // Find the latest service request for this patient so the doctor can access the summary
+          serviceRequestsApi.getAll().then(reqs => {
+            const patientReqs = reqs.filter(r => r.patientId === notification.patientId);
+            if (patientReqs.length > 0) {
+              patientReqs.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
+              navigate(`/dashboard/patient-clinical-summary?patient=${notification.patientId}&request=${patientReqs[0].id}&tab=history`);
+            } else {
+              navigate(`/dashboard/service-request-queue`);
+            }
+          });
+        }
         break;
       case 'VIEW_INSTRUCTIONS':
         navigate(`/dashboard/patient-history?patient=${notification.patientId}&tab=feedback`);

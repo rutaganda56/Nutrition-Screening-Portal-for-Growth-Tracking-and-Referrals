@@ -43,9 +43,9 @@ export const CHWDashboard = () => {
         const myScreenings = screeningsData.filter(s => s.conductedByName === user?.name);
         const myPatientIds = new Set(myScreenings.map(s => s.patientId));
         
-        // Patients are assigned to the CHW if they are in the same facility or the CHW has screened them
+        // Patients are assigned to the CHW if they have screened them or registered them
         const myPatients = patientsData.filter(
-          p => myPatientIds.has(p.id) || (user?.facilityName && p.facilityName === user?.facilityName)
+          p => myPatientIds.has(p.id) || p.registeredByName === user?.name
         );
 
         setPatients(myPatients);
@@ -168,7 +168,7 @@ export const CHWDashboard = () => {
           <Card className="h-full">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="flex items-center gap-2 text-lg">
-                <PeopleIcon className="h-5 w-5 text-green-600" />
+                
                 Assigned Patients
               </CardTitle>
               <Button
@@ -236,7 +236,6 @@ export const CHWDashboard = () => {
           <Card className="h-full">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="flex items-center gap-2 text-lg">
-                <AssignmentTurnedInIcon className="h-5 w-5 text-green-600" />
                 Recent Screenings
               </CardTitle>
               <Button

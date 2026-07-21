@@ -15,7 +15,6 @@ public class ClinicalAssessmentMapper {
                         ? ca.getPatient().getFirstName() + " " + ca.getPatient().getLastName() : null,
                 ca.getDiagnosis(),
                 ca.getSeverity(),
-                ca.getClinicalNotes(),
                 ca.getAssessedBy() != null ? ca.getAssessedBy().getFullName() : null,
                 ca.getAssessedAt(),
                 ca.getCreatedAt()

@@ -69,10 +69,13 @@ export const DoctorDashboard = () => {
         if (user) {
           const userNameStr = user.name?.toLowerCase().trim();
           
-          const myRequests = requests.filter(r => !r.assignedToName || r.assignedToName.toLowerCase().trim() === userNameStr);
+          const myRequests = requests.filter(r => r.assignedToName?.toLowerCase().trim() === userNameStr);
           setServiceRequests(myRequests);
           
-          const completedCases = myRequests.filter(r => r.status.toUpperCase() === 'COMPLETED' || r.status.toUpperCase() === 'RESOLVED').length;
+          const completedCases = myRequests.filter(r => 
+            (r.status.toUpperCase() === 'COMPLETED' || r.status.toUpperCase() === 'RESOLVED') && 
+            r.assignedToName?.toLowerCase().trim() === userNameStr
+          ).length;
           setCompletedAssessments(completedCases);
 
           // Process incoming service requests by priority for the pie chart
@@ -150,11 +153,14 @@ export const DoctorDashboard = () => {
       {/* Welcome Section */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900">
-          Clinical Review Dashboard
+          Clinical Review Dashboard 
         </h1>
-        <p className="text-gray-600 mt-1">
-          Welcome back, Dr. {user?.name} - Review patients requiring clinical
-          decisions
+        <p className="text-gray-600  mt-1">
+          Welcome back, Dr. {user?.name}   
+        </p>
+        <p className="text-gray-600 text-l mt-2">
+         Review patients requiring clinical
+        decisions
         </p>
       </div>
 

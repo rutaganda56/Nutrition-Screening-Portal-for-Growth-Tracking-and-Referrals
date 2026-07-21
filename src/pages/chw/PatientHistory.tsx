@@ -22,6 +22,7 @@ import AutorenewIcon from "@mui/icons-material/Autorenew";
 import { ExportDropdown } from '@/app/components/ui/ExportDropdown';
 import { toast } from 'sonner';
 import { useSearchParams } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   patientsApi, 
   screeningsApi, 
@@ -51,12 +52,37 @@ export const PatientHistory = () => {
   const [loading, setLoading] = useState(true);
   const [loadingPatientData, setLoadingPatientData] = useState<Record<number, boolean>>({});
 
+  const { user } = useAuth();
+
   useEffect(() => {
-    patientsApi.getAll()
-      .then(setPatients)
-      .catch(() => toast.error('Failed to load patients'))
-      .finally(() => setLoading(false));
-  }, []);
+    const fetchData = async () => {
+      try {
+        const [patientsData, screeningsData] = await Promise.all([
+          patientsApi.getAll().catch(() => []),
+          screeningsApi.getAll().catch(() => [])
+        ]);
+        
+        let filteredPatients = patientsData;
+        
+        // If user is a CHW, filter their assigned patients (ones they screened or registered)
+        if (user?.role === 'communityhealthworker') {
+          const myScreenings = screeningsData.filter(s => s.conductedByName === user?.name);
+          const myPatientIds = new Set(myScreenings.map(s => s.patientId));
+          filteredPatients = patientsData.filter(
+            p => myPatientIds.has(p.id) || p.registeredByName === user?.name
+          );
+        }
+        
+        setPatients(filteredPatients);
+      } catch (err) {
+        toast.error('Failed to load patients');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, [user]);
 
   // Handle URL Parameters for auto-opening
   useEffect(() => {
@@ -116,19 +142,23 @@ export const PatientHistory = () => {
   };
 
   return (
-    <div id="patient-history" className="p-4 sm:p-6 space-y-6 max-w-7xl mx-auto">
+    <div id="patient-history" className="p-4 sm:p-6 space-y-6 ">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Patient History</h1>
-          <p className="text-gray-600 mt-1">View patient screening history (Read-only)</p>
+          <p className="text-gray-600 mt-1">View patient screening history </p>
         </div>
-        <ExportDropdown data={patients} filename="patients_history" />
+        <ExportDropdown 
+          data={patients} 
+          filename="patients_history" 
+          buttonClassName="bg-green-600 hover:bg-green-700 text-white"
+        />
       </div>
 
       <Alert>
         <InfoOutlinedIcon className="h-4 w-4" />
         <AlertDescription>
-          <strong>Read-Only Access:</strong> You can view patient screening history but cannot modify past records.
+           You can view patient screening history but cannot modify past records.
         </AlertDescription>
       </Alert>
 
@@ -340,7 +370,7 @@ export const PatientHistory = () => {
 
                         <div className="mt-4">
                           {/* Patient Summary */}
-                          <Card className="bg-blue-50 border-blue-200 mb-4">
+                          <Card className="bg-gray-50 border-gray-200 mb-4">
                             <CardContent className="pt-4">
                               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                                 <div>
@@ -383,7 +413,7 @@ export const PatientHistory = () => {
                               ) : (
                                 <div className="space-y-3">
                                   {(screeningsMap[patient.id] ?? []).map((s) => (
-                                    <Card key={s.id} className="border-l-4 border-l-blue-500">
+                                    <Card key={s.id} className="border-l-4 border-l-gray-500">
                                       <CardContent className="pt-4">
                                         <div className="flex items-center gap-2 mb-3">
                                           <CalendarTodayIcon className="h-4 w-4 text-gray-500" />
@@ -451,8 +481,8 @@ export const PatientHistory = () => {
                                             <CardContent className="pt-4 pb-4">
                                               <div className="flex justify-between items-start mb-2">
                                                 <div>
-                                                  <Badge variant={assessment.severity.toLowerCase() === 'critical' ? 'destructive' : 'default'} className="mb-2">
-                                                    {assessment.severity.toUpperCase()}
+                                                  <Badge variant={(assessment.severity || '').toLowerCase() === 'critical' ? 'destructive' : 'default'} className="mb-2">
+                                                    {(assessment.severity || 'UNKNOWN').toUpperCase()}
                                                   </Badge>
                                                   <h5 className="font-bold text-lg">{assessment.diagnosis}</h5>
                                                 </div>
@@ -462,11 +492,6 @@ export const PatientHistory = () => {
                                               </div>
                                               
 
-                                              <div className="bg-gray-50 p-3 rounded text-sm mb-2">
-                                                <span className="text-xs text-gray-500 block mb-1">Clinical Notes:</span>
-                                                <p className="text-gray-800 whitespace-pre-wrap">{assessment.clinicalNotes}</p>
-                                              </div>
-                                              
                                               <p className="text-xs text-gray-500 mt-2 text-right">Assessed by: Dr. {assessment.assessedByName}</p>
                                             </CardContent>
                                           </Card>
@@ -490,7 +515,7 @@ export const PatientHistory = () => {
                                               <div className="flex justify-between items-start mb-3">
                                                 <div>
                                                   <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 mb-1">
-                                                    {order.supplementType.toUpperCase()}
+                                                    {(order.supplementType || 'N/A').toUpperCase()}
                                                   </Badge>
                                                   <h5 className="font-bold">{order.supplement}</h5>
                                                 </div>

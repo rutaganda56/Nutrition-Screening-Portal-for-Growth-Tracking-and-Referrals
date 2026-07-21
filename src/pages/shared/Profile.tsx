@@ -55,10 +55,8 @@ export const Profile = () => {
   const [formData, setFormData] = useState({
     name: user?.name || "",
     email: user?.email || "",
-    phone: "+250 788 123 456",
+    phone: user?.phone || "",
     department: user?.department || "General Health",
-    address: "Kigali, Rwanda",
-    joinDate: "2024-01-15",
   });
 
   const [stats, setStats] = useState({
@@ -195,6 +193,7 @@ export const Profile = () => {
       updateUser({
         name: formData.name,
         email: formData.email,
+        phone: formData.phone,
         department: formData.department,
       });
 
@@ -243,17 +242,7 @@ export const Profile = () => {
                 </div>
                 <div className="flex items-center gap-3 text-sm">
                   <Phone className="h-4 w-4 text-gray-500" />
-                  <span className="text-gray-700">{formData.phone}</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm">
-                  <MapPin className="h-4 w-4 text-gray-500" />
-                  <span className="text-gray-700">{formData.address}</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm">
-                  <Calendar className="h-4 w-4 text-gray-500" />
-                  <span className="text-gray-700">
-                    Joined {formData.joinDate}
-                  </span>
+                  <span className="text-gray-700">{formData.phone || "Not provided"}</span>
                 </div>
               </div>
             </div>
@@ -323,17 +312,6 @@ export const Profile = () => {
                       value={formData.department}
                       onChange={(e) =>
                         setFormData({ ...formData, department: e.target.value })
-                      }
-                      disabled={!isEditing}
-                    />
-                  </div>
-                  <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="address">Address</Label>
-                    <Input
-                      id="address"
-                      value={formData.address}
-                      onChange={(e) =>
-                        setFormData({ ...formData, address: e.target.value })
                       }
                       disabled={!isEditing}
                     />

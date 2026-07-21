@@ -299,7 +299,7 @@ export const AdminDashboard = () => {
         <Card className="shadow-sm">
           <CardHeader>
             <CardTitle>Malnutrition Severity Breakdown</CardTitle>
-            <CardDescription>System-wide patient health classification status</CardDescription>
+            <CardDescription>System wide patient health classification status</CardDescription>
           </CardHeader>
           <CardContent>
             {patients.length === 0 ? (

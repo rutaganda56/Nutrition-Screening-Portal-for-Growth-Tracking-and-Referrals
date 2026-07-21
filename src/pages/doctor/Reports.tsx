@@ -116,7 +116,7 @@ export const Reports = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 no-print">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Reports & Analytics</h1>
-          <p className="text-gray-600 mt-1">Real-time clinical and program analytics from the active database</p>
+          <p className="text-gray-600 mt-1">Real time clinical and program analytics from the active database</p>
         </div>
         <div className="flex items-center gap-2">
           <ExportDropdown

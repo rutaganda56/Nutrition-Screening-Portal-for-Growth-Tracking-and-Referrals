@@ -322,6 +322,7 @@ export const usersApi = {
 
 export const facilitiesApi = {
   getAll: () => request<FacilityResponse[]>('/facilities', { method: 'GET' }),
+  getById: (id: number) => request<FacilityResponse>(`/facilities/${id}`, { method: 'GET' }),
   create: (payload: Omit<FacilityResponse, 'id' | 'status'>) =>
     request<FacilityResponse>('/facilities', {
       method: 'POST',
@@ -425,7 +426,6 @@ export interface ClinicalAssessmentCreatePayload {
   patientId: number;
   diagnosis: string;
   severity: string;
-  clinicalNotes: string;
 }
 
 export interface ClinicalAssessmentResponse {
@@ -434,7 +434,6 @@ export interface ClinicalAssessmentResponse {
   patientId: number;
   diagnosis: string;
   severity: string;
-  clinicalNotes: string;
   assessedByName: string;
   createdAt: string;
 }
