@@ -4,9 +4,9 @@ spring:
       password: disabled
       name: disabled
   datasource:
-    url: jdbc:postgresql://localhost:5432/nutritrack_db
-    username: postgres
-    password: valentin04
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -19,10 +19,10 @@ spring:
     serialization:
       write-dates-as-timestamps: false
   mail:
-    host: ${MAIL_HOST:smtp.gmail.com}
+    host: ${MAIL_HOST}
     port: ${MAIL_PORT:587}
-    username: ${MAIL_USERNAME:valentinrutaganda04@gmail.com}
-    password: ${MAIL_PASSWORD:ofeqbbrrueuhuonq}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
     properties:
       mail:
         smtp:
@@ -32,4 +32,4 @@ spring:
 
 app:
   jwt:
-    secret: dev-only-nutritrack-jwt-secret-key-change-me
+    secret: ${JWT_SECRET}

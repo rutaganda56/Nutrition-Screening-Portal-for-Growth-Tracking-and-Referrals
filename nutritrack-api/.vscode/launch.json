@@ -7,10 +7,7 @@
       "request": "launch",
       "mainClass": "com.nutritrack.NutriTrackApplication",
       "projectName": "nutritrack-api",
-      "env": {
-        "MAIL_USERNAME": "valentinrutaganda04@gmail.com",
-        "MAIL_PASSWORD": ""
-      }
+      "envFile": "${workspaceFolder}/.env"
     }
   ]
 }
