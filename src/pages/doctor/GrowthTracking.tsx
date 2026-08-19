@@ -34,6 +34,7 @@ import {
 } from 'recharts';
 import { toast } from 'sonner';
 import { ExportDropdown } from '@/app/components/ui/ExportDropdown';
+import { generateGrowthTrackingPdfReport } from '@/utils/pdfReportGenerator';
 import { patientsApi, screeningsApi, serviceRequestsApi, PatientResponse, ScreeningResponse } from '@/services/api';
 
 export const GrowthTracking = () => {
@@ -136,6 +137,35 @@ export const GrowthTracking = () => {
     }
   };
 
+  const handleExportPdfReport = async () => {
+    if (!selectedPatient) {
+      toast.error('No patient selected');
+      return;
+    }
+    toast.info('Generating professional PDF report...', { duration: 2000 });
+    try {
+      await generateGrowthTrackingPdfReport({
+        patient: {
+          firstName: selectedPatient.firstName,
+          lastName: selectedPatient.lastName,
+          patientId: String(selectedPatient.id),
+        },
+        chartData: chartData.map(d => ({
+          date: d.date,
+          weight: d.weight,
+          height: d.height,
+          muac: d.muac,
+        })),
+        userName: user?.name || 'Doctor',
+        userRole: user?.role || 'doctor',
+      });
+      toast.success('PDF report downloaded successfully');
+    } catch (error) {
+      console.error('Failed to generate PDF report:', error);
+      toast.error('Failed to generate PDF report');
+    }
+  };
+
   return (
     <div id="growth-tracking-dashboard" className="p-6 space-y-6">
       {/* Header */}
@@ -149,8 +179,8 @@ export const GrowthTracking = () => {
             data={chartData}
             filename={`Growth_Chart_${selectedPatient?.firstName || 'Patient'}`}
             pdfElementId="growth-tracking-dashboard"
-            variant="outline"
-            label="Export Chart"
+            onCustomPdfExport={handleExportPdfReport}
+            buttonClassName="bg-green-600 hover:bg-green-700 text-white"
           />
         </div>
       </div>

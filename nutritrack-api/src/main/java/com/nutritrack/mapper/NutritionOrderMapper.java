@@ -23,6 +23,7 @@ public class NutritionOrderMapper {
                 order.getEndDate(),
                 order.getStatus(),
                 order.getPrescribedBy() != null ? order.getPrescribedBy().getFullName() : null,
+                order.getPrescribedBy() != null ? order.getPrescribedBy().getRole() : null,
                 order.getCreatedAt()
         );
     }

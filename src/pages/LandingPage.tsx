@@ -30,8 +30,8 @@ export const LandingPage = () => {
       description: 'Protected workspaces tailored for CHWs, Doctors, and Administrators.'
     },
     {
-      title: 'Holistic Management',
-      description: 'Track nutrition orders and follow-up schedules in one centralized system.'
+      title: 'Complete Care in One Place',
+      description: 'Track meal orders and upcoming appointments all in one system'
     }
   ];
 
@@ -52,7 +52,7 @@ export const LandingPage = () => {
 
       <main>
         {/* Hero Section */}
-        <section className="relative overflow-hidden bg-white py-20 lg:py-32">
+        <section className="relative overflow-hidden bg-white py-20 lg:py-12">
           <div className="container mx-auto px-6">
             <div className="flex flex-col lg:flex-row items-center gap-16">
               <div className="flex-1 text-center lg:text-left">
@@ -64,17 +64,54 @@ export const LandingPage = () => {
                   <span className="text-green-600">starts with better data.</span>
                 </h2>
                 <p className="mb-10 max-w-xl mx-auto lg:mx-0 text-lg leading-relaxed text-gray-600">
-                  A professional workflow system.Empowering 
-                  clinical teams to screen, track, and coordinate 
-                  malnutrition cases with precision and compassion.
+                  Nutri Track is a professional workflow system designed to help healthcare workers find, track,
+                  and treat cases of malnutrition with care and accuracy. Our easy to use system connects clinical teams,
+                  improves daily communication, and ensures patients receive continuous, high quality care all in one centralized platform. 
+                  By standardizing growth monitoring, automating risk screening, and connecting community health workers directly with doctors,
+                   Nutri Track eliminates care gaps, speeds up clinical decisions, and helps vulnerable patients recover faster.
                 </p>
                 <div className="flex flex-col sm:flex-row justify-center lg:justify-start gap-4">
                   <Button size="lg" onClick={() => navigate('login')} className="bg-green-600 hover:bg-green-700 h-12 px-8">
                      Access Dashboard
                   </Button>
+                </div>             
+              </div>
+              <div className="flex-1 w-[300px]">
+                <div className="relative rounded-3xl overflow-hidden shadow-2xl">
+                  <img src={clinicCare} alt="Healthcare worker checking toddler" className="w-full h-[500px] object-cover" />
                 </div>
               </div>
+            </div>
+          </div>
+        </section>
 
+        {/* Features Section */}
+        <section className="bg-gray-50/50 py-10">
+          <div className="container mx-auto px-6">
+            <div className="flex flex-col lg:flex-row items-center gap-16">
+              <div className="flex-1">
+                <div className="mb-12">
+                  <h3 className="mb-4 text-3xl font-bold text-gray-900">Integrated Care Delivery</h3>
+                  <p className="text-lg text-gray-600 max-w-lg">
+                    A comprehensive toolkit designed for the unique needs of nutrition clinics, connecting communities with clinical excellence.
+                  </p>
+                </div>
+                <div className="grid gap-x-8 gap-y-10 sm:grid-cols-2">
+                  {features.map((feature, index) => {
+                    return (
+                      <div key={index} className="group">
+                        <div className="mb-3 h-1 w-12 bg-green-100 group-hover:bg-green-600 transition-colors" />
+                        <h4 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-green-700 transition-colors">
+                          {feature.title}
+                        </h4>
+                        <p className="text-sm text-gray-600 leading-relaxed">
+                          {feature.description}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
               <div className="flex-1 w-full max-w-2xl">
                 <div className="relative rounded-2xl border border-gray-100 bg-gray-50/50 p-6 shadow-2xl shadow-gray-200/50">
                   <div className="mb-6 flex items-center justify-between">
@@ -107,42 +144,6 @@ export const LandingPage = () => {
           </div>
         </section>
 
-        {/* Features Section */}
-        <section className="bg-gray-50/50 py-24">
-          <div className="container mx-auto px-6">
-            <div className="flex flex-col lg:flex-row items-center gap-16">
-              <div className="flex-1">
-                <div className="mb-12">
-                  <h3 className="mb-4 text-3xl font-bold text-gray-900">Integrated Care Delivery</h3>
-                  <p className="text-lg text-gray-600 max-w-lg">
-                    A comprehensive toolkit designed for the unique needs of nutrition clinics, connecting communities with clinical excellence.
-                  </p>
-                </div>
-                <div className="grid gap-x-8 gap-y-10 sm:grid-cols-2">
-                  {features.map((feature, index) => {
-                    return (
-                      <div key={index} className="group">
-                        <div className="mb-3 h-1 w-12 bg-green-100 group-hover:bg-green-600 transition-colors" />
-                        <h4 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-green-700 transition-colors">
-                          {feature.title}
-                        </h4>
-                        <p className="text-sm text-gray-600 leading-relaxed">
-                          {feature.description}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-              <div className="flex-1 w-full">
-                <div className="relative rounded-3xl overflow-hidden shadow-2xl">
-                  <img src={clinicCare} alt="Healthcare worker checking toddler" className="w-full h-[600px] object-cover" />
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* Quick Process Section */}
         <section className="bg-green-700 py-20 text-white">
           <div className="container mx-auto px-6">
@@ -150,7 +151,7 @@ export const LandingPage = () => {
               {[
                 { title: 'Register', desc: 'Securely capture patient and guardian demographics.' },
                 { title: 'Screen', desc: 'Validate growth measurements against global standards.' },
-                { title: 'Consult', desc: 'Facilitate data-driven clinical decisions and orders.' }
+                { title: 'Consult', desc: 'Facilitate data driven clinical decisions and orders.' }
               ].map((item, i) => (
                 <div key={i} className="relative">
                   <div className="mb-4 text-5xl font-black text-green-100/20">{i + 1}</div>

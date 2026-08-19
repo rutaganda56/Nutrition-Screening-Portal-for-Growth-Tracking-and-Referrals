@@ -20,6 +20,7 @@ import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import DownloadIcon from "@mui/icons-material/Download";
 import AutorenewIcon from "@mui/icons-material/Autorenew";
 import { ExportDropdown } from '@/app/components/ui/ExportDropdown';
+import { generatePatientHistoryPdfReport } from '@/utils/pdfReportGenerator';
 import { toast } from 'sonner';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -118,10 +119,10 @@ export const PatientHistory = () => {
   };
 
   const getStatusColor = (status: string) => {
-    switch (status) {
+    switch (status?.toUpperCase()) {
       case 'SAM': return 'destructive';
       case 'MAM': return 'default';
-      case 'Normal': return 'secondary';
+      case 'NORMAL': return 'secondary';
       default: return 'secondary';
     }
   };
@@ -130,15 +131,37 @@ export const PatientHistory = () => {
     const name = `${p.firstName} ${p.lastName}`.toLowerCase();
     const matchesSearch = name.includes(searchQuery.toLowerCase()) ||
       p.patientCode.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter = filterStatus === 'all' || p.currentStatus === filterStatus;
+    const matchesFilter = filterStatus === 'all' || p.currentStatus?.toUpperCase() === filterStatus.toUpperCase();
     return matchesSearch && matchesFilter;
   });
 
   const stats = {
     total: patients.length,
-    normal: patients.filter(p => p.currentStatus === 'Normal').length,
-    mam: patients.filter(p => p.currentStatus === 'MAM').length,
-    sam: patients.filter(p => p.currentStatus === 'SAM').length,
+    normal: patients.filter(p => p.currentStatus?.toUpperCase() === 'NORMAL').length,
+    mam: patients.filter(p => p.currentStatus?.toUpperCase() === 'MAM').length,
+    sam: patients.filter(p => p.currentStatus?.toUpperCase() === 'SAM').length,
+  };
+
+  const handleExportPdfReport = async () => {
+    toast.info('Generating professional PDF report...', { duration: 2000 });
+    try {
+      await generatePatientHistoryPdfReport({
+        patients: filteredPatients.map(p => ({
+          name: `${p.firstName} ${p.lastName}`,
+          patientId: String(p.id),
+          age: p.age || 'Unknown',
+          gender: p.gender,
+          status: p.currentStatus
+        })),
+        filter: filterStatus,
+        userName: user?.name || 'CHW',
+        userRole: user?.role || 'communityhealthworker',
+      });
+      toast.success('PDF report downloaded successfully');
+    } catch (error) {
+      console.error('Failed to generate PDF report:', error);
+      toast.error('Failed to generate PDF report');
+    }
   };
 
   return (
@@ -151,17 +174,11 @@ export const PatientHistory = () => {
         <ExportDropdown 
           data={patients} 
           filename="patients_history" 
+          pdfElementId="patient-history"
+          onCustomPdfExport={handleExportPdfReport}
           buttonClassName="bg-green-600 hover:bg-green-700 text-white"
         />
       </div>
-
-      <Alert>
-        <InfoOutlinedIcon className="h-4 w-4" />
-        <AlertDescription>
-           You can view patient screening history but cannot modify past records.
-        </AlertDescription>
-      </Alert>
-
       {/* Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
@@ -300,12 +317,6 @@ export const PatientHistory = () => {
               <Card key={patient.id} className="hover:shadow-md transition-shadow">
                 <CardContent className="pt-6">
                   <div className="flex flex-col lg:flex-row gap-4 items-start">
-                    <Avatar className="h-12 w-12">
-                      <AvatarFallback className="bg-green-100 text-green-700 text-lg">
-                        {patient.firstName.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-
                     <div className="flex-1">
                       <div className="flex items-start justify-between mb-3">
                         <div>
@@ -364,7 +375,7 @@ export const PatientHistory = () => {
                         <DialogHeader>
                           <DialogTitle>Screening History: {patient.firstName} {patient.lastName}</DialogTitle>
                           <DialogDescription>
-                            {patient.patientCode} - {patient.age} - {patient.gender} (Read-only)
+                            {patient.patientCode} - {patient.age} - {patient.gender}
                           </DialogDescription>
                         </DialogHeader>
 
@@ -399,7 +410,7 @@ export const PatientHistory = () => {
                           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                             <TabsList className="grid w-full grid-cols-2 mb-4">
                               <TabsTrigger value="screenings">Screening History</TabsTrigger>
-                              <TabsTrigger value="feedback">Doctor Feedback</TabsTrigger>
+                              <TabsTrigger value="feedback">Clinical Feedback & Orders</TabsTrigger>
                             </TabsList>
                             
                             <TabsContent value="screenings" className="space-y-4">
@@ -452,12 +463,6 @@ export const PatientHistory = () => {
                                   ))}
                                 </div>
                               )}
-                              <Alert className="mt-4">
-                                <InfoOutlinedIcon className="h-4 w-4" />
-                                <AlertDescription className="text-sm">
-                                  These records are read-only. To add new records, use the Screening Form.
-                                </AlertDescription>
-                              </Alert>
                             </TabsContent>
                             
                             <TabsContent value="feedback" className="space-y-6">
@@ -546,7 +551,7 @@ export const PatientHistory = () => {
                                               
                                               <div className="flex justify-between items-center mt-3 text-xs text-gray-500">
                                                 <span>From: {order.startDate} to {order.endDate}</span>
-                                                <span>Prescribed by: Dr. {order.prescribedByName}</span>
+                                                <span>Prescribed by: {order.prescribedByRole === 'COMMUNITY_HEALTH_WORKER' ? 'CHW' : 'Dr.'} {order.prescribedByName}</span>
                                               </div>
                                             </CardContent>
                                           </Card>

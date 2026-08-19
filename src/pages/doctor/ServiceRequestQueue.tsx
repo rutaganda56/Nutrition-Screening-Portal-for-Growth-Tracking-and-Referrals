@@ -19,6 +19,7 @@ import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import DescriptionIcon from "@mui/icons-material/Description";
 import { Badge as UIBadge } from '@/app/components/ui/badge';
 import { ExportDropdown } from '@/app/components/ui/ExportDropdown';
+import { generateServiceRequestQueuePdfReport } from '@/utils/pdfReportGenerator';
 import { toast } from 'sonner';
 import { serviceRequestsApi, ServiceRequestResponse } from '@/services/api';
 
@@ -119,6 +120,36 @@ export const ServiceRequestQueue = () => {
     );
   };
 
+  const handleExportPdfReport = async () => {
+    toast.info('Generating professional PDF report...', { duration: 2000 });
+    let requestsToExport = [
+      ...pendingRequests,
+      ...inReviewRequests,
+      ...completedRequests
+    ];
+
+    requestsToExport = filteredRequests(requestsToExport);
+
+    try {
+      await generateServiceRequestQueuePdfReport({
+        requests: requestsToExport.map(r => ({
+          patientName: r.patientName,
+          patientId: String(r.patientId),
+          priority: r.priority,
+          classification: r.classification,
+          status: r.status
+        })),
+        queueFilter: 'All Requests',
+        userName: user?.name || 'Doctor',
+        userRole: user?.role || 'doctor',
+      });
+      toast.success('PDF report downloaded successfully');
+    } catch (error) {
+      console.error('Failed to generate PDF report:', error);
+      toast.error('Failed to generate PDF report');
+    }
+  };
+
   const ServiceRequestCard = ({ request }: { request: ServiceRequestResponse }) => (
     <Card className={`hover:shadow-lg transition-shadow ${
       request.priority.toLowerCase() === 'asap' || request.priority.toLowerCase() === 'urgent' ? 'border-2' : ''
@@ -209,21 +240,17 @@ export const ServiceRequestQueue = () => {
           <p className="text-gray-600 mt-1">Review and respond to CHW-submitted service requests requiring clinical decisions</p>
         </div>
         <ExportDropdown
-          data={serviceRequests}
-          filename="Service_Request_Queue"
-          pdfElementId="service-request-queue"
-          variant="outline"
+          data={filteredRequests(
+            activeTab === 'pending' ? pendingRequests : 
+            activeTab === 'in-review' ? inReviewRequests : 
+            completedRequests
+          )}
+          filename={`Service_Requests_All_Queue`}
+          pdfElementId="service-queue-document"
+          onCustomPdfExport={handleExportPdfReport}
+          buttonClassName="bg-green-600 hover:bg-green-700 text-white"
         />
       </div>
-
-      {/* Role Information */}
-      <Alert className="bg-grey-50">
-        <WarningAmberIcon className="h-4 w-4 text-grey-600" />
-        <AlertDescription className="text-grey-600">
-          <strong>Doctor Workflow:</strong> Community Health Workers submit service requests for patients requiring clinical review. 
-          All patient access is through these service requests  you cannot browse patients directly. Review each case to make clinical decisions.
-        </AlertDescription>
-      </Alert>
 
       {/* Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

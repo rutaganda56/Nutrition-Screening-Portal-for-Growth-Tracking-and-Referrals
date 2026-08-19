@@ -23,6 +23,8 @@ import { toast } from 'sonner';
 import { ExportDropdown } from '@/app/components/ui/ExportDropdown';
 import { downloadCSV, downloadJSON } from '@/utils/exportUtils';
 import { generateProfessionalExcelReport } from '@/utils/excelExportUtils';
+import { generateProfessionalPdfReport } from '@/utils/pdfReportGenerator';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   patientsApi, 
   screeningsApi, 
@@ -39,6 +41,7 @@ import {
 } from '@/services/api';
 
 export const ReportsAnalytics = () => {
+  const { user } = useAuth();
   const [dateRange, setDateRange] = useState('all');
   const [reportType, setReportType] = useState('overview');
   const [loading, setLoading] = useState(true);
@@ -299,6 +302,38 @@ export const ReportsAnalytics = () => {
     }
   };
 
+  const handleExportPdfReport = async () => {
+    toast.info('Generating professional PDF report...', { duration: 2000 });
+    try {
+      await generateProfessionalPdfReport({
+        totalScreenings: totalScreeningsCount,
+        atRiskPatients: atRiskCount,
+        activeReferrals: activeReferralsCount,
+        completedReferrals: completedReferralsCount,
+        totalServiceRequests: serviceRequests.length,
+        successRatePercent,
+        screeningTrends,
+        ageDistribution,
+        severityData,
+        facilityPerformance,
+        serviceRequestData,
+        entityCounts: {
+          patients: patients.length,
+          screenings: screenings.length,
+          serviceRequests: serviceRequests.length,
+          facilities: facilities.length,
+        },
+        dateRange,
+        userName: user?.name || 'Administrator',
+        userRole: user?.role || 'administrator',
+      });
+      toast.success('PDF report downloaded successfully');
+    } catch (error) {
+      console.error('Failed to generate PDF report:', error);
+      toast.error('Failed to generate PDF report');
+    }
+  };
+
   const handleGenerateReport = () => {
     toast.success('Refreshing analytics data...');
   };
@@ -379,6 +414,7 @@ export const ReportsAnalytics = () => {
             filename="NutriTrack_Analytics_Report"
             pdfElementId="reports-analytics"
             onCustomExcelExport={handleExportReport}
+            onCustomPdfExport={handleExportPdfReport}
             buttonClassName="bg-green-600 hover:bg-green-700 text-white shadow-sm"
           />
         </div>

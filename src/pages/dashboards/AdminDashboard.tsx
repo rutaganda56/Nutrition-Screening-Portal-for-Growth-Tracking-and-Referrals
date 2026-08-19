@@ -22,7 +22,9 @@ import HomeIcon from "@mui/icons-material/Home";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedIn";
 import PieChartIcon from "@mui/icons-material/PieChart";
+import { toast } from "sonner";
 import { ExportDropdown } from "@/app/components/ui/ExportDropdown";
+import { generateAdminDashboardPdfReport } from "@/utils/pdfReportGenerator";
 import {
   BarChart,
   Bar,
@@ -192,6 +194,36 @@ export const AdminDashboard = () => {
     },
   ];
 
+  const handleExportPdfReport = async () => {
+    toast.info('Generating professional PDF report...', { duration: 2000 });
+    try {
+      await generateAdminDashboardPdfReport({
+        stats: {
+          totalUsers: users.length,
+          activeUsers: activeUsers.length,
+          totalFacilities: facilityStats.length,
+          pendingRequests,
+          totalRecords: totalPatients + totalScreenings,
+          criticalAlerts,
+        },
+        facilityStats,
+        severityData,
+        alerts: alerts.slice(0, 50).map(a => ({
+          alertType: a.alertType,
+          patientName: a.patientName || 'System',
+          message: a.message,
+          createdAt: String(a.createdAt),
+        })),
+        userName: user?.name || 'Administrator',
+        userRole: user?.role || 'administrator',
+      });
+      toast.success('PDF report downloaded successfully');
+    } catch (error) {
+      console.error('Failed to generate PDF report:', error);
+      toast.error('Failed to generate PDF report');
+    }
+  };
+
   return (
     <div id="admin-dashboard" className="p-6 space-y-6">
       {/* Welcome Section */}
@@ -207,6 +239,7 @@ export const AdminDashboard = () => {
             data={facilityStats} 
             filename={`AdminDashboard_FacilityStats_${new Date().toISOString().split('T')[0]}`} 
             pdfElementId="admin-dashboard"
+            onCustomPdfExport={handleExportPdfReport}
             variant="outline"
           />
         </div>

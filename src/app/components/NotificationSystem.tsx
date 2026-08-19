@@ -90,13 +90,16 @@ export const NotificationSystem = () => {
       alertsApi.getByUser(Number(user.id))
         .then(data => {
           // Map backend alerts to frontend notification structure
-          const mappedNotifications = data.map(alert => ({
-            ...alert,
-            // If it's an INFO alert about doctor review, set action to VIEW_INSTRUCTIONS
-            actionType: alert.message.toLowerCase().includes('doctor review completed') 
-              ? 'VIEW_INSTRUCTIONS' 
-              : alert.alertType === 'CRITICAL' ? 'REVIEW_SUMMARY' : 'VIEW_GROWTH'
-          }));
+          const mappedNotifications = data.map(alert => {
+            const isChw = user?.role === 'communityhealthworker';
+            return {
+              ...alert,
+              // If it's an INFO alert about doctor review, set action to VIEW_INSTRUCTIONS
+              actionType: isChw ? 'VIEW_INSTRUCTIONS' : (alert.message.toLowerCase().includes('doctor review completed') 
+                ? 'VIEW_INSTRUCTIONS' 
+                : alert.alertType === 'CRITICAL' ? 'REVIEW_SUMMARY' : 'VIEW_GROWTH')
+            };
+          });
           setNotifications(mappedNotifications);
           setUnreadCount(mappedNotifications.filter(n => n.status === 'UNREAD').length);
         })
@@ -203,13 +206,13 @@ export const NotificationSystem = () => {
           </Badge>
         </div>
         <div className="max-h-[400px] overflow-y-auto">
-          {notifications.length === 0 ? (
+          {notifications.filter(n => n.status === 'UNREAD').length === 0 ? (
             <div className="p-8 text-center text-gray-500">
               <Bell className="h-8 w-8 mx-auto mb-2 opacity-20" />
-              <p>No notifications yet</p>
+              <p>No new notifications</p>
             </div>
           ) : (
-            notifications.map((n) => (
+            notifications.filter(n => n.status === 'UNREAD').map((n) => (
               <div 
                 key={n.id} 
                 className={cn(

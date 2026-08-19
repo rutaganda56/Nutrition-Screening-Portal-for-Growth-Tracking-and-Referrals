@@ -408,6 +408,7 @@ export interface NutritionOrderResponse {
   endDate: string;
   status: string;
   prescribedByName: string;
+  prescribedByRole?: string;
   createdAt: string;
 }
 

@@ -126,15 +126,10 @@ export const DashboardLayout = () => {
 
           <div className="flex items-center gap-4">
             <NotificationSystem />
-            
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="flex items-center gap-2">
-                  <Avatar>
-                    <AvatarFallback className="bg-green-600 text-white">
-                      {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
-                    </AvatarFallback>
-                  </Avatar>
+                  <PersonIcon className="mr-2 h-4 w-4" />
                   <div className="hidden md:block text-left">
                     <div className="text-sm font-medium">{user?.name || "User"}</div>
                     <div className="text-xs text-gray-500">{getRoleDisplayName(user.role)}</div>

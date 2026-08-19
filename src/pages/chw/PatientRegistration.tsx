@@ -170,14 +170,6 @@ export const PatientRegistration = () => {
         <p className="text-gray-600 mt-1">Register new patients for nutrition screening and monitoring</p>
       </div>
 
-      {/* Health Center Notice */}
-      <Alert>
-        <LocationOnIcon className="h-4 w-4" />
-        <AlertDescription>
-          Patients will be registered to your assigned health center: <strong>{assignedHealthCenter}</strong>
-        </AlertDescription>
-      </Alert>
-
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Patient Information */}
         <Card>

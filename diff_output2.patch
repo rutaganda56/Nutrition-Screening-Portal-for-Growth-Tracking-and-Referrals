@@ -1,0 +1,933 @@
+diff --git a/nutritrack-api/README.md b/nutritrack-api/README.md
+index 9c9b0eb..4ecd24d 100644
+--- a/nutritrack-api/README.md
++++ b/nutritrack-api/README.md
+@@ -170,7 +170,7 @@ Successful login response:
+ 
+ - Patient must be **under 5 years old** to be registered for nutrition screening
+ - Nutritional classification is **server-calculated** using WHO standards:
+-  - SAM: MUAC < 11.5 cm OR bilateral edema
++  - SAM: MUAC < 11.5 cm
+   - MAM: 11.5 cm ≤ MUAC < 12.5 cm
+   - NORMAL: MUAC ≥ 12.5 cm
+ - **No overlapping active nutrition orders** for the same patient
+diff --git a/nutritrack-api/src/main/java/com/nutritrack/model/NutritionOrder.java b/nutritrack-api/src/main/java/com/nutritrack/model/NutritionOrder.java
+index 166d8fb..53dd90f 100644
+--- a/nutritrack-api/src/main/java/com/nutritrack/model/NutritionOrder.java
++++ b/nutritrack-api/src/main/java/com/nutritrack/model/NutritionOrder.java
+@@ -24,7 +24,7 @@ public class NutritionOrder {
+ 
+     // THERAPEUTIC | SUPPLEMENTARY | PREVENTIVE | COUNSELING | RUTF | MICRONUTRIENT
+     @Column(name = "supplement_type")
+-    private String supplementType; // RUTF | RUSF | CSB+ | etc.
++    private String supplementType;
+ 
+     private String supplement;
+ 
+diff --git a/package-lock.json b/package-lock.json
+index 8344816..5c2bf2d 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -50,6 +50,7 @@
+         "html2canvas": "^1.4.1",
+         "input-otp": "1.4.2",
+         "jspdf": "^4.2.1",
++        "jspdf-autotable": "^5.0.8",
+         "lucide-react": "0.487.0",
+         "motion": "12.23.24",
+         "next-themes": "0.4.6",
+@@ -5063,6 +5064,15 @@
+         "html2canvas": "^1.0.0-rc.5"
+       }
+     },
++    "node_modules/jspdf-autotable": {
++      "version": "5.0.8",
++      "resolved": "https://registry.npmjs.org/jspdf-autotable/-/jspdf-autotable-5.0.8.tgz",
++      "integrity": "sha512-Hy05N86yBO7CXBrnSLOge7i1ZYpKH2DjQ94iybaP7vBhSInjvRBgDc99ngKzSbSO8Jc98ZCally8I6n0tj2RJQ==",
++      "license": "MIT",
++      "peerDependencies": {
++        "jspdf": "^2 || ^3 || ^4"
++      }
++    },
+     "node_modules/jszip": {
+       "version": "3.10.1",
+       "resolved": "https://registry.npmjs.org/jszip/-/jszip-3.10.1.tgz",
+diff --git a/package.json b/package.json
+index 003e041..89b0f46 100644
+--- a/package.json
++++ b/package.json
+@@ -50,6 +50,7 @@
+     "html2canvas": "^1.4.1",
+     "input-otp": "1.4.2",
+     "jspdf": "^4.2.1",
++    "jspdf-autotable": "^5.0.8",
+     "lucide-react": "0.487.0",
+     "motion": "12.23.24",
+     "next-themes": "0.4.6",
+diff --git a/src/app/components/NotificationSystem.tsx b/src/app/components/NotificationSystem.tsx
+index 115d19a..4b64982 100644
+--- a/src/app/components/NotificationSystem.tsx
++++ b/src/app/components/NotificationSystem.tsx
+@@ -90,13 +90,16 @@ export const NotificationSystem = () => {
+       alertsApi.getByUser(Number(user.id))
+         .then(data => {
+           // Map backend alerts to frontend notification structure
+-          const mappedNotifications = data.map(alert => ({
+-            ...alert,
+-            // If it's an INFO alert about doctor review, set action to VIEW_INSTRUCTIONS
+-            actionType: alert.message.toLowerCase().includes('doctor review completed') 
+-              ? 'VIEW_INSTRUCTIONS' 
+-              : alert.alertType === 'CRITICAL' ? 'REVIEW_SUMMARY' : 'VIEW_GROWTH'
+-          }));
++          const mappedNotifications = data.map(alert => {
++            const isChw = user?.role === 'communityhealthworker';
++            return {
++              ...alert,
++              // If it's an INFO alert about doctor review, set action to VIEW_INSTRUCTIONS
++              actionType: isChw ? 'VIEW_INSTRUCTIONS' : (alert.message.toLowerCase().includes('doctor review completed') 
++                ? 'VIEW_INSTRUCTIONS' 
++                : alert.alertType === 'CRITICAL' ? 'REVIEW_SUMMARY' : 'VIEW_GROWTH')
++            };
++          });
+           setNotifications(mappedNotifications);
+           setUnreadCount(mappedNotifications.filter(n => n.status === 'UNREAD').length);
+         })
+@@ -203,13 +206,13 @@ export const NotificationSystem = () => {
+           </Badge>
+         </div>
+         <div className="max-h-[400px] overflow-y-auto">
+-          {notifications.length === 0 ? (
++          {notifications.filter(n => n.status === 'UNREAD').length === 0 ? (
+             <div className="p-8 text-center text-gray-500">
+               <Bell className="h-8 w-8 mx-auto mb-2 opacity-20" />
+-              <p>No notifications yet</p>
++              <p>No new notifications</p>
+             </div>
+           ) : (
+-            notifications.map((n) => (
++            notifications.filter(n => n.status === 'UNREAD').map((n) => (
+               <div 
+                 key={n.id} 
+                 className={cn(
+diff --git a/src/components/DashboardLayout.tsx b/src/components/DashboardLayout.tsx
+index a4447be..5b6f4a4 100644
+--- a/src/components/DashboardLayout.tsx
++++ b/src/components/DashboardLayout.tsx
+@@ -126,15 +126,10 @@ export const DashboardLayout = () => {
+ 
+           <div className="flex items-center gap-4">
+             <NotificationSystem />
+-            
+             <DropdownMenu>
+               <DropdownMenuTrigger asChild>
+                 <Button variant="ghost" className="flex items-center gap-2">
+-                  <Avatar>
+-                    <AvatarFallback className="bg-green-600 text-white">
+-                      {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
+-                    </AvatarFallback>
+-                  </Avatar>
++                  <PersonIcon className="mr-2 h-4 w-4" />
+                   <div className="hidden md:block text-left">
+                     <div className="text-sm font-medium">{user?.name || "User"}</div>
+                     <div className="text-xs text-gray-500">{getRoleDisplayName(user.role)}</div>
+diff --git a/src/pages/LandingPage.tsx b/src/pages/LandingPage.tsx
+index 59f8f28..c62f871 100644
+--- a/src/pages/LandingPage.tsx
++++ b/src/pages/LandingPage.tsx
+@@ -30,8 +30,8 @@ export const LandingPage = () => {
+       description: 'Protected workspaces tailored for CHWs, Doctors, and Administrators.'
+     },
+     {
+-      title: 'Holistic Management',
+-      description: 'Track nutrition orders and follow-up schedules in one centralized system.'
++      title: 'Complete Care in One Place',
++      description: 'Track meal orders and upcoming appointments all in one system'
+     }
+   ];
+ 
+@@ -52,7 +52,7 @@ export const LandingPage = () => {
+ 
+       <main>
+         {/* Hero Section */}
+-        <section className="relative overflow-hidden bg-white py-20 lg:py-32">
++        <section className="relative overflow-hidden bg-white py-20 lg:py-12">
+           <div className="container mx-auto px-6">
+             <div className="flex flex-col lg:flex-row items-center gap-16">
+               <div className="flex-1 text-center lg:text-left">
+@@ -64,43 +64,21 @@ export const LandingPage = () => {
+                   <span className="text-green-600">starts with better data.</span>
+                 </h2>
+                 <p className="mb-10 max-w-xl mx-auto lg:mx-0 text-lg leading-relaxed text-gray-600">
+-                  A professional workflow system.Empowering 
+-                  clinical teams to screen, track, and coordinate 
+-                  malnutrition cases with precision and compassion.
++                  Nutri Track is a professional workflow system designed to help healthcare workers find, track,
++                  and treat cases of malnutrition with care and accuracy. Our easy to use system connects clinical teams,
++                  improves daily communication, and ensures patients receive continuous, high quality care all in one centralized platform. 
++                  By standardizing growth monitoring, automating risk screening, and connecting community health workers directly with doctors,
++                   Nutri Track eliminates care gaps, speeds up clinical decisions, and helps vulnerable patients recover faster.
+                 </p>
+                 <div className="flex flex-col sm:flex-row justify-center lg:justify-start gap-4">
+                   <Button size="lg" onClick={() => navigate('login')} className="bg-green-600 hover:bg-green-700 h-12 px-8">
+                      Access Dashboard
+                   </Button>
+-                </div>
++                </div>             
+               </div>
+-
+-              <div className="flex-1 w-full max-w-2xl">
+-                <div className="relative rounded-2xl border border-gray-100 bg-gray-50/50 p-6 shadow-2xl shadow-gray-200/50">
+-                  <div className="mb-6 flex items-center justify-between">
+-                    <div>
+-                      <h4 className="text-sm font-bold text-gray-900 uppercase tracking-tight">Service Request Queue</h4>
+-                      <p className="text-xs text-gray-500">Real-time clinical coordination</p>
+-                    </div>
+-                    <Badge className="bg-red-50 text-red-700 border-red-100 hover:bg-red-50 font-bold px-2 py-0">Urgent</Badge>
+-                  </div>
+-                  <div className="space-y-4">
+-                    {[
+-                      { label: 'CHW Screening', desc: 'Patient classified as SAM (High Priority)', status: 'Done' },
+-                      { label: 'Doctor Review', desc: 'Clinical assessment in progress', status: 'Active' },
+-                      { label: 'Nutrition Order', desc: 'Pending RUTF prescription', status: 'Pending' }
+-                    ].map((item, i) => (
+-                      <div key={i} className={`flex items-start gap-4 rounded-xl border p-4 transition-all ${item.status === 'Active' ? 'bg-white border-green-200 shadow-sm ring-1 ring-green-50' : 'bg-gray-50/50 border-gray-100'}`}>
+-                        <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${item.status === 'Done' ? 'bg-green-100 text-green-700' : item.status === 'Active' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-500'}`}>
+-                          {i + 1}
+-                        </div>
+-                        <div>
+-                          <p className="text-sm font-semibold text-gray-900">{item.label}</p>
+-                          <p className="text-xs text-gray-500">{item.desc}</p>
+-                        </div>
+-                      </div>
+-                    ))}
+-                  </div>
++              <div className="flex-1 w-[300px]">
++                <div className="relative rounded-3xl overflow-hidden shadow-2xl">
++                  <img src={clinicCare} alt="Healthcare worker checking toddler" className="w-full h-[500px] object-cover" />
+                 </div>
+               </div>
+             </div>
+@@ -108,7 +86,7 @@ export const LandingPage = () => {
+         </section>
+ 
+         {/* Features Section */}
+-        <section className="bg-gray-50/50 py-24">
++        <section className="bg-gray-50/50 py-10">
+           <div className="container mx-auto px-6">
+             <div className="flex flex-col lg:flex-row items-center gap-16">
+               <div className="flex-1">
+@@ -134,9 +112,32 @@ export const LandingPage = () => {
+                   })}
+                 </div>
+               </div>
+-              <div className="flex-1 w-full">
+-                <div className="relative rounded-3xl overflow-hidden shadow-2xl">
+-                  <img src={clinicCare} alt="Healthcare worker checking toddler" className="w-full h-[600px] object-cover" />
++              <div className="flex-1 w-full max-w-2xl">
++                <div className="relative rounded-2xl border border-gray-100 bg-gray-50/50 p-6 shadow-2xl shadow-gray-200/50">
++                  <div className="mb-6 flex items-center justify-between">
++                    <div>
++                      <h4 className="text-sm font-bold text-gray-900 uppercase tracking-tight">Service Request Queue</h4>
++                      <p className="text-xs text-gray-500">Real-time clinical coordination</p>
++                    </div>
++                    <Badge className="bg-red-50 text-red-700 border-red-100 hover:bg-red-50 font-bold px-2 py-0">Urgent</Badge>
++                  </div>
++                  <div className="space-y-4">
++                    {[
++                      { label: 'CHW Screening', desc: 'Patient classified as SAM (High Priority)', status: 'Done' },
++                      { label: 'Doctor Review', desc: 'Clinical assessment in progress', status: 'Active' },
++                      { label: 'Nutrition Order', desc: 'Pending RUTF prescription', status: 'Pending' }
++                    ].map((item, i) => (
++                      <div key={i} className={`flex items-start gap-4 rounded-xl border p-4 transition-all ${item.status === 'Active' ? 'bg-white border-green-200 shadow-sm ring-1 ring-green-50' : 'bg-gray-50/50 border-gray-100'}`}>
++                        <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${item.status === 'Done' ? 'bg-green-100 text-green-700' : item.status === 'Active' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-500'}`}>
++                          {i + 1}
++                        </div>
++                        <div>
++                          <p className="text-sm font-semibold text-gray-900">{item.label}</p>
++                          <p className="text-xs text-gray-500">{item.desc}</p>
++                        </div>
++                      </div>
++                    ))}
++                  </div>
+                 </div>
+               </div>
+             </div>
+@@ -150,7 +151,7 @@ export const LandingPage = () => {
+               {[
+                 { title: 'Register', desc: 'Securely capture patient and guardian demographics.' },
+                 { title: 'Screen', desc: 'Validate growth measurements against global standards.' },
+-                { title: 'Consult', desc: 'Facilitate data-driven clinical decisions and orders.' }
++                { title: 'Consult', desc: 'Facilitate data driven clinical decisions and orders.' }
+               ].map((item, i) => (
+                 <div key={i} className="relative">
+                   <div className="mb-4 text-5xl font-black text-green-100/20">{i + 1}</div>
+diff --git a/src/pages/admin/ReportsAnalytics.tsx b/src/pages/admin/ReportsAnalytics.tsx
+index 4ef6c45..0afee91 100644
+--- a/src/pages/admin/ReportsAnalytics.tsx
++++ b/src/pages/admin/ReportsAnalytics.tsx
+@@ -23,6 +23,8 @@ import { toast } from 'sonner';
+ import { ExportDropdown } from '@/app/components/ui/ExportDropdown';
+ import { downloadCSV, downloadJSON } from '@/utils/exportUtils';
+ import { generateProfessionalExcelReport } from '@/utils/excelExportUtils';
++import { generateProfessionalPdfReport } from '@/utils/pdfReportGenerator';
++import { useAuth } from '@/contexts/AuthContext';
+ import { 
+   patientsApi, 
+   screeningsApi, 
+@@ -39,6 +41,7 @@ import {
+ } from '@/services/api';
+ 
+ export const ReportsAnalytics = () => {
++  const { user } = useAuth();
+   const [dateRange, setDateRange] = useState('all');
+   const [reportType, setReportType] = useState('overview');
+   const [loading, setLoading] = useState(true);
+@@ -299,6 +302,38 @@ export const ReportsAnalytics = () => {
+     }
+   };
+ 
++  const handleExportPdfReport = async () => {
++    toast.info('Generating professional PDF report...', { duration: 2000 });
++    try {
++      await generateProfessionalPdfReport({
++        totalScreenings: totalScreeningsCount,
++        atRiskPatients: atRiskCount,
++        activeReferrals: activeReferralsCount,
++        completedReferrals: completedReferralsCount,
++        totalServiceRequests: serviceRequests.length,
++        successRatePercent,
++        screeningTrends,
++        ageDistribution,
++        severityData,
++        facilityPerformance,
++        serviceRequestData,
++        entityCounts: {
++          patients: patients.length,
++          screenings: screenings.length,
++          serviceRequests: serviceRequests.length,
++          facilities: facilities.length,
++        },
++        dateRange,
++        userName: user?.name || 'Administrator',
++        userRole: user?.role || 'administrator',
++      });
++      toast.success('PDF report downloaded successfully');
++    } catch (error) {
++      console.error('Failed to generate PDF report:', error);
++      toast.error('Failed to generate PDF report');
++    }
++  };
++
+   const handleGenerateReport = () => {
+     toast.success('Refreshing analytics data...');
+   };
+@@ -379,6 +414,7 @@ export const ReportsAnalytics = () => {
+             filename="NutriTrack_Analytics_Report"
+             pdfElementId="reports-analytics"
+             onCustomExcelExport={handleExportReport}
++            onCustomPdfExport={handleExportPdfReport}
+             buttonClassName="bg-green-600 hover:bg-green-700 text-white shadow-sm"
+           />
+         </div>
+diff --git a/src/pages/admin/UserManagement.tsx b/src/pages/admin/UserManagement.tsx
+index 2377962..d4c0ee4 100644
+--- a/src/pages/admin/UserManagement.tsx
++++ b/src/pages/admin/UserManagement.tsx
+@@ -23,6 +23,8 @@ import AutorenewIcon from "@mui/icons-material/Autorenew";
+ import { toast } from 'sonner'; 
+ import { ExportDropdown } from '@/app/components/ui/ExportDropdown';
+ import { usersApi, facilitiesApi, UserResponse, FacilityResponse } from '@/services/api';
++import { useAuth } from '@/contexts/AuthContext';
++import { generateUserManagementPdfReport } from '@/utils/pdfReportGenerator';
+ 
+ const ROLE_LABELS: Record<string, string> = {
+   DOCTOR: 'Doctor',
+@@ -31,6 +33,7 @@ const ROLE_LABELS: Record<string, string> = {
+ };
+ 
+ export const UserManagement = () => {
++  const { user } = useAuth();
+   const [users, setUsers] = useState<UserResponse[]>([]);
+   const [facilities, setFacilities] = useState<FacilityResponse[]>([]);
+   const [loading, setLoading] = useState(true);
+@@ -181,6 +184,33 @@ export const UserManagement = () => {
+     inactive: users.filter(u => u.status === 'INACTIVE').length,
+   };
+ 
++  const handleExportPdfReport = async () => {
++    toast.info('Generating professional PDF report...', { duration: 2000 });
++    try {
++      await generateUserManagementPdfReport({
++        stats,
++        roleDistribution: {
++          doctor: users.filter(u => u.role === 'DOCTOR').length,
++          chw: users.filter(u => u.role === 'COMMUNITY_HEALTH_WORKER').length,
++          admin: users.filter(u => u.role === 'ADMINISTRATOR').length,
++        },
++        users: filteredUsers.map(u => ({
++          fullName: u.fullName,
++          email: u.email,
++          role: ROLE_LABELS[u.role] ?? u.role,
++          facilityName: u.facilityName,
++          status: u.status,
++        })),
++        userName: user?.name || 'Administrator',
++        userRole: user?.role || 'administrator',
++      });
++      toast.success('PDF report downloaded successfully');
++    } catch (error) {
++      console.error('Failed to generate PDF report:', error);
++      toast.error('Failed to generate PDF report');
++    }
++  };
++
+   return (
+     <div id="user-management-container" className="p-6 space-y-6">
+       <div className="flex justify-between items-center">
+@@ -190,9 +220,10 @@ export const UserManagement = () => {
+         </div>
+         <div className="flex gap-2">
+           <ExportDropdown 
+-            data={users}
++            data={filteredUsers.length > 0 ? filteredUsers : users}
+             filename={`SystemUsers_${new Date().toISOString().split('T')[0]}`}
+             pdfElementId="user-management-container"
++            onCustomPdfExport={handleExportPdfReport}
+             variant="outline"
+           />
+           <Button className="bg-green-600 hover:bg-green-700" onClick={() => { setForm(emptyForm); setIsCreateOpen(true); }}>
+diff --git a/src/pages/chw/NewScreening.tsx b/src/pages/chw/NewScreening.tsx
+index 2f128e0..cda9e14 100644
+--- a/src/pages/chw/NewScreening.tsx
++++ b/src/pages/chw/NewScreening.tsx
+@@ -541,17 +541,6 @@ export const NewScreening = () => {
+         </p>
+       </div>
+ 
+-      {/* Health Center Alert */}
+-      <Alert>
+-        <Info className="h-4 w-4" />
+-        <AlertDescription>
+-          <strong>Assigned Health Center:</strong> {assignedHealthCenter}. You
+-          can only screen patients registered at your assigned health center.
+-          The nutrition status classification is automatically calculated based
+-          on WHO standards (read-only).
+-        </AlertDescription>
+-      </Alert>
+-
+       {/* Progress Steps */}
+       <Card>
+         <CardContent className="pt-6">
+@@ -808,7 +797,7 @@ export const NewScreening = () => {
+                   required
+                 />
+                 <p className="text-sm text-gray-500">
+-                  WHO Reference: SAM {"<"} 11.5cm | MAM 11.5-12.5cm | Normal ≥
++                   SAM {"<"} 11.5cm | MAM 11.5-12.5cm | Normal ≥
+                   12.5cm
+                 </p>
+               </div>
+diff --git a/src/pages/chw/PatientHistory.tsx b/src/pages/chw/PatientHistory.tsx
+index ecd4858..0e12067 100644
+--- a/src/pages/chw/PatientHistory.tsx
++++ b/src/pages/chw/PatientHistory.tsx
+@@ -20,6 +20,7 @@ import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+ import DownloadIcon from "@mui/icons-material/Download";
+ import AutorenewIcon from "@mui/icons-material/Autorenew";
+ import { ExportDropdown } from '@/app/components/ui/ExportDropdown';
++import { generatePatientHistoryPdfReport } from '@/utils/pdfReportGenerator';
+ import { toast } from 'sonner';
+ import { useSearchParams } from 'react-router-dom';
+ import { useAuth } from '@/contexts/AuthContext';
+@@ -118,10 +119,10 @@ export const PatientHistory = () => {
+   };
+ 
+   const getStatusColor = (status: string) => {
+-    switch (status) {
++    switch (status?.toUpperCase()) {
+       case 'SAM': return 'destructive';
+       case 'MAM': return 'default';
+-      case 'Normal': return 'secondary';
++      case 'NORMAL': return 'secondary';
+       default: return 'secondary';
+     }
+   };
+@@ -130,15 +131,37 @@ export const PatientHistory = () => {
+     const name = `${p.firstName} ${p.lastName}`.toLowerCase();
+     const matchesSearch = name.includes(searchQuery.toLowerCase()) ||
+       p.patientCode.toLowerCase().includes(searchQuery.toLowerCase());
+-    const matchesFilter = filterStatus === 'all' || p.currentStatus === filterStatus;
++    const matchesFilter = filterStatus === 'all' || p.currentStatus?.toUpperCase() === filterStatus.toUpperCase();
+     return matchesSearch && matchesFilter;
+   });
+ 
+   const stats = {
+     total: patients.length,
+-    normal: patients.filter(p => p.currentStatus === 'Normal').length,
+-    mam: patients.filter(p => p.currentStatus === 'MAM').length,
+-    sam: patients.filter(p => p.currentStatus === 'SAM').length,
++    normal: patients.filter(p => p.currentStatus?.toUpperCase() === 'NORMAL').length,
++    mam: patients.filter(p => p.currentStatus?.toUpperCase() === 'MAM').length,
++    sam: patients.filter(p => p.currentStatus?.toUpperCase() === 'SAM').length,
++  };
++
++  const handleExportPdfReport = async () => {
++    toast.info('Generating professional PDF report...', { duration: 2000 });
++    try {
++      await generatePatientHistoryPdfReport({
++        patients: filteredPatients.map(p => ({
++          name: `${p.firstName} ${p.lastName}`,
++          patientId: String(p.id),
++          age: p.age || 'Unknown',
++          gender: p.gender,
++          status: p.currentStatus
++        })),
++        filter: filterStatus,
++        userName: user?.name || 'CHW',
++        userRole: user?.role || 'communityhealthworker',
++      });
++      toast.success('PDF report downloaded successfully');
++    } catch (error) {
++      console.error('Failed to generate PDF report:', error);
++      toast.error('Failed to generate PDF report');
++    }
+   };
+ 
+   return (
+@@ -151,17 +174,11 @@ export const PatientHistory = () => {
+         <ExportDropdown 
+           data={patients} 
+           filename="patients_history" 
++          pdfElementId="patient-history"
++          onCustomPdfExport={handleExportPdfReport}
+           buttonClassName="bg-green-600 hover:bg-green-700 text-white"
+         />
+       </div>
+-
+-      <Alert>
+-        <InfoOutlinedIcon className="h-4 w-4" />
+-        <AlertDescription>
+-           You can view patient screening history but cannot modify past records.
+-        </AlertDescription>
+-      </Alert>
+-
+       {/* Statistics */}
+       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+         <Card>
+@@ -300,12 +317,6 @@ export const PatientHistory = () => {
+               <Card key={patient.id} className="hover:shadow-md transition-shadow">
+                 <CardContent className="pt-6">
+                   <div className="flex flex-col lg:flex-row gap-4 items-start">
+-                    <Avatar className="h-12 w-12">
+-                      <AvatarFallback className="bg-green-100 text-green-700 text-lg">
+-                        {patient.firstName.charAt(0)}
+-                      </AvatarFallback>
+-                    </Avatar>
+-
+                     <div className="flex-1">
+                       <div className="flex items-start justify-between mb-3">
+                         <div>
+diff --git a/src/pages/chw/PatientRegistration.tsx b/src/pages/chw/PatientRegistration.tsx
+index 0ecbbfe..8235a77 100644
+--- a/src/pages/chw/PatientRegistration.tsx
++++ b/src/pages/chw/PatientRegistration.tsx
+@@ -170,14 +170,6 @@ export const PatientRegistration = () => {
+         <p className="text-gray-600 mt-1">Register new patients for nutrition screening and monitoring</p>
+       </div>
+ 
+-      {/* Health Center Notice */}
+-      <Alert>
+-        <LocationOnIcon className="h-4 w-4" />
+-        <AlertDescription>
+-          Patients will be registered to your assigned health center: <strong>{assignedHealthCenter}</strong>
+-        </AlertDescription>
+-      </Alert>
+-
+       <form onSubmit={handleSubmit} className="space-y-6">
+         {/* Patient Information */}
+         <Card>
+diff --git a/src/pages/dashboards/AdminDashboard.tsx b/src/pages/dashboards/AdminDashboard.tsx
+index 0aae053..a3c44e4 100644
+--- a/src/pages/dashboards/AdminDashboard.tsx
++++ b/src/pages/dashboards/AdminDashboard.tsx
+@@ -22,7 +22,9 @@ import HomeIcon from "@mui/icons-material/Home";
+ import PersonAddIcon from "@mui/icons-material/PersonAdd";
+ import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedIn";
+ import PieChartIcon from "@mui/icons-material/PieChart";
++import { toast } from "sonner";
+ import { ExportDropdown } from "@/app/components/ui/ExportDropdown";
++import { generateAdminDashboardPdfReport } from "@/utils/pdfReportGenerator";
+ import {
+   BarChart,
+   Bar,
+@@ -192,6 +194,36 @@ export const AdminDashboard = () => {
+     },
+   ];
+ 
++  const handleExportPdfReport = async () => {
++    toast.info('Generating professional PDF report...', { duration: 2000 });
++    try {
++      await generateAdminDashboardPdfReport({
++        stats: {
++          totalUsers: users.length,
++          activeUsers: activeUsers.length,
++          totalFacilities: facilityStats.length,
++          pendingRequests,
++          totalRecords: totalPatients + totalScreenings,
++          criticalAlerts,
++        },
++        facilityStats,
++        severityData,
++        alerts: alerts.slice(0, 50).map(a => ({
++          alertType: a.alertType,
++          patientName: a.patientName || 'System',
++          message: a.message,
++          createdAt: String(a.createdAt),
++        })),
++        userName: user?.name || 'Administrator',
++        userRole: user?.role || 'administrator',
++      });
++      toast.success('PDF report downloaded successfully');
++    } catch (error) {
++      console.error('Failed to generate PDF report:', error);
++      toast.error('Failed to generate PDF report');
++    }
++  };
++
+   return (
+     <div id="admin-dashboard" className="p-6 space-y-6">
+       {/* Welcome Section */}
+@@ -207,6 +239,7 @@ export const AdminDashboard = () => {
+             data={facilityStats} 
+             filename={`AdminDashboard_FacilityStats_${new Date().toISOString().split('T')[0]}`} 
+             pdfElementId="admin-dashboard"
++            onCustomPdfExport={handleExportPdfReport}
+             variant="outline"
+           />
+         </div>
+diff --git a/src/pages/doctor/GrowthTracking.tsx b/src/pages/doctor/GrowthTracking.tsx
+index a757d3a..0509d90 100644
+--- a/src/pages/doctor/GrowthTracking.tsx
++++ b/src/pages/doctor/GrowthTracking.tsx
+@@ -34,6 +34,7 @@ import {
+ } from 'recharts';
+ import { toast } from 'sonner';
+ import { ExportDropdown } from '@/app/components/ui/ExportDropdown';
++import { generateGrowthTrackingPdfReport } from '@/utils/pdfReportGenerator';
+ import { patientsApi, screeningsApi, serviceRequestsApi, PatientResponse, ScreeningResponse } from '@/services/api';
+ 
+ export const GrowthTracking = () => {
+@@ -136,6 +137,35 @@ export const GrowthTracking = () => {
+     }
+   };
+ 
++  const handleExportPdfReport = async () => {
++    if (!selectedPatient) {
++      toast.error('No patient selected');
++      return;
++    }
++    toast.info('Generating professional PDF report...', { duration: 2000 });
++    try {
++      await generateGrowthTrackingPdfReport({
++        patient: {
++          firstName: selectedPatient.firstName,
++          lastName: selectedPatient.lastName,
++          patientId: String(selectedPatient.id),
++        },
++        chartData: chartData.map(d => ({
++          date: d.date,
++          weight: d.weight,
++          height: d.height,
++          muac: d.muac,
++        })),
++        userName: user?.name || 'Doctor',
++        userRole: user?.role || 'doctor',
++      });
++      toast.success('PDF report downloaded successfully');
++    } catch (error) {
++      console.error('Failed to generate PDF report:', error);
++      toast.error('Failed to generate PDF report');
++    }
++  };
++
+   return (
+     <div id="growth-tracking-dashboard" className="p-6 space-y-6">
+       {/* Header */}
+@@ -149,8 +179,8 @@ export const GrowthTracking = () => {
+             data={chartData}
+             filename={`Growth_Chart_${selectedPatient?.firstName || 'Patient'}`}
+             pdfElementId="growth-tracking-dashboard"
+-            variant="outline"
+-            label="Export Chart"
++            onCustomPdfExport={handleExportPdfReport}
++            buttonClassName="bg-green-600 hover:bg-green-700 text-white"
+           />
+         </div>
+       </div>
+diff --git a/src/pages/doctor/PatientClinicalSummary.tsx b/src/pages/doctor/PatientClinicalSummary.tsx
+index 636d228..a8fc17c 100644
+--- a/src/pages/doctor/PatientClinicalSummary.tsx
++++ b/src/pages/doctor/PatientClinicalSummary.tsx
+@@ -62,6 +62,7 @@ import {
+   ServiceRequestResponse,
+ } from "@/services/api";
+ import { ExportDropdown } from "@/app/components/ui/ExportDropdown";
++import { generatePatientClinicalSummaryPdfReport } from "@/utils/pdfReportGenerator";
+ import { useAuth } from "@/contexts/AuthContext";
+ 
+ export const PatientClinicalSummary = () => {
+@@ -272,6 +273,40 @@ export const PatientClinicalSummary = () => {
+       });
+   };
+ 
++  const handleExportPdfReport = async () => {
++    if (!patient) {
++      toast.error('Patient data not fully loaded yet');
++      return;
++    }
++    toast.info('Generating professional PDF report...', { duration: 2000 });
++    try {
++      await generatePatientClinicalSummaryPdfReport({
++        patient: {
++          firstName: patient.firstName,
++          lastName: patient.lastName,
++          patientId: String(patient.id),
++          dateOfBirth: patient.birthDate || 'Unknown',
++          gender: patient.gender,
++          bloodGroup: (patient as any).bloodGroup || null,
++        },
++        latestScreening: latestScreening ? {
++          weightKg: latestScreening.weightKg,
++          heightCm: latestScreening.heightCm,
++          muacCm: latestScreening.muacCm,
++          classification: latestScreening.classification,
++        } : null,
++        clinicalDecision,
++        nutritionOrder,
++        userName: user?.name || 'Doctor',
++        userRole: user?.role || 'doctor',
++      });
++      toast.success('PDF report downloaded successfully');
++    } catch (error) {
++      console.error('Failed to generate PDF report:', error);
++      toast.error('Failed to generate PDF report');
++    }
++  };
++
+   const getClassificationColor = (classification: string) => {
+     switch (classification) {
+       case "SAM":
+@@ -382,9 +417,10 @@ export const PatientClinicalSummary = () => {
+           </p>
+         </div>
+         <ExportDropdown
+-          data={patientExportData}
+-          filename={`Clinical_Summary_${patient.firstName}_${patient.lastName}`}
++          data={[patient, latestScreening].filter(Boolean) as Record<string, any>[]}
++          filename={`Clinical_Summary_${patient?.firstName}`}
+           pdfElementId="clinical-summary-document"
++          onCustomPdfExport={handleExportPdfReport}
+           variant="outline"
+           buttonClassName="flex items-center gap-2 bg-green-500 border-green-200  text-white"
+         />
+diff --git a/src/pages/doctor/Reports.tsx b/src/pages/doctor/Reports.tsx
+index a96e798..0443ac9 100644
+--- a/src/pages/doctor/Reports.tsx
++++ b/src/pages/doctor/Reports.tsx
+@@ -30,6 +30,7 @@ import {
+ } from 'recharts';
+ import { toast } from 'sonner';
+ import { ExportDropdown } from '@/app/components/ui/ExportDropdown';
++import { generateDoctorReportsPdfReport } from '@/utils/pdfReportGenerator';
+ import { screeningsApi, referralsApi, patientsApi, serviceRequestsApi, PatientResponse, ScreeningResponse, ReferralResponse } from '@/services/api';
+ 
+ export const Reports = () => {
+@@ -110,6 +111,29 @@ export const Reports = () => {
+     DateRange: dateRange
+   }];
+ 
++  const handleExportPdfReport = async () => {
++    toast.info('Generating professional PDF report...', { duration: 2000 });
++    try {
++      await generateDoctorReportsPdfReport({
++        stats: {
++          totalPatients,
++          totalScreened,
++          samCases,
++          mamCases,
++          normalCases,
++          referralSuccessRate
++        },
++        dateRange,
++        userName: user?.name || 'Doctor',
++        userRole: user?.role || 'doctor',
++      });
++      toast.success('PDF report downloaded successfully');
++    } catch (error) {
++      console.error('Failed to generate PDF report:', error);
++      toast.error('Failed to generate PDF report');
++    }
++  };
++
+   return (
+     <div className="p-6 space-y-6" id="analytics-report-document">
+       {/* Header */}
+@@ -123,50 +147,12 @@ export const Reports = () => {
+             data={exportDataArray}
+             filename={`Clinical_Analytics_Report_${dateRange}`}
+             pdfElementId="analytics-report-document"
++            onCustomPdfExport={handleExportPdfReport}
+             buttonClassName="bg-green-600 hover:bg-green-700 text-white"
+           />
+         </div>
+       </div>
+ 
+-      {/* Filters */}
+-      <Card>
+-        <CardContent className="pt-6">
+-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+-            <div className="space-y-2">
+-              <Label>Report Type</Label>
+-              <Select value={reportType} onValueChange={setReportType}>
+-                <SelectTrigger>
+-                  <SelectValue />
+-                </SelectTrigger>
+-                <SelectContent>
+-                  <SelectItem value="overview">Overview Summary</SelectItem>
+-                  <SelectItem value="screening">Screening Report</SelectItem>
+-                  <SelectItem value="performance">Performance Metrics</SelectItem>
+-                </SelectContent>
+-              </Select>
+-            </div>
+-            <div className="flex.items-end">
+-              <Label>Date Range</Label>
+-              <Select value={dateRange} onValueChange={setDateRange}>
+-                <SelectTrigger>
+-                  <SelectValue />
+-                </SelectTrigger>
+-                <SelectContent>
+-                  <SelectItem value="6months">Last 6 Months</SelectItem>
+-                  <SelectItem value="all">All-Time</SelectItem>
+-                </SelectContent>
+-              </Select>
+-            </div>
+-            {/* <div className="flex items-end">
+-              <Button onClick={fetchReportData} variant="outline" className="w-full">
+-                <Calendar className="h-4 w-4 mr-2" />
+-                Refresh Data
+-              </Button>
+-            </div> */}
+-          </div>
+-        </CardContent>
+-      </Card>
+-
+       {/* Performance Metrics Grid */}
+       {loading ? (
+         <div className="space-y-6 animate-in fade-in duration-500">
+diff --git a/src/pages/doctor/ServiceRequestQueue.tsx b/src/pages/doctor/ServiceRequestQueue.tsx
+index 186309b..9c9b565 100644
+--- a/src/pages/doctor/ServiceRequestQueue.tsx
++++ b/src/pages/doctor/ServiceRequestQueue.tsx
+@@ -19,6 +19,7 @@ import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+ import DescriptionIcon from "@mui/icons-material/Description";
+ import { Badge as UIBadge } from '@/app/components/ui/badge';
+ import { ExportDropdown } from '@/app/components/ui/ExportDropdown';
++import { generateServiceRequestQueuePdfReport } from '@/utils/pdfReportGenerator';
+ import { toast } from 'sonner';
+ import { serviceRequestsApi, ServiceRequestResponse } from '@/services/api';
+ 
+@@ -119,6 +120,36 @@ export const ServiceRequestQueue = () => {
+     );
+   };
+ 
++  const handleExportPdfReport = async () => {
++    toast.info('Generating professional PDF report...', { duration: 2000 });
++    let requestsToExport = [
++      ...pendingRequests,
++      ...inReviewRequests,
++      ...completedRequests
++    ];
++
++    requestsToExport = filteredRequests(requestsToExport);
++
++    try {
++      await generateServiceRequestQueuePdfReport({
++        requests: requestsToExport.map(r => ({
++          patientName: r.patientName,
++          patientId: String(r.patientId),
++          priority: r.priority,
++          classification: r.classification,
++          status: r.status
++        })),
++        queueFilter: 'All Requests',
++        userName: user?.name || 'Doctor',
++        userRole: user?.role || 'doctor',
++      });
++      toast.success('PDF report downloaded successfully');
++    } catch (error) {
++      console.error('Failed to generate PDF report:', error);
++      toast.error('Failed to generate PDF report');
++    }
++  };
++
+   const ServiceRequestCard = ({ request }: { request: ServiceRequestResponse }) => (
+     <Card className={`hover:shadow-lg transition-shadow ${
+       request.priority.toLowerCase() === 'asap' || request.priority.toLowerCase() === 'urgent' ? 'border-2' : ''
+@@ -209,22 +240,18 @@ export const ServiceRequestQueue = () => {
+           <p className="text-gray-600 mt-1">Review and respond to CHW-submitted service requests requiring clinical decisions</p>
+         </div>
+         <ExportDropdown
+-          data={serviceRequests}
+-          filename="Service_Request_Queue"
+-          pdfElementId="service-request-queue"
+-          variant="outline"
++          data={filteredRequests(
++            activeTab === 'pending' ? pendingRequests : 
++            activeTab === 'in-review' ? inReviewRequests : 
++            completedRequests
++          )}
++          filename={`Service_Requests_All_Queue`}
++          pdfElementId="service-queue-document"
++          onCustomPdfExport={handleExportPdfReport}
++          buttonClassName="bg-green-600 hover:bg-green-700 text-white"
+         />
+       </div>
+ 
+-      {/* Role Information */}
+-      <Alert className="bg-grey-50">
+-        <WarningAmberIcon className="h-4 w-4 text-grey-600" />
+-        <AlertDescription className="text-grey-600">
+-          <strong>Doctor Workflow:</strong> Community Health Workers submit service requests for patients requiring clinical review. 
+-          All patient access is through these service requests  you cannot browse patients directly. Review each case to make clinical decisions.
+-        </AlertDescription>
+-      </Alert>
+-
+       {/* Statistics */}
+       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+         <Card>
+diff --git a/src/pages/shared/NotificationsPage.tsx b/src/pages/shared/NotificationsPage.tsx
+index ea9b537..8262c60 100644
+--- a/src/pages/shared/NotificationsPage.tsx
++++ b/src/pages/shared/NotificationsPage.tsx
+@@ -101,12 +101,15 @@ export const NotificationsPage = () => {
+     setLoading(true);
+     try {
+       const data = await alertsApi.getByUser(Number(user.id));
+-      const mappedNotifications = data.map(alert => ({
+-        ...alert,
+-        actionType: alert.message.toLowerCase().includes('doctor review completed') 
+-          ? 'VIEW_INSTRUCTIONS' 
+-          : alert.alertType === 'CRITICAL' ? 'REVIEW_SUMMARY' : 'VIEW_GROWTH'
+-      }));
++      const mappedNotifications = data.map(alert => {
++        const isChw = user?.role === 'communityhealthworker';
++        return {
++          ...alert,
++          actionType: isChw ? 'VIEW_INSTRUCTIONS' : (alert.message.toLowerCase().includes('doctor review completed') 
++            ? 'VIEW_INSTRUCTIONS' 
++            : alert.alertType === 'CRITICAL' ? 'REVIEW_SUMMARY' : 'VIEW_GROWTH')
++        };
++      });
+       setNotifications(mappedNotifications);
+     } catch (err) {
+       console.error('Failed to fetch notifications:', err);

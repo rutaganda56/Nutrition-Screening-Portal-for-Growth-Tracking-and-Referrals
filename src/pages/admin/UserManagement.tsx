@@ -23,6 +23,8 @@ import AutorenewIcon from "@mui/icons-material/Autorenew";
 import { toast } from 'sonner'; 
 import { ExportDropdown } from '@/app/components/ui/ExportDropdown';
 import { usersApi, facilitiesApi, UserResponse, FacilityResponse } from '@/services/api';
+import { useAuth } from '@/contexts/AuthContext';
+import { generateUserManagementPdfReport } from '@/utils/pdfReportGenerator';
 
 const ROLE_LABELS: Record<string, string> = {
   DOCTOR: 'Doctor',
@@ -31,6 +33,7 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 export const UserManagement = () => {
+  const { user } = useAuth();
   const [users, setUsers] = useState<UserResponse[]>([]);
   const [facilities, setFacilities] = useState<FacilityResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -181,6 +184,33 @@ export const UserManagement = () => {
     inactive: users.filter(u => u.status === 'INACTIVE').length,
   };
 
+  const handleExportPdfReport = async () => {
+    toast.info('Generating professional PDF report...', { duration: 2000 });
+    try {
+      await generateUserManagementPdfReport({
+        stats,
+        roleDistribution: {
+          doctor: users.filter(u => u.role === 'DOCTOR').length,
+          chw: users.filter(u => u.role === 'COMMUNITY_HEALTH_WORKER').length,
+          admin: users.filter(u => u.role === 'ADMINISTRATOR').length,
+        },
+        users: filteredUsers.map(u => ({
+          fullName: u.fullName,
+          email: u.email,
+          role: ROLE_LABELS[u.role] ?? u.role,
+          facilityName: u.facilityName,
+          status: u.status,
+        })),
+        userName: user?.name || 'Administrator',
+        userRole: user?.role || 'administrator',
+      });
+      toast.success('PDF report downloaded successfully');
+    } catch (error) {
+      console.error('Failed to generate PDF report:', error);
+      toast.error('Failed to generate PDF report');
+    }
+  };
+
   return (
     <div id="user-management-container" className="p-6 space-y-6">
       <div className="flex justify-between items-center">
@@ -190,9 +220,10 @@ export const UserManagement = () => {
         </div>
         <div className="flex gap-2">
           <ExportDropdown 
-            data={users}
+            data={filteredUsers.length > 0 ? filteredUsers : users}
             filename={`SystemUsers_${new Date().toISOString().split('T')[0]}`}
             pdfElementId="user-management-container"
+            onCustomPdfExport={handleExportPdfReport}
             variant="outline"
           />
           <Button className="bg-green-600 hover:bg-green-700" onClick={() => { setForm(emptyForm); setIsCreateOpen(true); }}>

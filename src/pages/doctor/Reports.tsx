@@ -30,6 +30,7 @@ import {
 } from 'recharts';
 import { toast } from 'sonner';
 import { ExportDropdown } from '@/app/components/ui/ExportDropdown';
+import { generateDoctorReportsPdfReport } from '@/utils/pdfReportGenerator';
 import { screeningsApi, referralsApi, patientsApi, serviceRequestsApi, PatientResponse, ScreeningResponse, ReferralResponse } from '@/services/api';
 
 export const Reports = () => {
@@ -110,6 +111,29 @@ export const Reports = () => {
     DateRange: dateRange
   }];
 
+  const handleExportPdfReport = async () => {
+    toast.info('Generating professional PDF report...', { duration: 2000 });
+    try {
+      await generateDoctorReportsPdfReport({
+        stats: {
+          totalPatients,
+          totalScreened,
+          samCases,
+          mamCases,
+          normalCases,
+          referralSuccessRate
+        },
+        dateRange,
+        userName: user?.name || 'Doctor',
+        userRole: user?.role || 'doctor',
+      });
+      toast.success('PDF report downloaded successfully');
+    } catch (error) {
+      console.error('Failed to generate PDF report:', error);
+      toast.error('Failed to generate PDF report');
+    }
+  };
+
   return (
     <div className="p-6 space-y-6" id="analytics-report-document">
       {/* Header */}
@@ -123,49 +147,11 @@ export const Reports = () => {
             data={exportDataArray}
             filename={`Clinical_Analytics_Report_${dateRange}`}
             pdfElementId="analytics-report-document"
+            onCustomPdfExport={handleExportPdfReport}
             buttonClassName="bg-green-600 hover:bg-green-700 text-white"
           />
         </div>
       </div>
-
-      {/* Filters */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Report Type</Label>
-              <Select value={reportType} onValueChange={setReportType}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="overview">Overview Summary</SelectItem>
-                  <SelectItem value="screening">Screening Report</SelectItem>
-                  <SelectItem value="performance">Performance Metrics</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex.items-end">
-              <Label>Date Range</Label>
-              <Select value={dateRange} onValueChange={setDateRange}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="6months">Last 6 Months</SelectItem>
-                  <SelectItem value="all">All-Time</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {/* <div className="flex items-end">
-              <Button onClick={fetchReportData} variant="outline" className="w-full">
-                <Calendar className="h-4 w-4 mr-2" />
-                Refresh Data
-              </Button>
-            </div> */}
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Performance Metrics Grid */}
       {loading ? (

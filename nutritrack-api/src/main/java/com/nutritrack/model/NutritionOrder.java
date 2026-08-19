@@ -24,7 +24,7 @@ public class NutritionOrder {
 
     // THERAPEUTIC | SUPPLEMENTARY | PREVENTIVE | COUNSELING | RUTF | MICRONUTRIENT
     @Column(name = "supplement_type")
-    private String supplementType; // RUTF | RUSF | CSB+ | etc.
+    private String supplementType;
 
     private String supplement;
 

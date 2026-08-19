@@ -170,7 +170,7 @@ Successful login response:
 
 - Patient must be **under 5 years old** to be registered for nutrition screening
 - Nutritional classification is **server-calculated** using WHO standards:
-  - SAM: MUAC < 11.5 cm OR bilateral edema
+  - SAM: MUAC < 11.5 cm
   - MAM: 11.5 cm ≤ MUAC < 12.5 cm
   - NORMAL: MUAC ≥ 12.5 cm
 - **No overlapping active nutrition orders** for the same patient

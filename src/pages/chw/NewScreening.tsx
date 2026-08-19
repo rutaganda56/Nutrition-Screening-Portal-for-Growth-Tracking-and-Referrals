@@ -541,17 +541,6 @@ export const NewScreening = () => {
         </p>
       </div>
 
-      {/* Health Center Alert */}
-      <Alert>
-        <Info className="h-4 w-4" />
-        <AlertDescription>
-          <strong>Assigned Health Center:</strong> {assignedHealthCenter}. You
-          can only screen patients registered at your assigned health center.
-          The nutrition status classification is automatically calculated based
-          on WHO standards (read-only).
-        </AlertDescription>
-      </Alert>
-
       {/* Progress Steps */}
       <Card>
         <CardContent className="pt-6">
@@ -808,7 +797,7 @@ export const NewScreening = () => {
                   required
                 />
                 <p className="text-sm text-gray-500">
-                  WHO Reference: SAM {"<"} 11.5cm | MAM 11.5-12.5cm | Normal ≥
+                   SAM {"<"} 11.5cm | MAM 11.5-12.5cm | Normal ≥
                   12.5cm
                 </p>
               </div>

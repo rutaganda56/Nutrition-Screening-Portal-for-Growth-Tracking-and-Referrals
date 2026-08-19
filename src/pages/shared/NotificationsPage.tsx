@@ -101,12 +101,15 @@ export const NotificationsPage = () => {
     setLoading(true);
     try {
       const data = await alertsApi.getByUser(Number(user.id));
-      const mappedNotifications = data.map(alert => ({
-        ...alert,
-        actionType: alert.message.toLowerCase().includes('doctor review completed') 
-          ? 'VIEW_INSTRUCTIONS' 
-          : alert.alertType === 'CRITICAL' ? 'REVIEW_SUMMARY' : 'VIEW_GROWTH'
-      }));
+      const mappedNotifications = data.map(alert => {
+        const isChw = user?.role === 'communityhealthworker';
+        return {
+          ...alert,
+          actionType: isChw ? 'VIEW_INSTRUCTIONS' : (alert.message.toLowerCase().includes('doctor review completed') 
+            ? 'VIEW_INSTRUCTIONS' 
+            : alert.alertType === 'CRITICAL' ? 'REVIEW_SUMMARY' : 'VIEW_GROWTH')
+        };
+      });
       setNotifications(mappedNotifications);
     } catch (err) {
       console.error('Failed to fetch notifications:', err);

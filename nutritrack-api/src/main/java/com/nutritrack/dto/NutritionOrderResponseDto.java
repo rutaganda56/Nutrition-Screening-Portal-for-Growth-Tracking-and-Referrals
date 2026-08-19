@@ -17,5 +17,6 @@ public record NutritionOrderResponseDto(
         LocalDate endDate,
         String status,
         String prescribedByName,
+        String prescribedByRole,
         LocalDateTime createdAt
 ) {}

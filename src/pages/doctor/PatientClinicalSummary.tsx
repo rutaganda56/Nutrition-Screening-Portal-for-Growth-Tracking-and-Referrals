@@ -62,6 +62,7 @@ import {
   ServiceRequestResponse,
 } from "@/services/api";
 import { ExportDropdown } from "@/app/components/ui/ExportDropdown";
+import { generatePatientClinicalSummaryPdfReport } from "@/utils/pdfReportGenerator";
 import { useAuth } from "@/contexts/AuthContext";
 
 export const PatientClinicalSummary = () => {
@@ -272,6 +273,40 @@ export const PatientClinicalSummary = () => {
       });
   };
 
+  const handleExportPdfReport = async () => {
+    if (!patient) {
+      toast.error('Patient data not fully loaded yet');
+      return;
+    }
+    toast.info('Generating professional PDF report...', { duration: 2000 });
+    try {
+      await generatePatientClinicalSummaryPdfReport({
+        patient: {
+          firstName: patient.firstName,
+          lastName: patient.lastName,
+          patientId: String(patient.id),
+          dateOfBirth: patient.birthDate || 'Unknown',
+          gender: patient.gender,
+          bloodGroup: (patient as any).bloodGroup || null,
+        },
+        latestScreening: latestScreening ? {
+          weightKg: latestScreening.weightKg,
+          heightCm: latestScreening.heightCm,
+          muacCm: latestScreening.muacCm,
+          classification: latestScreening.classification,
+        } : null,
+        clinicalDecision,
+        nutritionOrder,
+        userName: user?.name || 'Doctor',
+        userRole: user?.role || 'doctor',
+      });
+      toast.success('PDF report downloaded successfully');
+    } catch (error) {
+      console.error('Failed to generate PDF report:', error);
+      toast.error('Failed to generate PDF report');
+    }
+  };
+
   const getClassificationColor = (classification: string) => {
     switch (classification) {
       case "SAM":
@@ -382,9 +417,10 @@ export const PatientClinicalSummary = () => {
           </p>
         </div>
         <ExportDropdown
-          data={patientExportData}
-          filename={`Clinical_Summary_${patient.firstName}_${patient.lastName}`}
+          data={[patient, latestScreening].filter(Boolean) as Record<string, any>[]}
+          filename={`Clinical_Summary_${patient?.firstName}`}
           pdfElementId="clinical-summary-document"
+          onCustomPdfExport={handleExportPdfReport}
           variant="outline"
           buttonClassName="flex items-center gap-2 bg-green-500 border-green-200  text-white"
         />
