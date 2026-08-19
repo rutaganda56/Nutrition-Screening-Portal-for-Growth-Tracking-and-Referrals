@@ -10,7 +10,7 @@ Nutri Track is a comprehensive web application designed to empower healthcare pr
 
 - **Administrators**: Centralized system management. Manage healthcare facilities, oversee registered personnel (Doctors and CHWs), monitor system-wide malnutrition statistics, and handle security settings. Note: To ensure strict security, user registration is handled exclusively by Administrators.
 - **Doctors**: Clinical oversight. Review critical nutritional screenings, perform advanced clinical assessments, prescribe nutrition orders (e.g., RUTF), and manage inbound/outbound patient referrals.
-- **Community Health Workers (CHW)**: Frontline data collection. Register new patients, record anthropometric measurements (Weight, Height, MUAC, Z-Scores, Edema presence), and view patient histories directly from the field.
+- **Community Health Workers (CHW)**: Frontline data collection. Register new patients, record anthropometric measurements (Weight, Height, MUAC), and view patient histories directly from the field.
 
 ### 🩺 Nutrition Screening & Clinical Workflows
 
