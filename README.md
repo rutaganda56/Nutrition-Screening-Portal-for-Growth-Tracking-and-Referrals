@@ -89,6 +89,4 @@ Nutri Track is a comprehensive web application designed to empower healthcare pr
 
 5. The User interface will be available at `https://nutrition-screening-portal-for-growth-xu9s.onrender.com`
 
-## 🎨 Design Reference
 
-The original UI/UX design is available at [Figma - Nutri Track](https://www.figma.com/design/J1aNJtqAwvJBm9hi5DdZDb/Nutri-Track).
