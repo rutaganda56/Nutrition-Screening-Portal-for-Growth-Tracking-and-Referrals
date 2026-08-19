@@ -136,6 +136,12 @@ export const LoginPage = () => {
                 <Button type="submit" className="w-full bg-green-600 hover:bg-green-700" disabled={loading}>
                   Sign In
                 </Button>
+                <p className="text-center text-sm text-gray-600">
+                  Need a test account?{' '}
+                  <button type="button" className="text-green-600 hover:underline" onClick={() => navigate('/register')}>
+                    Create one
+                  </button>
+                </p>
               </div>
             </form>
           </CardContent>

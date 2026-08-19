@@ -7,6 +7,7 @@ import { ErrorBoundary } from "@/app/components/ErrorBoundary";
 import { LandingPage } from "@/pages/LandingPage";
 import { LoginPage } from "@/pages/LoginPage";
 import { ForgotPasswordPage } from "@/pages/ForgotPasswordPage";
+import { RegisterPage } from "@/pages/RegisterPage";
 
 // Auth Pages
 import { TwoFactorSetup } from "@/pages/auth/TwoFactorSetup";
@@ -77,6 +78,7 @@ function AppRoutes() {
         {/* Public Routes */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
         {/* 2FA Routes */}

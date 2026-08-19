@@ -1,9 +1,7 @@
 package com.nutritrack.controller;
 
-import com.nutritrack.dto.AuthResponseDto;
 import com.nutritrack.dto.LoginDto;
 import com.nutritrack.dto.RegisterDto;
-import com.nutritrack.dto.UserResponseDto;
 import com.nutritrack.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +29,16 @@ public class AuthController {
             java.util.Map<String, String> response = new java.util.HashMap<>();
             response.put("message", "the information you are using are not saved in the database try again");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterDto dto) {
+        try {
+            return ResponseEntity.status(HttpStatus.CREATED).body(userService.register(dto));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(java.util.Map.of("message", e.getMessage()));
         }
     }
 
